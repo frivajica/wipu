@@ -21,7 +21,7 @@ A ledger-based finance tracker where items are grouped by selectable time period
 | Layer | Technology | Version | Notes |
 |---|---|---|---|
 | Package Manager | pnpm | latest | Fast, disk-space efficient |
-| Framework | Next.js | 16.1.6 | App Router, React Compiler opt-in, initialized in `./` |
+| Framework | Next.js | 16.1.6 | App Router, React Compiler opt-in, View Transitions enabled, initialized in `./` |
 | UI Library | React / React DOM | 19.x | Required by Next.js 16 |
 | Language | TypeScript | 5.x | Strict mode |
 | Styling | Tailwind CSS | 4.x | Custom design token extensions (modern, clean palette) |
