@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { SpaceState, PeriodType } from "@/lib/types";
-import { STORAGE_KEYS, DEFAULT_PERIOD_TYPE } from "@/lib/constants";
+import { SpaceState } from "@/lib/types";
+import { STORAGE_KEYS } from "@/lib/constants";
 
 interface SpaceStore extends SpaceState {
   hasHydrated: boolean;

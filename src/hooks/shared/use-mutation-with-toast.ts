@@ -2,20 +2,16 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToastStore } from "@/components/ui/toast";
-import { simulateDelay } from "@/lib/api-simulation";
-
 interface UseMutationWithToastOptions<TData, TVariables> {
   mutationFn: (vars: TVariables) => TData | Promise<TData>;
   successMessage: string;
   invalidateKeys?: (string | null)[][];
-  delayMs?: number;
 }
 
 export function useMutationWithToast<TData, TVariables>({
   mutationFn,
   successMessage,
   invalidateKeys = [],
-  delayMs = 300,
 }: UseMutationWithToastOptions<TData, TVariables>) {
   const queryClient = useQueryClient();
   const { addToast } = useToastStore();
