@@ -1,0 +1,144 @@
+"use client";
+
+import * as React from "react";
+import { useAuth } from "@/hooks/use-auth";
+import { useLedger } from "@/hooks/use-ledger";
+import { useSpaces } from "@/hooks/use-spaces";
+import { useUIStore } from "@/stores/ui-store";
+import { PeriodSelector } from "@/components/ledger/period-selector";
+import { SmartDateToggle } from "@/components/ledger/smart-date-toggle";
+import { CustomDateRange } from "@/components/ledger/custom-date-range";
+import { PeriodGroup } from "@/components/ledger/period-group";
+import { groupItemsByPeriod, sortItemsByDate } from "@/lib/utils";
+import { LedgerItem } from "@/lib/types";
+import { DateTime } from "luxon";
+
+export default function LedgerPage() {
+  const { user } = useAuth();
+  const { activeSpaceId } = useSpaces();
+  const { items, isLoading, addItem, updateItem, deleteItem } = useLedger();
+  const {
+    periodType,
+    smartDateInheritance,
+    customDateRange,
+    setPeriodType,
+    setSmartDateInheritance,
+    setCustomDateRange,
+  } = useUIStore();
+
+  const handleAddItem = async (
+    item: Omit<LedgerItem, "id" | "createdAt" | "updatedAt">
+  ) => {
+    await addItem(item);
+  };
+
+  const handleEditItem = async (item: LedgerItem) => {
+    // For now, just log it. In a real implementation, you'd open an edit modal
+    console.log("Edit item:", item);
+  };
+
+  const handleDeleteItem = async (id: string) => {
+    await deleteItem(id);
+  };
+
+  // Group items by period
+  const groupedItems = React.useMemo(() => {
+    if (!items.length) return new Map<string, LedgerItem[]>();
+
+    let sortedItems = [...items];
+
+    // Sort by date if not using custom sort
+    if (true) {
+      sortedItems = sortItemsByDate(sortedItems);
+    }
+
+    return groupItemsByPeriod(
+      sortedItems,
+      periodType,
+      customDateRange || undefined
+    );
+  }, [items, periodType, customDateRange]);
+
+  // Get period keys sorted by date (most recent first)
+  const periodKeys = React.useMemo(() => {
+    return Array.from(groupedItems.keys()).reverse();
+  }, [groupedItems]);
+
+  // Show only first 2 periods by default, with load more
+  const [visibleCount, setVisibleCount] = React.useState(2);
+  const visibleKeys = periodKeys.slice(0, visibleCount);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin h-8 w-8 border-2 border-primary-accent border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Controls */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold font-display text-text-primary">
+            Shared Ledger
+          </h1>
+          <p className="text-text-secondary mt-1">
+            {periodType === "custom" && customDateRange
+              ? `Custom range: ${DateTime.fromISO(customDateRange.start).toFormat("MMM d")} - ${DateTime.fromISO(customDateRange.end).toFormat("MMM d")}`
+              : "Reviewing multiple periods"}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <PeriodSelector value={periodType} onChange={setPeriodType} />
+          <SmartDateToggle
+            checked={smartDateInheritance}
+            onChange={setSmartDateInheritance}
+          />
+        </div>
+      </div>
+
+      {/* Custom Date Range */}
+      {periodType === "custom" && (
+        <CustomDateRange
+          start={customDateRange?.start || DateTime.now().minus({ months: 1 }).toISODate() || ""}
+          end={customDateRange?.end || DateTime.now().toISODate() || ""}
+          onChange={setCustomDateRange}
+        />
+      )}
+
+      {/* Period Groups */}
+      <div className="space-y-2">
+        {visibleKeys.map((key) => (
+          <PeriodGroup
+            key={key}
+            label={key}
+            items={groupedItems.get(key) || []}
+            onAddItem={handleAddItem}
+            onEditItem={handleEditItem}
+            onDeleteItem={handleDeleteItem}
+            currentUserId={user?.id || ""}
+          />
+        ))}
+
+        {visibleKeys.length === 0 && (
+          <div className="text-center py-12 bg-surface rounded-xl border border-border">
+            <p className="text-text-secondary">No items yet. Add your first transaction!</p>
+          </div>
+        )}
+
+        {/* Load More */}
+        {visibleCount < periodKeys.length && (
+          <button
+            onClick={() => setVisibleCount((c) => c + 2)}
+            className="w-full py-3 text-sm text-text-secondary hover:text-text-primary transition-colors"
+          >
+            Load older periods...
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
