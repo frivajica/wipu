@@ -4,10 +4,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSpaceStore } from "@/stores/space-store";
 import { mockDb } from "@/lib/data";
 import { LedgerItem } from "@/lib/types";
+import { useToastStore } from "@/components/ui/toast";
 
 export function useLedger() {
   const { activeSpaceId } = useSpaceStore();
   const queryClient = useQueryClient();
+  const { addToast } = useToastStore();
 
   const { data: items, isLoading } = useQuery({
     queryKey: ["ledger", activeSpaceId],
@@ -26,6 +28,7 @@ export function useLedger() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ledger", activeSpaceId] });
+      addToast("Item added", "success");
     },
   });
 
@@ -36,6 +39,7 @@ export function useLedger() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ledger", activeSpaceId] });
+      addToast("Item updated", "success");
     },
   });
 
@@ -46,6 +50,7 @@ export function useLedger() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ledger", activeSpaceId] });
+      addToast("Item deleted", "success");
     },
   });
 

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { motion } from "framer-motion";
 import { cn, formatDate, getCurrentDate } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,14 @@ export function InlineEditRow({
   const [editDescription, setEditDescription] = React.useState(description);
   const [editCategory, setEditCategory] = React.useState(category);
   const [editDate, setEditDate] = React.useState(date);
+  const amountRef = React.useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      amountRef.current?.focus();
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,15 +62,20 @@ export function InlineEditRow({
   };
 
   return (
-    <form
+    <motion.form
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: "auto" }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ type: "spring" as const, stiffness: 400, damping: 35 }}
       onSubmit={handleSubmit}
       onKeyDown={handleKeyDown}
-      className="px-4 py-3 bg-primary-accent/5 border-y border-primary-accent/20"
+      className="px-4 py-3 bg-primary-accent/5 border-y border-primary-accent/20 border-l-2 border-l-primary-accent"
     >
       <div className="grid md:grid-cols-[32px_120px_1fr_120px_100px_80px] md:gap-4 grid-cols-[32px_1fr] gap-3 items-center">
         <div></div>
 
         <Input
+          ref={amountRef}
           type="number"
           step="0.01"
           value={editAmount}
@@ -102,6 +116,6 @@ export function InlineEditRow({
           </Button>
         </div>
       </div>
-    </form>
+    </motion.form>
   );
 }

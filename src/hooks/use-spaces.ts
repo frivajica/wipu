@@ -5,11 +5,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/auth-store";
 import { useSpaceStore } from "@/stores/space-store";
 import { mockDb } from "@/lib/data";
+import { useToastStore } from "@/components/ui/toast";
 
 export function useSpaces() {
   const { user } = useAuthStore();
   const { spaces, activeSpaceId, setSpaces, setActiveSpace, addSpace, removeSpace } = useSpaceStore();
   const queryClient = useQueryClient();
+  const { addToast } = useToastStore();
 
   const { data: spacesData, isLoading } = useQuery({
     queryKey: ["spaces", user?.id],
@@ -46,6 +48,7 @@ export function useSpaces() {
       addSpace(space);
       setActiveSpace(space.id);
       queryClient.invalidateQueries({ queryKey: ["spaces"] });
+      addToast(`Space "${space.name}" created`, "success");
     },
   });
 
@@ -57,6 +60,7 @@ export function useSpaces() {
     onSuccess: (_, spaceId) => {
       removeSpace(spaceId);
       queryClient.invalidateQueries({ queryKey: ["spaces"] });
+      addToast("Space deleted", "success");
     },
   });
 
@@ -68,11 +72,16 @@ export function useSpaces() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["spaces"] });
+      addToast("You left the space", "info");
     },
   });
 
   const switchSpace = (spaceId: string) => {
+    const space = spaces.find((s) => s.id === spaceId);
     setActiveSpace(spaceId);
+    if (space) {
+      addToast(`Switched to ${space.name}`, "info");
+    }
   };
 
   return {

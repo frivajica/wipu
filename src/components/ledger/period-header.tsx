@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { AnimatedNumber } from "@/components/ui/animated-number";
 
 interface PeriodHeaderProps {
   label: string;
@@ -25,11 +26,11 @@ export function PeriodHeader({ label, balance }: PeriodHeaderProps) {
             isPositive ? "text-secondary" : "text-error"
           )}
         >
-          {isPositive ? "+" : ""}
-          {new Intl.NumberFormat("en-US", {
-            style: "currency",
-            currency: "USD",
-          }).format(balance)}
+          <AnimatedNumber
+            value={balance}
+            prefix={isPositive ? "+" : ""}
+            className={isPositive ? "text-secondary" : "text-error"}
+          />
         </span>
       </div>
     </div>
