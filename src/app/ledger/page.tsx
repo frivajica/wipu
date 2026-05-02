@@ -64,15 +64,17 @@ export default function LedgerPage() {
 
     let sortedItems = [...items];
 
-    // Sort by date if not using custom sort
-    sortedItems = sortItemsByDate(sortedItems);
+    // Sort by date if enabled
+    if (sortByDate) {
+      sortedItems = sortItemsByDate(sortedItems);
+    }
 
     return groupItemsByPeriod(
       sortedItems,
       periodType,
       customDateRange || undefined
     );
-  }, [items, periodType, customDateRange]);
+  }, [items, periodType, customDateRange, sortByDate]);
 
   // Get period keys sorted by date (most recent first)
   const periodKeys = React.useMemo(() => {
