@@ -1,87 +1,71 @@
 "use client";
 
 import React from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/auth-store";
 import { useSpaceStore } from "@/stores/space-store";
 import { mockDb } from "@/lib/data";
+import { simulateDelay } from "@/lib/api-simulation";
+import { useMutationWithToast } from "@/hooks/shared/use-mutation-with-toast";
 import { useToastStore } from "@/components/ui/toast";
 
 export function useSpaces() {
   const { user } = useAuthStore();
   const { spaces, activeSpaceId, setSpaces, setActiveSpace, addSpace, removeSpace } = useSpaceStore();
-  const queryClient = useQueryClient();
   const { addToast } = useToastStore();
 
   const { data: spacesData, isLoading } = useQuery({
     queryKey: ["spaces", user?.id],
     queryFn: async () => {
       if (!user) return [];
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      await simulateDelay(300);
       return mockDb.getSpacesByUserId(user.id);
     },
     enabled: !!user,
   });
 
-  // Sync query data with store
   React.useEffect(() => {
-    if (spacesData) {
-      setSpaces(spacesData);
-    }
+    if (spacesData) setSpaces(spacesData);
   }, [spacesData, setSpaces]);
 
-  const createSpaceMutation = useMutation({
+  const createSpace = useMutationWithToast({
     mutationFn: async (name: string) => {
       if (!user) throw new Error("Not authenticated");
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      
       const space = mockDb.createSpace({
         name,
         ownerId: user.id,
         members: [user.id],
         maxMembers: 8,
       });
-      
       return space;
     },
-    onSuccess: (space) => {
-      addSpace(space);
-      setActiveSpace(space.id);
-      queryClient.invalidateQueries({ queryKey: ["spaces"] });
-      addToast(`Space "${space.name}" created`, "success");
-    },
+    successMessage: "Space created",
+    invalidateKeys: [["spaces"]],
   });
 
-  const deleteSpaceMutation = useMutation({
+  const deleteSpace = useMutationWithToast({
     mutationFn: async (spaceId: string) => {
-      await new Promise((resolve) => setTimeout(resolve, 300));
       mockDb.deleteSpace(spaceId);
+      return Promise.resolve();
     },
-    onSuccess: (_, spaceId) => {
-      removeSpace(spaceId);
-      queryClient.invalidateQueries({ queryKey: ["spaces"] });
-      addToast("Space deleted", "success");
-    },
+    successMessage: "Space deleted",
+    invalidateKeys: [["spaces"]],
   });
 
-  const leaveSpaceMutation = useMutation({
+  const leaveSpace = useMutationWithToast({
     mutationFn: async (spaceId: string) => {
       if (!user) throw new Error("Not authenticated");
-      await new Promise((resolve) => setTimeout(resolve, 300));
       mockDb.leaveSpace(spaceId, user.id);
+      return Promise.resolve();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["spaces"] });
-      addToast("You left the space", "info");
-    },
+    successMessage: "You left the space",
+    invalidateKeys: [["spaces"]],
   });
 
   const switchSpace = (spaceId: string) => {
     const space = spaces.find((s) => s.id === spaceId);
     setActiveSpace(spaceId);
-    if (space) {
-      addToast(`Switched to ${space.name}`, "info");
-    }
+    if (space) addToast(`Switched to ${space.name}`, "info");
   };
 
   return {
@@ -89,12 +73,12 @@ export function useSpaces() {
     activeSpaceId,
     activeSpace: spaces.find((s) => s.id === activeSpaceId),
     isLoading,
-    createSpace: createSpaceMutation.mutateAsync,
-    deleteSpace: deleteSpaceMutation.mutateAsync,
-    leaveSpace: leaveSpaceMutation.mutateAsync,
+    createSpace: createSpace.mutateAsync,
+    deleteSpace: deleteSpace.mutateAsync,
+    leaveSpace: leaveSpace.mutateAsync,
     switchSpace,
-    isCreating: createSpaceMutation.isPending,
-    isDeleting: deleteSpaceMutation.isPending,
-    isLeaving: leaveSpaceMutation.isPending,
+    isCreating: createSpace.isPending,
+    isDeleting: deleteSpace.isPending,
+    isLeaving: leaveSpace.isPending,
   };
 }

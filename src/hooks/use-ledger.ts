@@ -1,79 +1,67 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useSpaceStore } from "@/stores/space-store";
 import { mockDb } from "@/lib/data";
 import { LedgerItem } from "@/lib/types";
-import { useToastStore } from "@/components/ui/toast";
+import { simulateDelay } from "@/lib/api-simulation";
+import { useMutationWithToast } from "@/hooks/shared/use-mutation-with-toast";
 
 export function useLedger() {
   const { activeSpaceId } = useSpaceStore();
-  const queryClient = useQueryClient();
-  const { addToast } = useToastStore();
 
   const { data: items, isLoading } = useQuery({
     queryKey: ["ledger", activeSpaceId],
     queryFn: async () => {
       if (!activeSpaceId) return [];
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      await simulateDelay(300);
       return mockDb.getLedgerItems(activeSpaceId);
     },
     enabled: !!activeSpaceId,
   });
 
-  const addItemMutation = useMutation({
-    mutationFn: async (item: Omit<LedgerItem, "id" | "createdAt" | "updatedAt">) => {
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      return mockDb.createLedgerItem(item);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ledger", activeSpaceId] });
-      addToast("Item added", "success");
-    },
+  const addItem = useMutationWithToast({
+    mutationFn: (item: Omit<LedgerItem, "id" | "createdAt" | "updatedAt">) =>
+      mockDb.createLedgerItem(item),
+    successMessage: "Item added",
+    invalidateKeys: [["ledger", activeSpaceId]],
   });
 
-  const updateItemMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<LedgerItem> }) => {
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      return mockDb.updateLedgerItem(id, updates);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ledger", activeSpaceId] });
-      addToast("Item updated", "success");
-    },
+  const updateItem = useMutationWithToast({
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<LedgerItem> }) =>
+      mockDb.updateLedgerItem(id, updates),
+    successMessage: "Item updated",
+    invalidateKeys: [["ledger", activeSpaceId]],
   });
 
-  const deleteItemMutation = useMutation({
-    mutationFn: async (id: string) => {
-      await new Promise((resolve) => setTimeout(resolve, 300));
+  const deleteItem = useMutationWithToast({
+    mutationFn: (id: string) => {
       mockDb.deleteLedgerItem(id);
+      return Promise.resolve();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ledger", activeSpaceId] });
-      addToast("Item deleted", "success");
-    },
+    successMessage: "Item deleted",
+    invalidateKeys: [["ledger", activeSpaceId]],
   });
 
-  const reorderItemsMutation = useMutation({
-    mutationFn: async ({ spaceId, itemIds }: { spaceId: string; itemIds: string[] }) => {
-      await new Promise((resolve) => setTimeout(resolve, 300));
+  const reorderItems = useMutationWithToast({
+    mutationFn: ({ spaceId, itemIds }: { spaceId: string; itemIds: string[] }) => {
       mockDb.reorderLedgerItems(spaceId, itemIds);
+      return Promise.resolve();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ledger", activeSpaceId] });
-    },
+    successMessage: "Order updated",
+    invalidateKeys: [["ledger", activeSpaceId]],
   });
 
   return {
     items: items || [],
     isLoading,
-    addItem: addItemMutation.mutateAsync,
-    updateItem: updateItemMutation.mutateAsync,
-    deleteItem: deleteItemMutation.mutateAsync,
-    reorderItems: reorderItemsMutation.mutateAsync,
-    isAdding: addItemMutation.isPending,
-    isUpdating: updateItemMutation.isPending,
-    isDeleting: deleteItemMutation.isPending,
-    isReordering: reorderItemsMutation.isPending,
+    addItem: addItem.mutateAsync,
+    updateItem: updateItem.mutateAsync,
+    deleteItem: deleteItem.mutateAsync,
+    reorderItems: reorderItems.mutateAsync,
+    isAdding: addItem.isPending,
+    isUpdating: updateItem.isPending,
+    isDeleting: deleteItem.isPending,
+    isReordering: reorderItems.isPending,
   };
 }
