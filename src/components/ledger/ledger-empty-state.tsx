@@ -48,7 +48,7 @@ export function LedgerEmptyState({ onAdd }: LedgerEmptyStateProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             onClick={() => setIsAdding(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary-accent text-white hover:bg-primary-accent/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-accent focus-visible:ring-offset-2"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary-accent text-white hover:bg-primary-accent/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-accent focus-visible:ring-offset-2 cursor-pointer"
           >
             <Plus className="h-4 w-4" />
             Add your first transaction

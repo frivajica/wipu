@@ -183,7 +183,7 @@ export function PeriodGroup({
               exit={{ opacity: 0 }}
               onClick={() => setIsAdding(true)}
               className={cn(
-                "w-full py-3 px-4 flex items-center justify-center gap-2 text-sm font-medium",
+                "w-full py-3 px-4 flex items-center justify-center gap-2 text-sm font-medium cursor-pointer",
                 "text-primary-accent hover:bg-surface-elevated transition-colors",
                 "border-t border-border"
               )}

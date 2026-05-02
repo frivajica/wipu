@@ -1,7 +1,9 @@
 "use client";
 
 import * as React from "react";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { SPRING_SNAP } from "@/lib/animations";
 
 export interface ToggleProps {
   checked: boolean;
@@ -27,20 +29,18 @@ export function Toggle({ checked, onChange, label, className }: ToggleProps) {
         aria-checked={checked}
         onClick={() => onChange(!checked)}
         className={cn(
-          "relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200",
+          "relative inline-flex h-6 w-11 items-center rounded-full cursor-pointer",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-accent focus-visible:ring-offset-2",
           checked ? "bg-primary-accent" : "bg-border"
         )}
       >
-        <span
-          className={cn(
-            "inline-block h-5 w-5 transform rounded-full bg-white shadow-sm",
-            "will-change-transform",
-            checked ? "translate-x-5" : "translate-x-0.5"
-          )}
-          style={{
-            transition: "transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
+        <motion.span
+          className="inline-block h-5 w-5 rounded-full bg-white shadow-sm will-change-transform"
+          initial={false}
+          animate={{
+            x: checked ? 20 : 2,
           }}
+          transition={SPRING_SNAP}
         />
       </button>
     </label>

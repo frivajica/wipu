@@ -9,6 +9,7 @@ interface InfiniteScrollLoaderProps {
   hasMore: boolean;
   onLoadMore: () => void;
   loaderRef?: React.Ref<HTMLDivElement>;
+  hasItems?: boolean;
 }
 
 export function InfiniteScrollLoader({
@@ -16,6 +17,7 @@ export function InfiniteScrollLoader({
   hasMore,
   onLoadMore,
   loaderRef,
+  hasItems = true,
 }: InfiniteScrollLoaderProps) {
   const internalRef = React.useRef<HTMLDivElement>(null);
   const ref = (loaderRef as React.RefObject<HTMLDivElement>) || internalRef;
@@ -38,13 +40,14 @@ export function InfiniteScrollLoader({
   }, [ref, hasMore, isLoading, onLoadMore]);
 
   if (!hasMore) {
+    if (!hasItems) return null;
     return (
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         className="text-center py-6 text-sm text-text-secondary"
       >
-        All caught up
+        End of ledger
       </motion.div>
     );
   }

@@ -17,7 +17,10 @@ export function LedgerRowContent({ item, userName, onClick }: LedgerRowContentPr
   return (
     <>
       {/* Mobile Layout */}
-      <div className="md:hidden flex flex-col gap-1">
+      <div
+        className="md:hidden flex flex-col gap-1 cursor-pointer"
+        onClick={onClick}
+      >
         <div className="flex items-center justify-between">
           <span
             className={cn(

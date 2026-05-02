@@ -90,7 +90,7 @@ export function RowContextMenu({
                 <button
                   onClick={handleDeleteClick}
                   className={cn(
-                    "w-full text-left px-3 py-2 text-sm flex items-center gap-2",
+                    "w-full text-left px-3 py-2 text-sm flex items-center gap-2 cursor-pointer",
                     "text-error hover:bg-error/10 transition-colors"
                   )}
                 >

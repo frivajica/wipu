@@ -73,7 +73,7 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
       <span className="text-sm text-text-primary flex-1">{toast.message}</span>
       <button
         onClick={onClose}
-        className="p-1 rounded hover:bg-surface-elevated transition-colors"
+        className="p-1 rounded hover:bg-surface-elevated transition-colors cursor-pointer"
       >
         <X className="h-4 w-4 text-text-secondary" />
       </button>

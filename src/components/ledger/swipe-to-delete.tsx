@@ -82,13 +82,13 @@ export function SwipeToDelete({ children, onDelete, className, requiresConfirmat
             <span className="text-white text-sm font-medium">Delete?</span>
             <button
               onClick={handleConfirmDelete}
-              className="px-3 py-1 bg-white text-error rounded-md text-sm font-medium hover:bg-white/90 transition-colors"
+              className="px-3 py-1 bg-white text-error rounded-md text-sm font-medium hover:bg-white/90 transition-colors cursor-pointer"
             >
               Yes
             </button>
             <button
               onClick={handleCancel}
-              className="px-3 py-1 bg-white/20 text-white rounded-md text-sm font-medium hover:bg-white/30 transition-colors"
+              className="px-3 py-1 bg-white/20 text-white rounded-md text-sm font-medium hover:bg-white/30 transition-colors cursor-pointer"
             >
               No
             </button>

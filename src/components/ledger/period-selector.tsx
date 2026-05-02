@@ -21,11 +21,11 @@ export function PeriodSelector({ value, onChange, className }: PeriodSelectorPro
     <div className={cn("relative", className)}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium w-full sm:w-auto",
-          "bg-surface border border-border hover:border-primary-accent transition-colors",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-accent focus-visible:ring-offset-2"
-        )}
+          className={cn(
+            "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium w-full sm:w-auto cursor-pointer",
+            "bg-surface border border-border hover:border-primary-accent transition-colors",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-accent focus-visible:ring-offset-2"
+          )}
       >
         {selectedLabel}
         <ChevronDown className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")} />
@@ -53,7 +53,7 @@ export function PeriodSelector({ value, onChange, className }: PeriodSelectorPro
                     setIsOpen(false);
                   }}
                   className={cn(
-                    "w-full text-left px-3 py-2 text-sm transition-colors",
+                    "w-full text-left px-3 py-2 text-sm transition-colors cursor-pointer",
                     period.value === value
                       ? "bg-primary-accent/10 text-primary-accent"
                       : "text-text-primary hover:bg-surface-elevated"

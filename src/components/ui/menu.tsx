@@ -43,7 +43,7 @@ export function MenuItem({
   return (
     <button
       className={cn(
-        "w-full text-left px-4 py-2 text-sm transition-colors active:scale-[0.98]",
+        "w-full text-left px-4 py-2 text-sm transition-colors active:scale-[0.98] cursor-pointer inline-flex items-center",
         "hover:bg-surface-elevated",
         danger ? "text-error" : "text-text-primary",
         className

@@ -65,11 +65,11 @@ export default function LedgerPage() {
           <h1 className="text-2xl font-bold font-display text-text-primary">
             Shared Ledger
           </h1>
-          <p className="text-text-secondary mt-1">
-            {periodType === "custom" && customDateRange
-              ? `Custom range: ${DateTime.fromISO(customDateRange.start).toFormat("MMM d")} - ${DateTime.fromISO(customDateRange.end).toFormat("MMM d")}`
-              : "Reviewing multiple periods"}
-          </p>
+          {periodType === "custom" && customDateRange && (
+            <p className="text-text-secondary mt-1">
+              Custom range: {DateTime.fromISO(customDateRange.start).toFormat("MMM d")} - {DateTime.fromISO(customDateRange.end).toFormat("MMM d")}
+            </p>
+          )}
         </div>
 
         <div className="flex items-center gap-4 w-full sm:w-auto">
@@ -144,6 +144,7 @@ export default function LedgerPage() {
           isLoading={isLoading}
           hasMore={hasMore}
           onLoadMore={loadMore}
+          hasItems={items.length > 0}
         />
       </div>
     </div>

@@ -31,7 +31,7 @@ export function SortResetCue({ visible, onReset }: SortResetCueProps) {
             </p>
             <button
               onClick={onReset}
-              className="text-sm font-medium text-amber-900 hover:text-amber-700 underline"
+              className="text-sm font-medium text-amber-900 hover:text-amber-700 underline cursor-pointer"
             >
               Reset sort
             </button>

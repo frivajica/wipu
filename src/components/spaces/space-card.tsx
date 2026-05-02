@@ -67,7 +67,7 @@ export function SpaceCard({ space, onDelete, onLeave, onInvite, onClick }: Space
           </Button>
         )}
         
-        {isOwner && (
+        {isOwner && !isPersonal && (
           <Button
             variant="ghost"
             size="sm"
