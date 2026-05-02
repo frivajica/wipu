@@ -10,8 +10,13 @@ import { useMutationWithToast } from "@/hooks/shared/use-mutation-with-toast";
 import { useToastStore } from "@/components/ui/toast";
 
 export function useSpaces() {
-  const { user } = useAuthStore();
-  const { spaces, activeSpaceId, setSpaces, setActiveSpace, addSpace, removeSpace } = useSpaceStore();
+  const user = useAuthStore((s) => s.user);
+  const spaces = useSpaceStore((s) => s.spaces);
+  const activeSpaceId = useSpaceStore((s) => s.activeSpaceId);
+  const setSpaces = useSpaceStore((s) => s.setSpaces);
+  const setActiveSpace = useSpaceStore((s) => s.setActiveSpace);
+  const addSpace = useSpaceStore((s) => s.addSpace);
+  const removeSpace = useSpaceStore((s) => s.removeSpace);
   const { addToast } = useToastStore();
 
   const { data: spacesData, isLoading } = useQuery({
@@ -22,6 +27,7 @@ export function useSpaces() {
       return mockDb.getSpacesByUserId(user.id);
     },
     enabled: !!user,
+    staleTime: 5 * 60 * 1000,
   });
 
   React.useEffect(() => {

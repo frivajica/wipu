@@ -8,7 +8,7 @@ import { simulateDelay } from "@/lib/api-simulation";
 import { useMutationWithToast } from "@/hooks/shared/use-mutation-with-toast";
 
 export function useLedger() {
-  const { activeSpaceId } = useSpaceStore();
+  const activeSpaceId = useSpaceStore((s) => s.activeSpaceId);
 
   const { data: items, isLoading } = useQuery({
     queryKey: ["ledger", activeSpaceId],
@@ -22,6 +22,7 @@ export function useLedger() {
       });
     },
     enabled: !!activeSpaceId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const addItem = useMutationWithToast({

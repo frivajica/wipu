@@ -15,7 +15,6 @@ import { SortResetCue } from "@/components/ledger/sort-reset-cue";
 import { InfiniteScrollLoader } from "@/components/ledger/infinite-scroll-loader";
 import { LedgerSkeleton } from "@/components/ledger/ledger-skeleton";
 import { LedgerEmptyState } from "@/components/ledger/ledger-empty-state";
-import { LedgerItem } from "@/lib/types";
 import { DateTime } from "luxon";
 
 export default function LedgerPage() {
@@ -40,20 +39,46 @@ export default function LedgerPage() {
     sortByDate,
   });
 
-  const handleAddFirstItem = async (data: {
-    amount: number;
-    description: string;
-    category: string;
-    date: string;
-  }) => {
-    await addItem({
-      ...data,
-      spaceId: activeSpaceId || "",
-      createdBy: user?.id || "",
-      updatedBy: user?.id || "",
-      sortOrder: 0,
-    });
-  };
+  const handleAddFirstItem = React.useCallback(
+    async (data: {
+      amount: number;
+      description: string;
+      category: string;
+      date: string;
+    }) => {
+      await addItem({
+        ...data,
+        spaceId: activeSpaceId || "",
+        createdBy: user?.id || "",
+        updatedBy: user?.id || "",
+        sortOrder: 0,
+      });
+    },
+    [addItem, activeSpaceId, user?.id]
+  );
+
+  const handleEditItem = React.useCallback(
+    (item: { id: string; amount: number; description: string; category: string; date: string; updatedBy: string }) => {
+      return updateItem({
+        id: item.id,
+        updates: {
+          amount: item.amount,
+          description: item.description,
+          category: item.category,
+          date: item.date,
+          updatedBy: user?.id || item.updatedBy,
+        },
+      });
+    },
+    [updateItem, user?.id]
+  );
+
+  const handleReorderItems = React.useCallback(
+    (itemIds: string[]) => {
+      return reorderItems({ spaceId: activeSpaceId || "", itemIds });
+    },
+    [reorderItems, activeSpaceId]
+  );
 
   if (isLoading) return <LedgerSkeleton />;
 
@@ -116,20 +141,9 @@ export default function LedgerPage() {
               label={key}
               items={groupedItems.get(key) || []}
               onAddItem={addItem}
-              onEditItem={(item) =>
-                updateItem({
-                  id: item.id,
-                  updates: {
-                    amount: item.amount,
-                    description: item.description,
-                    category: item.category,
-                    date: item.date,
-                    updatedBy: user?.id || item.updatedBy,
-                  },
-                })
-              }
+              onEditItem={handleEditItem}
               onDeleteItem={deleteItem}
-              onReorderItems={(itemIds) => reorderItems({ spaceId: activeSpaceId || "", itemIds })}
+              onReorderItems={handleReorderItems}
               currentUserId={user?.id || ""}
               isDragEnabled={!sortByDate || smartDateInheritance}
             />

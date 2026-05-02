@@ -4,16 +4,17 @@ import { useMutation } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/auth-store";
 import { useSpaceStore } from "@/stores/space-store";
 import { mockDb } from "@/lib/data";
-import { simulateDelay } from "@/lib/api-simulation";
 import { getInitials, generateId, generateInviteCode } from "@/lib/id-utils";
 
 export function useAuth() {
-  const { login: setAuth, logout: clearAuth, user } = useAuthStore();
-  const { setSpaces, setActiveSpace } = useSpaceStore();
+  const user = useAuthStore((s) => s.user);
+  const setAuth = useAuthStore((s) => s.login);
+  const clearAuth = useAuthStore((s) => s.logout);
+  const setSpaces = useSpaceStore((s) => s.setSpaces);
+  const setActiveSpace = useSpaceStore((s) => s.setActiveSpace);
 
   const loginMutation = useMutation({
     mutationFn: async ({ email, password }: { email: string; password: string }) => {
-      await simulateDelay(500);
       const foundUser = mockDb.getUserByEmail(email);
       if (!foundUser || foundUser.password !== password) {
         throw new Error("Invalid email or password");
@@ -31,7 +32,6 @@ export function useAuth() {
 
   const registerMutation = useMutation({
     mutationFn: async ({ name, email, password }: { name: string; email: string; password: string }) => {
-      await simulateDelay(500);
       const existingUser = mockDb.getUserByEmail(email);
       if (existingUser) throw new Error("Email already registered");
 

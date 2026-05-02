@@ -4,6 +4,7 @@ import { SpaceState, PeriodType } from "@/lib/types";
 import { STORAGE_KEYS, DEFAULT_PERIOD_TYPE } from "@/lib/constants";
 
 interface SpaceStore extends SpaceState {
+  hasHydrated: boolean;
   setSpaces: (spaces: SpaceState["spaces"]) => void;
   setActiveSpace: (spaceId: string | null) => void;
   addSpace: (space: SpaceState["spaces"][0]) => void;
@@ -15,6 +16,7 @@ export const useSpaceStore = create<SpaceStore>()(
     (set) => ({
       spaces: [],
       activeSpaceId: null,
+      hasHydrated: false,
 
       setSpaces: (spaces) => set({ spaces }),
 
@@ -36,6 +38,11 @@ export const useSpaceStore = create<SpaceStore>()(
     }),
     {
       name: STORAGE_KEYS.SPACES,
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.hasHydrated = true;
+        }
+      },
     }
   )
 );

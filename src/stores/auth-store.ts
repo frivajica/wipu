@@ -4,6 +4,7 @@ import { AuthState, User } from "@/lib/types";
 import { STORAGE_KEYS } from "@/lib/constants";
 
 interface AuthStore extends AuthState {
+  hasHydrated: boolean;
   login: (user: User, token: string) => void;
   logout: () => void;
   hydrate: () => void;
@@ -15,6 +16,7 @@ export const useAuthStore = create<AuthStore>()(
       user: null,
       token: null,
       isAuthenticated: false,
+      hasHydrated: false,
 
       login: (user, token) =>
         set({
@@ -36,6 +38,11 @@ export const useAuthStore = create<AuthStore>()(
     }),
     {
       name: STORAGE_KEYS.AUTH,
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.hasHydrated = true;
+        }
+      },
     }
   )
 );

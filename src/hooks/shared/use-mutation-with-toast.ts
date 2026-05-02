@@ -22,7 +22,6 @@ export function useMutationWithToast<TData, TVariables>({
 
   return useMutation({
     mutationFn: async (vars: TVariables) => {
-      await simulateDelay(delayMs);
       return await mutationFn(vars);
     },
     onSuccess: () => {

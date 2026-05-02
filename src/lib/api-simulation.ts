@@ -1,3 +1,3 @@
-export function simulateDelay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+export function simulateDelay(_ms: number): Promise<void> {
+  return Promise.resolve();
 }
