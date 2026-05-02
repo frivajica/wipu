@@ -27,9 +27,9 @@ export function SpaceCard({ space, onDelete, onLeave, onInvite, onManage, onClic
       whileTap={{ scale: 0.98 }}
       transition={{ type: "spring", stiffness: 400, damping: 30 }}
       onClick={onClick}
-      className="bg-surface rounded-xl border border-border p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+      className="bg-surface rounded-xl border border-border p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer h-full flex flex-col"
     >
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex items-start justify-between mb-4 flex-1">
         <div>
           <h3 className="text-lg font-semibold text-text-primary">{space.name}</h3>
           <div className="flex items-center gap-2 mt-1 text-sm text-text-secondary">
@@ -47,53 +47,51 @@ export function SpaceCard({ space, onDelete, onLeave, onInvite, onManage, onClic
         </div>
       </div>
 
-      {/* Action bar — hidden for Personal spaces */}
-      {!isPersonal && (
-        <div className="flex items-center gap-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
-          {isOwner && (
-            <>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => onInvite?.(space)}
-              >
-                <UserPlus className="h-4 w-4 mr-1" />
-                Invite
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onManage?.(space)}
-                className="text-text-primary"
-              >
-                <Settings className="h-4 w-4 mr-1" />
-                Manage
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onDelete?.(space.id)}
-                className="text-error hover:text-error"
-              >
-                <Trash2 className="h-4 w-4 mr-1" />
-                Delete
-              </Button>
-            </>
-          )}
-          
-          {!isOwner && (
+      {/* Action bar */}
+      <div className="flex items-center gap-2 flex-wrap min-h-[36px]" onClick={(e) => e.stopPropagation()}>
+        {!isPersonal && isOwner && (
+          <>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => onInvite?.(space)}
+            >
+              <UserPlus className="h-4 w-4 mr-1" />
+              Invite
+            </Button>
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onLeave?.(space.id)}
-              className="text-text-secondary"
+              onClick={() => onManage?.(space)}
+              className="text-text-primary"
             >
-              <LogOut className="h-4 w-4 mr-1" />
-              Leave
+              <Settings className="h-4 w-4 mr-1" />
+              Manage
             </Button>
-          )}
-        </div>
-      )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onDelete?.(space.id)}
+              className="text-error hover:text-error"
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
+              Delete
+            </Button>
+          </>
+        )}
+        
+        {!isPersonal && !isOwner && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onLeave?.(space.id)}
+            className="text-text-secondary"
+          >
+            <LogOut className="h-4 w-4 mr-1" />
+            Leave
+          </Button>
+        )}
+      </div>
     </motion.div>
   );
 }

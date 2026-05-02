@@ -98,6 +98,7 @@ export default function SpacesPage() {
                   hidden: { opacity: 0, y: 16 },
                   visible: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 400, damping: 30 } },
                 }}
+                className="h-full"
               >
                 <SpaceCard
                   space={space}
