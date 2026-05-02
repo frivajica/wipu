@@ -24,7 +24,7 @@ import { LedgerRow } from "./ledger-row";
 import { InlineEditRow } from "./inline-edit-row";
 import { AddItemRow } from "./add-item-row";
 import { cn, getPeriodBalance } from "@/lib/utils";
-import { mockDb } from "@/lib/data.js";
+import { mockDb } from "@/lib/data";
 import { Plus } from "lucide-react";
 
 interface SortableLedgerRowProps {

@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useSpaceStore } from "@/stores/space-store";
-import { mockDb } from "@/lib/data.js";
+import { mockDb } from "@/lib/data";
 
 export function useAutocomplete(type: "description" | "category", query: string) {
   const { activeSpaceId } = useSpaceStore();

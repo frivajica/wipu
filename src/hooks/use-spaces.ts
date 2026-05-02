@@ -4,7 +4,7 @@ import React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/auth-store";
 import { useSpaceStore } from "@/stores/space-store";
-import { mockDb } from "@/lib/data.js";
+import { mockDb } from "@/lib/data";
 
 export function useSpaces() {
   const { user } = useAuthStore();

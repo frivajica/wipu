@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 interface CreateSpaceModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreate: (name: string) => Promise<void>;
+  onCreate: (name: string) => Promise<unknown>;
   isCreating: boolean;
 }
 

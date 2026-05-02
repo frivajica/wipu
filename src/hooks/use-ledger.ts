@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSpaceStore } from "@/stores/space-store";
-import { mockDb } from "@/lib/data.js";
+import { mockDb } from "@/lib/data";
 import { LedgerItem } from "@/lib/types";
 
 export function useLedger() {
