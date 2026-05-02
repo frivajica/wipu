@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { useLedger } from "@/hooks/use-ledger";
 import { useSpaces } from "@/hooks/use-spaces";
@@ -12,11 +12,12 @@ import { CustomDateRange } from "@/components/ledger/custom-date-range";
 import { PeriodGroup } from "@/components/ledger/period-group";
 import { SortResetCue } from "@/components/ledger/sort-reset-cue";
 import { InfiniteScrollLoader } from "@/components/ledger/infinite-scroll-loader";
+import { LedgerSkeleton } from "@/components/ledger/ledger-skeleton";
 import { AddItemRow } from "@/components/ledger/add-item-row";
 import { groupItemsByPeriod, sortItemsByDate } from "@/lib/utils";
 import { LedgerItem } from "@/lib/types";
 import { DateTime } from "luxon";
-import { Plus } from "lucide-react";
+import { Plus, Receipt } from "lucide-react";
 
 export default function LedgerPage() {
   const { user } = useAuth();
@@ -106,11 +107,7 @@ export default function LedgerPage() {
   const visibleKeys = periodKeys.slice(0, visibleCount);
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin h-8 w-8 border-2 border-primary-accent border-t-transparent rounded-full" />
-      </div>
-    );
+    return <LedgerSkeleton />;
   }
 
   return (
@@ -146,7 +143,7 @@ export default function LedgerPage() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ type: "spring", stiffness: 400, damping: 35 }}
+            transition={{ type: "spring" as const, stiffness: 400, damping: 35 }}
           >
             <CustomDateRange
               start={customDateRange?.start || DateTime.now().minus({ months: 1 }).toISODate() || ""}
@@ -194,16 +191,26 @@ export default function LedgerPage() {
               />
             ) : (
               <div className="text-center py-12">
+                <motion.div
+                  animate={{ y: [0, -4, 0] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                  className="inline-flex mb-4"
+                >
+                  <Receipt className="h-12 w-12 text-text-secondary/40" />
+                </motion.div>
                 <p className="text-text-secondary mb-4">
                   No items yet. Add your first transaction!
                 </p>
-                <button
+                <motion.button
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
                   onClick={() => setIsAddingFirstItem(true)}
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary-accent text-white hover:bg-primary-accent/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-accent focus-visible:ring-offset-2"
                 >
                   <Plus className="h-4 w-4" />
                   Add your first transaction
-                </button>
+                </motion.button>
               </div>
             )}
           </motion.div>

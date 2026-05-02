@@ -1,13 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { useSpaces } from "@/hooks/use-spaces";
 import { SpaceCard } from "@/components/spaces/space-card";
 import { CreateSpaceModal } from "@/components/spaces/create-space-modal";
 import { InviteLinkModal } from "@/components/spaces/invite-link-modal";
 import { DeleteConfirmationModal } from "@/components/ui/delete-confirmation-modal";
+import { SpacesSkeleton } from "@/components/spaces/spaces-skeleton";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { Space } from "@/lib/types";
@@ -27,8 +28,20 @@ export default function SpacesPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-2 border-primary-accent border-t-transparent rounded-full" />
+      <div className="min-h-screen bg-background">
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-2xl font-bold font-display text-text-primary">
+                Your Spaces
+              </h1>
+              <p className="text-text-secondary mt-1">
+                Manage your teams and workspaces
+              </p>
+            </div>
+          </div>
+          <SpacesSkeleton />
+        </div>
       </div>
     );
   }
@@ -70,7 +83,7 @@ export default function SpacesPage() {
                 key={space.id}
                 variants={{
                   hidden: { opacity: 0, y: 16 },
-                  visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 400, damping: 30 } },
+                  visible: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 400, damping: 30 } },
                 }}
               >
                 <SpaceCard
