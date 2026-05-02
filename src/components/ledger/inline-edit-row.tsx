@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import { cn, formatDate, getCurrentDate } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { formatDate, getCurrentDate } from "@/lib/formatting";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Check, X } from "lucide-react";

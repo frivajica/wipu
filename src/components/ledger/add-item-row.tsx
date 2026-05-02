@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { cn, getCurrentDate } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { getCurrentDate } from "@/lib/formatting";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AutocompleteInput } from "./autocomplete-input";

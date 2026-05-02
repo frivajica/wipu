@@ -14,7 +14,7 @@ import { SortResetCue } from "@/components/ledger/sort-reset-cue";
 import { InfiniteScrollLoader } from "@/components/ledger/infinite-scroll-loader";
 import { LedgerSkeleton } from "@/components/ledger/ledger-skeleton";
 import { AddItemRow } from "@/components/ledger/add-item-row";
-import { groupItemsByPeriod, sortItemsByDate } from "@/lib/utils";
+import { groupItemsByPeriod, sortItemsByDate } from "@/lib/grouping";
 import { LedgerItem } from "@/lib/types";
 import { DateTime } from "luxon";
 import { Plus, Receipt } from "lucide-react";

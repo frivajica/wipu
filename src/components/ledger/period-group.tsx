@@ -24,7 +24,7 @@ import { PeriodHeader } from "./period-header";
 import { LedgerRow } from "./ledger-row";
 import { InlineEditRow } from "./inline-edit-row";
 import { AddItemRow } from "./add-item-row";
-import { getPeriodBalance } from "@/lib/utils";
+import { getPeriodBalance } from "@/lib/grouping";
 import { mockDb } from "@/lib/data";
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";

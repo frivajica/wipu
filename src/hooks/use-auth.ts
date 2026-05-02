@@ -5,7 +5,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { useSpaceStore } from "@/stores/space-store";
 import { mockDb } from "@/lib/data";
 import { User } from "@/lib/types";
-import { getInitials, generateId, generateInviteCode } from "@/lib/utils";
+import { getInitials, generateId, generateInviteCode } from "@/lib/id-utils";
 
 export function useAuth() {
   const { login: setAuth, logout: clearAuth, user } = useAuthStore();

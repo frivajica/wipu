@@ -1,5 +1,5 @@
 import { User, Space, LedgerItem, Category } from "./types";
-import { getInitials, generateId, generateInviteCode } from "./utils";
+import { getInitials, generateId, generateInviteCode } from "./id-utils";
 
 // Demo Users
 export const mockUsers: User[] = [

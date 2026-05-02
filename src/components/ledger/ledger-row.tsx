@@ -3,7 +3,8 @@
 import * as React from "react";
 import { motion } from "framer-motion";
 import { LedgerItem } from "@/lib/types";
-import { cn, formatCurrency, formatDate } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/formatting";
 import { Avatar } from "@/components/ui/avatar";
 import { DragHandle } from "./drag-handle";
 import { RowContextMenu } from "./row-context-menu";
