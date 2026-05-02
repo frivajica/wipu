@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Manrope } from "next/font/google";
 import { Providers } from "@/components/providers";
+import { AuthGuard } from "@/components/auth-guard";
+import { ToastContainer } from "@/components/ui/toast";
 import "./globals.css";
 
 const inter = Inter({
@@ -29,7 +31,10 @@ export default function RootLayout({
         className={`${inter.variable} ${manrope.variable} font-sans antialiased bg-background text-text-primary`}
       >
         <Providers>
-          {children}
+          <AuthGuard>
+            {children}
+          </AuthGuard>
+          <ToastContainer />
         </Providers>
       </body>
     </html>
