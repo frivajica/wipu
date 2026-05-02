@@ -13,6 +13,9 @@ interface LedgerRowProps {
   onDelete: (id: string) => void;
   dragHandleProps?: React.HTMLAttributes<HTMLButtonElement>;
   isDragging?: boolean;
+  isEditing?: boolean;
+  onStartEdit?: () => void;
+  onCancelEdit?: () => void;
 }
 
 export function LedgerRow({
@@ -22,6 +25,9 @@ export function LedgerRow({
   onDelete,
   dragHandleProps,
   isDragging,
+  isEditing,
+  onStartEdit,
+  onCancelEdit,
 }: LedgerRowProps) {
   const isPositive = item.amount >= 0;
 
@@ -32,13 +38,20 @@ export function LedgerRow({
     }
   };
 
+  const handleClick = () => {
+    if (!isEditing && onStartEdit) {
+      onStartEdit();
+    }
+  };
+
   return (
     <div
       className={cn(
         "group grid items-center hover:bg-surface-elevated/50 transition-colors",
         "md:grid-cols-[32px_120px_1fr_120px_100px_60px] md:gap-4 md:px-4 md:py-2.5",
         "grid-cols-[32px_1fr] gap-3 px-3 py-3",
-        isDragging && "opacity-50 bg-surface-elevated"
+        isDragging && "opacity-50 bg-surface-elevated",
+        isEditing && "bg-primary-accent/5"
       )}
       onContextMenu={handleContextMenu}
     >
@@ -85,21 +98,21 @@ export function LedgerRow({
           "hidden md:block font-medium tabular-nums cursor-pointer",
           isPositive ? "text-secondary" : "text-error"
         )}
-        onClick={() => onEdit(item)}
+        onClick={handleClick}
       >
         {formatCurrency(item.amount)}
       </div>
 
       <div
         className="hidden md:block text-sm text-text-primary truncate cursor-pointer"
-        onClick={() => onEdit(item)}
+        onClick={handleClick}
       >
         {item.description}
       </div>
 
       <div
         className="hidden md:block cursor-pointer"
-        onClick={() => onEdit(item)}
+        onClick={handleClick}
       >
         <span className="inline-flex px-2 py-0.5 text-xs bg-surface-elevated rounded-full text-text-secondary">
           {item.category}
@@ -108,7 +121,7 @@ export function LedgerRow({
 
       <div
         className="hidden md:block text-sm text-text-secondary cursor-pointer"
-        onClick={() => onEdit(item)}
+        onClick={handleClick}
       >
         {formatDate(item.date)}
       </div>
@@ -116,7 +129,7 @@ export function LedgerRow({
       <div className="hidden md:flex justify-center">
         <button
           className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-accent focus-visible:ring-offset-2 rounded-full"
-          onClick={() => onEdit(item)}
+          onClick={handleClick}
         >
           <Avatar name={userName} size="sm" />
         </button>

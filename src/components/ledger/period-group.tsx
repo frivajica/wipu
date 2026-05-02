@@ -1,13 +1,101 @@
 "use client";
 
 import * as React from "react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { LedgerItem } from "@/lib/types";
 import { PeriodHeader } from "./period-header";
 import { LedgerRow } from "./ledger-row";
+import { InlineEditRow } from "./inline-edit-row";
 import { AddItemRow } from "./add-item-row";
 import { cn, getPeriodBalance } from "@/lib/utils";
 import { mockDb } from "@/lib/data.js";
 import { Plus } from "lucide-react";
+
+interface SortableLedgerRowProps {
+  item: LedgerItem;
+  userName: string;
+  onEdit: (item: LedgerItem) => void;
+  onDelete: (id: string) => void;
+  isEditing: boolean;
+  onStartEdit: () => void;
+  onSaveEdit: (data: {
+    amount: number;
+    description: string;
+    category: string;
+    date: string;
+  }) => void;
+  onCancelEdit: () => void;
+}
+
+function SortableLedgerRow({
+  item,
+  userName,
+  onEdit,
+  onDelete,
+  isEditing,
+  onStartEdit,
+  onSaveEdit,
+  onCancelEdit,
+}: SortableLedgerRowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  if (isEditing) {
+    return (
+      <div ref={setNodeRef} style={style}>
+        <InlineEditRow
+          amount={item.amount}
+          description={item.description}
+          category={item.category}
+          date={item.date}
+          onSave={onSaveEdit}
+          onCancel={onCancelEdit}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <LedgerRow
+        item={item}
+        userName={userName}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        dragHandleProps={{ ...attributes, ...listeners }}
+        isDragging={isDragging}
+        onStartEdit={onStartEdit}
+      />
+    </div>
+  );
+}
 
 interface PeriodGroupProps {
   label: string;
@@ -15,7 +103,9 @@ interface PeriodGroupProps {
   onAddItem: (item: Omit<LedgerItem, "id" | "createdAt" | "updatedAt">) => void;
   onEditItem: (item: LedgerItem) => void;
   onDeleteItem: (id: string) => void;
+  onReorderItems: (itemIds: string[]) => void;
   currentUserId: string;
+  isDragEnabled: boolean;
 }
 
 export function PeriodGroup({
@@ -24,10 +114,43 @@ export function PeriodGroup({
   onAddItem,
   onEditItem,
   onDeleteItem,
+  onReorderItems,
   currentUserId,
+  isDragEnabled,
 }: PeriodGroupProps) {
   const [isAdding, setIsAdding] = React.useState(false);
+  const [editingId, setEditingId] = React.useState<string | null>(null);
+  const [localItems, setLocalItems] = React.useState(items);
   const balance = getPeriodBalance(items);
+
+  React.useEffect(() => {
+    setLocalItems(items);
+  }, [items]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setLocalItems((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+        const newItems = arrayMove(items, oldIndex, newIndex);
+        onReorderItems(newItems.map((item) => item.id));
+        return newItems;
+      });
+    }
+  };
 
   const handleAdd = (data: {
     amount: number;
@@ -43,6 +166,25 @@ export function PeriodGroup({
       sortOrder: items.length,
     });
     setIsAdding(false);
+  };
+
+  const handleEditSave = (data: {
+    amount: number;
+    description: string;
+    category: string;
+    date: string;
+  }) => {
+    if (editingId) {
+      const item = items.find((i) => i.id === editingId);
+      if (item) {
+        onEditItem({
+          ...item,
+          ...data,
+          updatedBy: currentUserId,
+        });
+      }
+      setEditingId(null);
+    }
   };
 
   return (
@@ -61,20 +203,69 @@ export function PeriodGroup({
         </div>
 
         {/* Items */}
-        <div className="divide-y divide-border/50">
-          {items.map((item) => {
-            const user = mockDb.getUserById(item.updatedBy);
-            return (
-              <LedgerRow
-                key={item.id}
-                item={item}
-                userName={user?.name || "Unknown"}
-                onEdit={onEditItem}
-                onDelete={onDeleteItem}
-              />
-            );
-          })}
-        </div>
+        {isDragEnabled ? (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={localItems.map((item) => item.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="divide-y divide-border/50">
+                {localItems.map((item) => {
+                  const user = mockDb.getUserById(item.updatedBy);
+                  return (
+                    <SortableLedgerRow
+                      key={item.id}
+                      item={item}
+                      userName={user?.name || "Unknown"}
+                      onEdit={onEditItem}
+                      onDelete={onDeleteItem}
+                      isEditing={editingId === item.id}
+                      onStartEdit={() => setEditingId(item.id)}
+                      onSaveEdit={handleEditSave}
+                      onCancelEdit={() => setEditingId(null)}
+                    />
+                  );
+                })}
+              </div>
+            </SortableContext>
+          </DndContext>
+        ) : (
+          <div className="divide-y divide-border/50">
+            {localItems.map((item) => {
+              const user = mockDb.getUserById(item.updatedBy);
+              
+              if (editingId === item.id) {
+                return (
+                  <InlineEditRow
+                    key={item.id}
+                    amount={item.amount}
+                    description={item.description}
+                    category={item.category}
+                    date={item.date}
+                    onSave={handleEditSave}
+                    onCancel={() => setEditingId(null)}
+                  />
+                );
+              }
+              
+              return (
+                <LedgerRow
+                  key={item.id}
+                  item={item}
+                  userName={user?.name || "Unknown"}
+                  onEdit={onEditItem}
+                  onDelete={onDeleteItem}
+                  isEditing={editingId === item.id}
+                  onStartEdit={() => setEditingId(item.id)}
+                />
+              );
+            })}
+          </div>
+        )}
 
         {/* Add Item */}
         {isAdding ? (

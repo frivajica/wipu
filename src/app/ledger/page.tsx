@@ -9,6 +9,7 @@ import { PeriodSelector } from "@/components/ledger/period-selector";
 import { SmartDateToggle } from "@/components/ledger/smart-date-toggle";
 import { CustomDateRange } from "@/components/ledger/custom-date-range";
 import { PeriodGroup } from "@/components/ledger/period-group";
+import { SortResetCue } from "@/components/ledger/sort-reset-cue";
 import { groupItemsByPeriod, sortItemsByDate } from "@/lib/utils";
 import { LedgerItem } from "@/lib/types";
 import { DateTime } from "luxon";
@@ -16,14 +17,16 @@ import { DateTime } from "luxon";
 export default function LedgerPage() {
   const { user } = useAuth();
   const { activeSpaceId } = useSpaces();
-  const { items, isLoading, addItem, updateItem, deleteItem } = useLedger();
+  const { items, isLoading, addItem, updateItem, deleteItem, reorderItems } = useLedger();
   const {
     periodType,
     smartDateInheritance,
     customDateRange,
+    sortByDate,
     setPeriodType,
     setSmartDateInheritance,
     setCustomDateRange,
+    setSortByDate,
   } = useUIStore();
 
   const handleAddItem = async (
@@ -33,12 +36,24 @@ export default function LedgerPage() {
   };
 
   const handleEditItem = async (item: LedgerItem) => {
-    // For now, just log it. In a real implementation, you'd open an edit modal
-    console.log("Edit item:", item);
+    await updateItem({
+      id: item.id,
+      updates: {
+        amount: item.amount,
+        description: item.description,
+        category: item.category,
+        date: item.date,
+        updatedBy: user?.id || item.updatedBy,
+      },
+    });
   };
 
   const handleDeleteItem = async (id: string) => {
     await deleteItem(id);
+  };
+
+  const handleReorderItems = async (spaceId: string, itemIds: string[]) => {
+    await reorderItems({ spaceId, itemIds });
   };
 
   // Group items by period
@@ -109,6 +124,12 @@ export default function LedgerPage() {
         />
       )}
 
+      {/* Sort Reset Cue */}
+      <SortResetCue
+        visible={sortByDate && !smartDateInheritance}
+        onReset={() => setSortByDate(false)}
+      />
+
       {/* Period Groups */}
       <div className="space-y-2">
         {visibleKeys.map((key) => (
@@ -119,7 +140,9 @@ export default function LedgerPage() {
             onAddItem={handleAddItem}
             onEditItem={handleEditItem}
             onDeleteItem={handleDeleteItem}
+            onReorderItems={(itemIds) => handleReorderItems(activeSpaceId || "", itemIds)}
             currentUserId={user?.id || ""}
+            isDragEnabled={!sortByDate || smartDateInheritance}
           />
         ))}
 
