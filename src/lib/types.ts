@@ -15,6 +15,7 @@ export interface Space {
   maxMembers: number;
   inviteCode: string;
   createdAt: string;
+  isPersonal?: boolean;
 }
 
 export interface LedgerItem {

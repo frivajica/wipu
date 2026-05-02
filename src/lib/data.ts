@@ -31,6 +31,7 @@ export const mockSpaces: Space[] = [
     maxMembers: 8,
     inviteCode: generateInviteCode(),
     createdAt: "2026-01-15T00:00:00.000Z",
+    isPersonal: false,
   },
 ];
 
@@ -182,6 +183,21 @@ class MockDatabase {
     };
     this.spaces.push(newSpace);
     return newSpace;
+  }
+
+  updateSpaceName(id: string, name: string): Space | undefined {
+    const space = this.getSpaceById(id);
+    if (space) {
+      space.name = name;
+    }
+    return space;
+  }
+
+  removeMember(spaceId: string, userId: string): void {
+    const space = this.getSpaceById(spaceId);
+    if (space) {
+      space.members = space.members.filter((m) => m !== userId);
+    }
   }
 
   deleteSpace(id: string): void {

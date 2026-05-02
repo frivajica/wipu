@@ -41,6 +41,7 @@ export function useAuth() {
         ownerId: newUser.id,
         members: [newUser.id],
         maxMembers: 8,
+        isPersonal: true,
       });
       const token = `token-${generateId()}`;
       return { user: newUser, token, space: personalSpace };

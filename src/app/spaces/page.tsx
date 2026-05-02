@@ -3,27 +3,51 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useSpaces } from "@/hooks/use-spaces";
+import { useAuth } from "@/hooks/use-auth";
+import { mockDb } from "@/lib/data";
 import { SpaceCard } from "@/components/spaces/space-card";
 import { CreateSpaceModal } from "@/components/spaces/create-space-modal";
 import { InviteLinkModal } from "@/components/spaces/invite-link-modal";
+import { SpaceManageModal } from "@/components/spaces/space-manage-modal";
 import { SpaceModals } from "@/components/spaces/space-modals";
 import { SpacesSkeleton } from "@/components/spaces/spaces-skeleton";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { Space } from "@/lib/types";
+import { Space, User } from "@/lib/types";
 import { motion } from "framer-motion";
 
 export default function SpacesPage() {
   const router = useRouter();
-  const { spaces, isLoading, createSpace, deleteSpace, leaveSpace, switchSpace } = useSpaces();
+  const { user } = useAuth();
+  const {
+    spaces,
+    isLoading,
+    createSpace,
+    updateSpaceName,
+    removeMember,
+    deleteSpace,
+    leaveSpace,
+    switchSpace,
+    isUpdating,
+    isRemovingMember,
+  } = useSpaces();
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
   const [selectedSpace, setSelectedSpace] = React.useState<Space | null>(null);
+  const [manageSpace, setManageSpace] = React.useState<Space | null>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<{ id: string; name: string } | null>(null);
   const [leaveTarget, setLeaveTarget] = React.useState<{ id: string; name: string } | null>(null);
 
   const handleSpaceClick = (spaceId: string) => {
     switchSpace(spaceId);
     router.push("/ledger");
+  };
+
+  // Enrich members with user data for the manage modal
+  const getMembersForSpace = (space: Space | null): User[] => {
+    if (!space) return [];
+    return space.members
+      .map((memberId) => mockDb.getUserById(memberId))
+      .filter((u): u is User => u !== undefined);
   };
 
   if (isLoading) {
@@ -80,6 +104,7 @@ export default function SpacesPage() {
                   onDelete={(id) => setDeleteTarget({ id, name: space.name })}
                   onLeave={(id) => setLeaveTarget({ id, name: space.name })}
                   onInvite={(space) => setSelectedSpace(space)}
+                  onManage={(space) => setManageSpace(space)}
                   onClick={() => handleSpaceClick(space.id)}
                 />
               </motion.div>
@@ -100,6 +125,24 @@ export default function SpacesPage() {
           isOpen={!!selectedSpace}
           onClose={() => setSelectedSpace(null)}
           inviteCode={selectedSpace.inviteCode}
+        />
+      )}
+
+      {manageSpace && user && (
+        <SpaceManageModal
+          space={manageSpace}
+          currentUserId={user.id}
+          members={getMembersForSpace(manageSpace)}
+          isOpen={!!manageSpace}
+          onClose={() => setManageSpace(null)}
+          onUpdateName={async (spaceId, name) => {
+            await updateSpaceName({ spaceId, name });
+          }}
+          onRemoveMember={async (spaceId, userId) => {
+            await removeMember({ spaceId, userId });
+          }}
+          isUpdating={isUpdating}
+          isRemovingMember={isRemovingMember}
         />
       )}
 

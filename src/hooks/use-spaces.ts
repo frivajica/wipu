@@ -36,10 +36,30 @@ export function useSpaces() {
         ownerId: user.id,
         members: [user.id],
         maxMembers: 8,
+        isPersonal: false,
       });
       return space;
     },
     successMessage: "Space created",
+    invalidateKeys: [["spaces"]],
+  });
+
+  const updateSpaceName = useMutationWithToast({
+    mutationFn: async ({ spaceId, name }: { spaceId: string; name: string }) => {
+      const space = mockDb.updateSpaceName(spaceId, name);
+      if (!space) throw new Error("Space not found");
+      return space;
+    },
+    successMessage: "Space name updated",
+    invalidateKeys: [["spaces"]],
+  });
+
+  const removeMember = useMutationWithToast({
+    mutationFn: async ({ spaceId, userId }: { spaceId: string; userId: string }) => {
+      mockDb.removeMember(spaceId, userId);
+      return Promise.resolve();
+    },
+    successMessage: "Member removed",
     invalidateKeys: [["spaces"]],
   });
 
@@ -74,10 +94,14 @@ export function useSpaces() {
     activeSpace: spaces.find((s) => s.id === activeSpaceId),
     isLoading,
     createSpace: createSpace.mutateAsync,
+    updateSpaceName: updateSpaceName.mutateAsync,
+    removeMember: removeMember.mutateAsync,
     deleteSpace: deleteSpace.mutateAsync,
     leaveSpace: leaveSpace.mutateAsync,
     switchSpace,
     isCreating: createSpace.isPending,
+    isUpdating: updateSpaceName.isPending,
+    isRemovingMember: removeMember.isPending,
     isDeleting: deleteSpace.isPending,
     isLeaving: leaveSpace.isPending,
   };

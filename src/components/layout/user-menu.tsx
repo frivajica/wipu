@@ -13,7 +13,7 @@ export function UserMenu() {
   return (
     <Menu
       trigger={
-        <button className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-accent focus-visible:ring-offset-2 rounded-full transition-transform active:scale-95">
+        <button className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-accent focus-visible:ring-offset-2 rounded-full transition-transform active:scale-95 cursor-pointer">
           <Avatar name={user.name} size="sm" />
         </button>
       }
