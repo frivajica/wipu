@@ -5,6 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Trash2 } from "lucide-react";
 import { DeleteConfirmationModal } from "@/components/ui/delete-confirmation-modal";
+import { useClickOutside } from "@/hooks/shared/use-click-outside";
+import { useLongPress } from "@/hooks/shared/use-long-press";
+import { SPRING_DEFAULT } from "@/lib/animations";
 
 interface RowContextMenuProps {
   children: React.ReactNode;
@@ -12,13 +15,20 @@ interface RowContextMenuProps {
   requiresConfirmation?: boolean;
 }
 
-export function RowContextMenu({ children, onDelete, requiresConfirmation = false }: RowContextMenuProps) {
+export function RowContextMenu({
+  children,
+  onDelete,
+  requiresConfirmation = false,
+}: RowContextMenuProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [showConfirm, setShowConfirm] = React.useState(false);
   const [position, setPosition] = React.useState({ x: 0, y: 0 });
   const containerRef = React.useRef<HTMLDivElement>(null);
-  const longPressTimer = React.useRef<NodeJS.Timeout | null>(null);
-  const isLongPress = React.useRef(false);
+
+  useClickOutside(containerRef, () => setIsOpen(false), [
+    "mousedown",
+    "touchstart",
+  ]);
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -27,45 +37,16 @@ export function RowContextMenu({ children, onDelete, requiresConfirmation = fals
     setIsOpen(true);
   };
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    isLongPress.current = false;
-    longPressTimer.current = setTimeout(() => {
-      isLongPress.current = true;
-      const touch = e.touches[0];
-      setPosition({ x: touch.clientX, y: touch.clientY });
-      setIsOpen(true);
-    }, 600);
+  const handleLongPress = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    setPosition({ x: touch.clientX, y: touch.clientY });
+    setIsOpen(true);
   };
 
-  const handleTouchEnd = () => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-  };
-
-  const handleTouchMove = () => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-  };
-
-  React.useEffect(() => {
-    function handleClickOutside(event: Event) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      document.addEventListener("touchstart", handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("touchstart", handleClickOutside);
-    };
-  }, [isOpen]);
+  const { onTouchStart, onTouchEnd, onTouchMove } = useLongPress(
+    handleLongPress,
+    600
+  );
 
   const handleDeleteClick = () => {
     setIsOpen(false);
@@ -81,9 +62,9 @@ export function RowContextMenu({ children, onDelete, requiresConfirmation = fals
       <div
         ref={containerRef}
         onContextMenu={handleContextMenu}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        onTouchMove={handleTouchMove}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        onTouchMove={onTouchMove}
       >
         {children}
 
@@ -98,7 +79,7 @@ export function RowContextMenu({ children, onDelete, requiresConfirmation = fals
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                transition={SPRING_DEFAULT}
                 style={{
                   position: "fixed",
                   left: Math.min(position.x, window.innerWidth - 160),

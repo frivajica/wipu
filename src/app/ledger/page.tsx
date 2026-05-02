@@ -1,11 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { useLedger } from "@/hooks/use-ledger";
 import { useSpaces } from "@/hooks/use-spaces";
 import { useUIStore } from "@/stores/ui-store";
+import { useGroupedLedger } from "@/hooks/use-grouped-ledger";
 import { PeriodSelector } from "@/components/ledger/period-selector";
 import { SmartDateToggle } from "@/components/ledger/smart-date-toggle";
 import { CustomDateRange } from "@/components/ledger/custom-date-range";
@@ -13,11 +14,9 @@ import { PeriodGroup } from "@/components/ledger/period-group";
 import { SortResetCue } from "@/components/ledger/sort-reset-cue";
 import { InfiniteScrollLoader } from "@/components/ledger/infinite-scroll-loader";
 import { LedgerSkeleton } from "@/components/ledger/ledger-skeleton";
-import { AddItemRow } from "@/components/ledger/add-item-row";
-import { groupItemsByPeriod, sortItemsByDate } from "@/lib/grouping";
+import { LedgerEmptyState } from "@/components/ledger/ledger-empty-state";
 import { LedgerItem } from "@/lib/types";
 import { DateTime } from "luxon";
-import { Plus, Receipt } from "lucide-react";
 
 export default function LedgerPage() {
   const { user } = useAuth();
@@ -34,13 +33,12 @@ export default function LedgerPage() {
     setSortByDate,
   } = useUIStore();
 
-  const [isAddingFirstItem, setIsAddingFirstItem] = React.useState(false);
-
-  const handleAddItem = async (
-    item: Omit<LedgerItem, "id" | "createdAt" | "updatedAt">
-  ) => {
-    await addItem(item);
-  };
+  const { groupedItems, visibleKeys, hasMore, loadMore } = useGroupedLedger({
+    items,
+    periodType,
+    customDateRange,
+    sortByDate,
+  });
 
   const handleAddFirstItem = async (data: {
     amount: number;
@@ -55,60 +53,9 @@ export default function LedgerPage() {
       updatedBy: user?.id || "",
       sortOrder: 0,
     });
-    setIsAddingFirstItem(false);
   };
 
-  const handleEditItem = async (item: LedgerItem) => {
-    await updateItem({
-      id: item.id,
-      updates: {
-        amount: item.amount,
-        description: item.description,
-        category: item.category,
-        date: item.date,
-        updatedBy: user?.id || item.updatedBy,
-      },
-    });
-  };
-
-  const handleDeleteItem = async (id: string) => {
-    await deleteItem(id);
-  };
-
-  const handleReorderItems = async (spaceId: string, itemIds: string[]) => {
-    await reorderItems({ spaceId, itemIds });
-  };
-
-  // Group items by period
-  const groupedItems = React.useMemo(() => {
-    if (!items.length) return new Map<string, LedgerItem[]>();
-
-    let sortedItems = [...items];
-
-    // Sort by date if enabled
-    if (sortByDate) {
-      sortedItems = sortItemsByDate(sortedItems);
-    }
-
-    return groupItemsByPeriod(
-      sortedItems,
-      periodType,
-      customDateRange || undefined
-    );
-  }, [items, periodType, customDateRange, sortByDate]);
-
-  // Get period keys sorted by date (most recent first)
-  const periodKeys = React.useMemo(() => {
-    return Array.from(groupedItems.keys()).reverse();
-  }, [groupedItems]);
-
-  // Show only first 2 periods by default, with load more
-  const [visibleCount, setVisibleCount] = React.useState(2);
-  const visibleKeys = periodKeys.slice(0, visibleCount);
-
-  if (isLoading) {
-    return <LedgerSkeleton />;
-  }
+  if (isLoading) return <LedgerSkeleton />;
 
   return (
     <div className="space-y-6 pb-safe">
@@ -168,10 +115,21 @@ export default function LedgerPage() {
               key={key}
               label={key}
               items={groupedItems.get(key) || []}
-              onAddItem={handleAddItem}
-              onEditItem={handleEditItem}
-              onDeleteItem={handleDeleteItem}
-              onReorderItems={(itemIds) => handleReorderItems(activeSpaceId || "", itemIds)}
+              onAddItem={addItem}
+              onEditItem={(item) =>
+                updateItem({
+                  id: item.id,
+                  updates: {
+                    amount: item.amount,
+                    description: item.description,
+                    category: item.category,
+                    date: item.date,
+                    updatedBy: user?.id || item.updatedBy,
+                  },
+                })
+              }
+              onDeleteItem={deleteItem}
+              onReorderItems={(itemIds) => reorderItems({ spaceId: activeSpaceId || "", itemIds })}
               currentUserId={user?.id || ""}
               isDragEnabled={!sortByDate || smartDateInheritance}
             />
@@ -179,48 +137,13 @@ export default function LedgerPage() {
         </AnimatePresence>
 
         {visibleKeys.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-surface rounded-xl border border-border overflow-hidden shadow-sm"
-          >
-            {isAddingFirstItem ? (
-              <AddItemRow
-                onSubmit={handleAddFirstItem}
-                onCancel={() => setIsAddingFirstItem(false)}
-              />
-            ) : (
-              <div className="text-center py-12">
-                <motion.div
-                  animate={{ y: [0, -4, 0] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                  className="inline-flex mb-4"
-                >
-                  <Receipt className="h-12 w-12 text-text-secondary/40" />
-                </motion.div>
-                <p className="text-text-secondary mb-4">
-                  No items yet. Add your first transaction!
-                </p>
-                <motion.button
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  onClick={() => setIsAddingFirstItem(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary-accent text-white hover:bg-primary-accent/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-accent focus-visible:ring-offset-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add your first transaction
-                </motion.button>
-              </div>
-            )}
-          </motion.div>
+          <LedgerEmptyState onAdd={handleAddFirstItem} />
         )}
 
-        {/* Load More */}
         <InfiniteScrollLoader
           isLoading={isLoading}
-          hasMore={visibleCount < periodKeys.length}
-          onLoadMore={() => setVisibleCount((c) => c + 2)}
+          hasMore={hasMore}
+          onLoadMore={loadMore}
         />
       </div>
     </div>

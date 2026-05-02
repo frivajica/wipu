@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { Dropdown } from "./dropdown";
 
 export interface MenuProps {
   trigger: React.ReactNode;
@@ -12,45 +12,20 @@ export interface MenuProps {
 
 export function Menu({ trigger, children, className }: MenuProps) {
   const [isOpen, setIsOpen] = React.useState(false);
-  const menuRef = React.useRef<HTMLDivElement>(null);
 
-  React.useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  const toggle = () => setIsOpen((prev) => !prev);
+  const close = () => setIsOpen(false);
 
   return (
-    <div ref={menuRef} className="relative">
-      <div onClick={() => setIsOpen(!isOpen)}>{trigger}</div>
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            <div
-              className="fixed inset-0 z-40"
-              onClick={() => setIsOpen(false)}
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: -4 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: -4 }}
-              transition={{ type: "spring" as const, stiffness: 400, damping: 30 }}
-              className={cn(
-                "absolute right-0 mt-2 w-48 rounded-lg bg-surface shadow-lg border border-border py-1 z-50 overflow-hidden",
-                className
-              )}
-            >
-              {children}
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </div>
+    <Dropdown
+      trigger={<div onClick={toggle}>{trigger}</div>}
+      isOpen={isOpen}
+      onClose={close}
+      className={cn("w-48 py-1", className)}
+      align="right"
+    >
+      {children}
+    </Dropdown>
   );
 }
 
@@ -59,7 +34,12 @@ export interface MenuItemProps
   danger?: boolean;
 }
 
-export function MenuItem({ className, danger, children, ...props }: MenuItemProps) {
+export function MenuItem({
+  className,
+  danger,
+  children,
+  ...props
+}: MenuItemProps) {
   return (
     <button
       className={cn(

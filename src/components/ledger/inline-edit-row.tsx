@@ -2,10 +2,8 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
-import { formatDate, getCurrentDate } from "@/lib/formatting";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { LedgerFormFields } from "./forms/ledger-form-fields";
 import { Check, X } from "lucide-react";
 
 interface InlineEditRowProps {
@@ -37,9 +35,7 @@ export function InlineEditRow({
   const amountRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
-    const timer = setTimeout(() => {
-      amountRef.current?.focus();
-    }, 100);
+    const timer = setTimeout(() => amountRef.current?.focus(), 100);
     return () => clearTimeout(timer);
   }, []);
 
@@ -57,9 +53,7 @@ export function InlineEditRow({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") {
-      onCancel();
-    }
+    if (e.key === "Escape") onCancel();
   };
 
   return (
@@ -75,37 +69,17 @@ export function InlineEditRow({
       <div className="grid md:grid-cols-[32px_120px_1fr_120px_100px_80px] md:gap-4 grid-cols-[32px_1fr] gap-3 items-center">
         <div></div>
 
-        <Input
-          ref={amountRef}
-          type="number"
-          step="0.01"
-          value={editAmount}
-          onChange={(e) => setEditAmount(e.target.value)}
-          className="h-9"
-          required
-        />
-
-        <Input
-          type="text"
-          value={editDescription}
-          onChange={(e) => setEditDescription(e.target.value)}
-          className="h-9"
-          required
-        />
-
-        <Input
-          type="text"
-          value={editCategory}
-          onChange={(e) => setEditCategory(e.target.value)}
-          className="h-9"
-        />
-
-        <Input
-          type="date"
-          value={editDate}
-          onChange={(e) => setEditDate(e.target.value)}
-          className="h-9"
-          required
+        <LedgerFormFields
+          amount={editAmount}
+          description={editDescription}
+          category={editCategory}
+          date={editDate}
+          onAmountChange={setEditAmount}
+          onDescriptionChange={setEditDescription}
+          onCategoryChange={setEditCategory}
+          onDateChange={setEditDate}
+          amountRef={amountRef}
+          amountClassName="h-9"
         />
 
         <div className="flex items-center gap-1">

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   DndContext,
   closestCenter,
@@ -15,92 +15,16 @@ import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
-  useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import { LedgerItem } from "@/lib/types";
 import { PeriodHeader } from "./period-header";
-import { LedgerRow } from "./ledger-row";
-import { InlineEditRow } from "./inline-edit-row";
 import { AddItemRow } from "./add-item-row";
+import { LedgerItemList } from "./period/ledger-item-list";
 import { getPeriodBalance } from "@/lib/grouping";
-import { mockDb } from "@/lib/data";
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-interface SortableLedgerRowProps {
-  item: LedgerItem;
-  userName: string;
-  onEdit: (item: LedgerItem) => void;
-  onDelete: (id: string) => void;
-  isEditing: boolean;
-  onStartEdit: () => void;
-  onSaveEdit: (data: {
-    amount: number;
-    description: string;
-    category: string;
-    date: string;
-  }) => void;
-  onCancelEdit: () => void;
-  isOwned: boolean;
-}
-
-function SortableLedgerRow({
-  item,
-  userName,
-  onEdit,
-  onDelete,
-  isEditing,
-  onStartEdit,
-  onSaveEdit,
-  onCancelEdit,
-  isOwned,
-}: SortableLedgerRowProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: item.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  if (isEditing) {
-    return (
-      <div ref={setNodeRef} style={style}>
-        <InlineEditRow
-          amount={item.amount}
-          description={item.description}
-          category={item.category}
-          date={item.date}
-          onSave={onSaveEdit}
-          onCancel={onCancelEdit}
-        />
-      </div>
-    );
-  }
-
-  return (
-    <div ref={setNodeRef} style={style}>
-      <LedgerRow
-        item={item}
-        userName={userName}
-        onEdit={onEdit}
-        onDelete={onDelete}
-        dragHandleProps={{ ...attributes, ...listeners }}
-        isDragging={isDragging}
-        onStartEdit={onStartEdit}
-        isOwned={isOwned}
-      />
-    </div>
-  );
-}
+import { AnimatePresence } from "framer-motion";
 
 interface PeriodGroupProps {
   label: string;
@@ -134,9 +58,7 @@ export function PeriodGroup({
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
+      activationConstraint: { distance: 8 },
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
@@ -145,7 +67,6 @@ export function PeriodGroup({
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-
     if (over && active.id !== over.id) {
       setLocalItems((items) => {
         const oldIndex = items.findIndex((item) => item.id === active.id);
@@ -182,21 +103,31 @@ export function PeriodGroup({
     if (editingId) {
       const item = items.find((i) => i.id === editingId);
       if (item) {
-        onEditItem({
-          ...item,
-          ...data,
-          updatedBy: currentUserId,
-        });
+        onEditItem({ ...item, ...data, updatedBy: currentUserId });
       }
       setEditingId(null);
     }
   };
 
+  const list = (
+    <LedgerItemList
+      items={localItems}
+      editingId={editingId}
+      onEdit={onEditItem}
+      onDelete={onDeleteItem}
+      onStartEdit={setEditingId}
+      onSaveEdit={handleEditSave}
+      onCancelEdit={() => setEditingId(null)}
+      currentUserId={currentUserId}
+      isDragEnabled={isDragEnabled}
+    />
+  );
+
   return (
     <motion.section
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ type: "spring", stiffness: 400, damping: 35 }}
+      transition={{ type: "spring" as const, stiffness: 400, damping: 35 }}
       className="mb-8"
     >
       <PeriodHeader label={label} balance={balance} />
@@ -223,64 +154,11 @@ export function PeriodGroup({
               items={localItems.map((item) => item.id)}
               strategy={verticalListSortingStrategy}
             >
-              <div className="divide-y divide-border/50">
-                <AnimatePresence mode="popLayout" initial={false}>
-                  {localItems.map((item) => {
-                    const user = mockDb.getUserById(item.updatedBy);
-                    return (
-                      <SortableLedgerRow
-                        key={item.id}
-                        item={item}
-                        userName={user?.name || "Unknown"}
-                        onEdit={onEditItem}
-                        onDelete={onDeleteItem}
-                        isEditing={editingId === item.id}
-                        onStartEdit={() => setEditingId(item.id)}
-                        onSaveEdit={handleEditSave}
-                        onCancelEdit={() => setEditingId(null)}
-                        isOwned={item.createdBy === currentUserId}
-                      />
-                    );
-                  })}
-                </AnimatePresence>
-              </div>
+              {list}
             </SortableContext>
           </DndContext>
         ) : (
-          <div className="divide-y divide-border/50">
-            <AnimatePresence mode="popLayout" initial={false}>
-              {localItems.map((item) => {
-                const user = mockDb.getUserById(item.updatedBy);
-                
-                if (editingId === item.id) {
-                  return (
-                    <InlineEditRow
-                      key={item.id}
-                      amount={item.amount}
-                      description={item.description}
-                      category={item.category}
-                      date={item.date}
-                      onSave={handleEditSave}
-                      onCancel={() => setEditingId(null)}
-                    />
-                  );
-                }
-                
-                return (
-                  <LedgerRow
-                    key={item.id}
-                    item={item}
-                    userName={user?.name || "Unknown"}
-                    onEdit={onEditItem}
-                    onDelete={onDeleteItem}
-                    isEditing={editingId === item.id}
-                    onStartEdit={() => setEditingId(item.id)}
-                    isOwned={item.createdBy === currentUserId}
-                  />
-                );
-              })}
-            </AnimatePresence>
-          </div>
+          list
         )}
 
         {/* Add Item */}
@@ -290,7 +168,7 @@ export function PeriodGroup({
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              transition={{ type: "spring", stiffness: 400, damping: 35 }}
+              transition={{ type: "spring" as const, stiffness: 400, damping: 35 }}
             >
               <AddItemRow
                 onSubmit={handleAdd}

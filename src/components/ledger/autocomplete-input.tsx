@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { SuggestionDropdown } from "@/components/ui/suggestion-dropdown";
+import { useClickOutside } from "@/hooks/shared/use-click-outside";
 
 interface AutocompleteInputProps {
   value: string;
@@ -40,20 +41,10 @@ export function AutocompleteInput({
       .slice(0, 5);
   }, [value, suggestions]);
 
-  const showDropdown = isOpen && filteredSuggestions.length > 0;
-
-  React.useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  useClickOutside(containerRef, () => setIsOpen(false));
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!showDropdown) {
+    if (!isOpen || filteredSuggestions.length === 0) {
       onKeyDown?.(e);
       return;
     }
@@ -71,7 +62,10 @@ export function AutocompleteInput({
         break;
       case "Enter":
         e.preventDefault();
-        if (highlightedIndex >= 0 && highlightedIndex < filteredSuggestions.length) {
+        if (
+          highlightedIndex >= 0 &&
+          highlightedIndex < filteredSuggestions.length
+        ) {
           onChange(filteredSuggestions[highlightedIndex]);
           setIsOpen(false);
           setHighlightedIndex(-1);
@@ -96,22 +90,6 @@ export function AutocompleteInput({
     onChange(suggestion);
     setIsOpen(false);
     setHighlightedIndex(-1);
-  };
-
-  // Highlight matched text in suggestions
-  const highlightMatch = (text: string, query: string) => {
-    if (!query.trim()) return text;
-    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
-    const parts = text.split(regex);
-    return parts.map((part, i) =>
-      regex.test(part) ? (
-        <mark key={i} className="bg-primary-accent/20 text-text-primary font-medium rounded px-0.5">
-          {part}
-        </mark>
-      ) : (
-        <span key={i}>{part}</span>
-      )
-    );
   };
 
   return (
@@ -143,36 +121,14 @@ export function AutocompleteInput({
         )}
       />
 
-      <AnimatePresence>
-        {showDropdown && (
-          <motion.ul
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.15 }}
-            className="absolute z-50 w-full mt-1 bg-surface rounded-lg border border-border shadow-lg overflow-hidden"
-            role="listbox"
-          >
-            {filteredSuggestions.map((suggestion, index) => (
-              <li
-                key={suggestion}
-                role="option"
-                aria-selected={index === highlightedIndex}
-                onClick={() => handleSelect(suggestion)}
-                onMouseEnter={() => setHighlightedIndex(index)}
-                className={cn(
-                  "px-3 py-2 text-sm cursor-pointer transition-colors",
-                  index === highlightedIndex
-                    ? "bg-primary-accent/10 text-text-primary"
-                    : "text-text-secondary hover:bg-surface-elevated"
-                )}
-              >
-                {highlightMatch(suggestion, value)}
-              </li>
-            ))}
-          </motion.ul>
-        )}
-      </AnimatePresence>
+      <SuggestionDropdown
+        suggestions={filteredSuggestions}
+        highlightedIndex={highlightedIndex}
+        query={value}
+        isOpen={isOpen}
+        onSelect={handleSelect}
+        onHover={setHighlightedIndex}
+      />
     </div>
   );
 }

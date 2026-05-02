@@ -1,17 +1,17 @@
 "use client";
 
 import * as React from "react";
-import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useSpaces } from "@/hooks/use-spaces";
 import { SpaceCard } from "@/components/spaces/space-card";
 import { CreateSpaceModal } from "@/components/spaces/create-space-modal";
 import { InviteLinkModal } from "@/components/spaces/invite-link-modal";
-import { DeleteConfirmationModal } from "@/components/ui/delete-confirmation-modal";
+import { SpaceModals } from "@/components/spaces/space-modals";
 import { SpacesSkeleton } from "@/components/spaces/spaces-skeleton";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { Space } from "@/lib/types";
+import { motion } from "framer-motion";
 
 export default function SpacesPage() {
   const router = useRouter();
@@ -32,12 +32,8 @@ export default function SpacesPage() {
         <div className="max-w-4xl mx-auto px-4 py-8">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-2xl font-bold font-display text-text-primary">
-                Your Spaces
-              </h1>
-              <p className="text-text-secondary mt-1">
-                Manage your teams and workspaces
-              </p>
+              <h1 className="text-2xl font-bold font-display text-text-primary">Your Spaces</h1>
+              <p className="text-text-secondary mt-1">Manage your teams and workspaces</p>
             </div>
           </div>
           <SpacesSkeleton />
@@ -51,12 +47,8 @@ export default function SpacesPage() {
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold font-display text-text-primary">
-              Your Spaces
-            </h1>
-            <p className="text-text-secondary mt-1">
-              Manage your teams and workspaces
-            </p>
+            <h1 className="text-2xl font-bold font-display text-text-primary">Your Spaces</h1>
+            <p className="text-text-secondary mt-1">Manage your teams and workspaces</p>
           </div>
           <Button onClick={() => setIsCreateModalOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
@@ -72,10 +64,7 @@ export default function SpacesPage() {
           <motion.div
             initial="hidden"
             animate="visible"
-            variants={{
-              hidden: {},
-              visible: { transition: { staggerChildren: 0.06 } },
-            }}
+            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.06 } } }}
             className="grid gap-4 md:grid-cols-2"
           >
             {spaces.map((space) => (
@@ -114,27 +103,13 @@ export default function SpacesPage() {
         />
       )}
 
-      <DeleteConfirmationModal
-        isOpen={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={async () => {
-          if (deleteTarget) await deleteSpace(deleteTarget.id);
-        }}
-        title={`Delete "${deleteTarget?.name}"?`}
-        description="This space and all its ledger data will be permanently deleted. This action cannot be undone."
-        confirmLabel="Delete Space"
-      />
-
-      <DeleteConfirmationModal
-        isOpen={!!leaveTarget}
-        onClose={() => setLeaveTarget(null)}
-        onConfirm={async () => {
-          if (leaveTarget) await leaveSpace(leaveTarget.id);
-        }}
-        title={`Leave "${leaveTarget?.name}"?`}
-        description="You will lose access to this space and its ledger data. This action cannot be undone."
-        confirmLabel="Leave Space"
-        confirmVariant="primary"
+      <SpaceModals
+        deleteTarget={deleteTarget}
+        leaveTarget={leaveTarget}
+        onCloseDelete={() => setDeleteTarget(null)}
+        onCloseLeave={() => setLeaveTarget(null)}
+        onConfirmDelete={async () => { if (deleteTarget) await deleteSpace(deleteTarget.id); }}
+        onConfirmLeave={async () => { if (leaveTarget) await leaveSpace(leaveTarget.id); }}
       />
     </div>
   );

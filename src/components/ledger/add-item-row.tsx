@@ -2,11 +2,8 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { getCurrentDate } from "@/lib/formatting";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { AutocompleteInput } from "./autocomplete-input";
-import { useAutocomplete } from "@/hooks/use-autocomplete";
+import { LedgerFormFields } from "./forms/ledger-form-fields";
 import { Plus, X } from "lucide-react";
 
 interface AddItemRowProps {
@@ -24,11 +21,8 @@ export function AddItemRow({ onSubmit, onCancel, defaultDate }: AddItemRowProps)
   const [amount, setAmount] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [category, setCategory] = React.useState("");
-  const [date, setDate] = React.useState(defaultDate || getCurrentDate());
+  const [date, setDate] = React.useState(defaultDate || "");
   const amountRef = React.useRef<HTMLInputElement>(null);
-
-  const { suggestions: descriptionSuggestions } = useAutocomplete("description", description);
-  const { suggestions: categorySuggestions } = useAutocomplete("category", category);
 
   React.useEffect(() => {
     amountRef.current?.focus();
@@ -47,10 +41,10 @@ export function AddItemRow({ onSubmit, onCancel, defaultDate }: AddItemRowProps)
     });
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent, nextField?: () => void) => {
-    if (e.key === "Enter" && nextField) {
+  const handleKeyDown = (e: React.KeyboardEvent, nextFieldId?: string) => {
+    if (e.key === "Enter" && nextFieldId) {
       e.preventDefault();
-      nextField();
+      document.getElementById(nextFieldId)?.focus();
     }
   };
 
@@ -67,45 +61,18 @@ export function AddItemRow({ onSubmit, onCancel, defaultDate }: AddItemRowProps)
           <Plus className="h-5 w-5 text-primary-accent" />
         </div>
 
-        <Input
-          ref={amountRef}
-          type="number"
-          step="0.01"
-          placeholder="Amount"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          onKeyDown={(e) => handleKeyDown(e, () => document.getElementById("desc-input")?.focus())}
-          className={cn("h-10", amountColor)}
-          required
-        />
-
-        <AutocompleteInput
-          inputRef={undefined}
-          value={description}
-          onChange={setDescription}
-          suggestions={descriptionSuggestions}
-          placeholder="Description"
-          onKeyDown={(e) => handleKeyDown(e, () => document.getElementById("cat-input")?.focus())}
-          required
-        />
-
-        <AutocompleteInput
-          inputRef={undefined}
-          id="cat-input"
-          value={category}
-          onChange={setCategory}
-          suggestions={categorySuggestions}
-          placeholder="Category"
-          onKeyDown={(e) => handleKeyDown(e, () => document.getElementById("date-input")?.focus())}
-        />
-
-        <Input
-          id="date-input"
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="h-10"
-          required
+        <LedgerFormFields
+          amount={amount}
+          description={description}
+          category={category}
+          date={date}
+          onAmountChange={setAmount}
+          onDescriptionChange={setDescription}
+          onCategoryChange={setCategory}
+          onDateChange={setDate}
+          onKeyDown={handleKeyDown}
+          amountRef={amountRef}
+          amountClassName={cn("h-10", amountColor)}
         />
 
         <div className="flex items-center gap-2">
