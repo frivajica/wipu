@@ -1,10 +1,13 @@
 "use client";
 
 import * as React from "react";
+import { motion } from "framer-motion";
 import { LedgerItem } from "@/lib/types";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { Avatar } from "@/components/ui/avatar";
-import { GripVertical } from "lucide-react";
+import { DragHandle } from "./drag-handle";
+import { RowContextMenu } from "./row-context-menu";
+import { SwipeToDelete } from "./swipe-to-delete";
 
 interface LedgerRowProps {
   item: LedgerItem;
@@ -27,16 +30,8 @@ export function LedgerRow({
   isDragging,
   isEditing,
   onStartEdit,
-  onCancelEdit,
 }: LedgerRowProps) {
   const isPositive = item.amount >= 0;
-
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (confirm("Delete this item?")) {
-      onDelete(item.id);
-    }
-  };
 
   const handleClick = () => {
     if (!isEditing && onStartEdit) {
@@ -44,29 +39,23 @@ export function LedgerRow({
     }
   };
 
-  return (
+  const rowContent = (
     <div
       className={cn(
-        "group grid items-center hover:bg-surface-elevated/50 transition-colors",
+        "group grid items-center transition-colors",
         "md:grid-cols-[32px_120px_1fr_120px_100px_60px] md:gap-4 md:px-4 md:py-2.5",
         "grid-cols-[32px_1fr] gap-3 px-3 py-3",
-        isDragging && "opacity-50 bg-surface-elevated",
+        "hover:bg-surface-elevated/50",
+        isDragging && "opacity-50 bg-surface-elevated cursor-grabbing",
         isEditing && "bg-primary-accent/5"
       )}
-      onContextMenu={handleContextMenu}
     >
       {/* Drag Handle */}
-      <button
+      <DragHandle
         {...dragHandleProps}
-        className={cn(
-          "flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors",
-          "md:w-8 md:h-8 w-10 h-10",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-accent focus-visible:ring-offset-2 rounded"
-        )}
-        aria-label="Drag to reorder"
-      >
-        <GripVertical className="h-5 w-5" />
-      </button>
+        isDragging={isDragging}
+        className="md:w-8 md:h-8 w-11 h-11"
+      />
 
       {/* Mobile Layout */}
       <div className="md:hidden flex flex-col gap-1">
@@ -135,5 +124,29 @@ export function LedgerRow({
         </button>
       </div>
     </div>
+  );
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.98 }}
+      transition={{ type: "spring", stiffness: 500, damping: 35 }}
+    >
+      {/* Mobile: Swipe to delete */}
+      <div className="md:hidden">
+        <SwipeToDelete onDelete={() => onDelete(item.id)}>
+          {rowContent}
+        </SwipeToDelete>
+      </div>
+
+      {/* Desktop: Right-click context menu */}
+      <div className="hidden md:block">
+        <RowContextMenu onDelete={() => onDelete(item.id)}>
+          {rowContent}
+        </RowContextMenu>
+      </div>
+    </motion.div>
   );
 }

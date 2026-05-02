@@ -16,6 +16,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           "inline-flex items-center justify-center rounded-lg font-medium transition-all duration-200",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-accent focus-visible:ring-offset-2",
           "active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none",
+          "hover:-translate-y-0.5 hover:shadow-md",
           {
             "bg-primary-accent text-white hover:bg-primary-accent/90": variant === "primary",
             "bg-surface-elevated text-text-primary hover:bg-border": variant === "secondary",

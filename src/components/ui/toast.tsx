@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { create } from "zustand";
 import { cn } from "@/lib/utils";
 import { CheckCircle, XCircle, Info, X } from "lucide-react";
@@ -23,7 +24,7 @@ export const useToastStore = create<ToastStore>((set) => ({
   toasts: [],
   addToast: (message, type = "info") =>
     set((state) => ({
-      toasts: [...state.toasts, { id: Math.random().toString(36), message, type }],
+      toasts: [...state.toasts, { id: Math.random().toString(36).slice(2), message, type }],
     })),
   removeToast: (id) =>
     set((state) => ({
@@ -36,16 +37,18 @@ export function ToastContainer() {
 
   return (
     <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
-      {toasts.map((toast) => (
-        <ToastItem key={toast.id} toast={toast} onClose={() => removeToast(toast.id)} />
-      ))}
+      <AnimatePresence mode="popLayout">
+        {toasts.map((toast) => (
+          <ToastItem key={toast.id} toast={toast} onClose={() => removeToast(toast.id)} />
+        ))}
+      </AnimatePresence>
     </div>
   );
 }
 
 function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
   React.useEffect(() => {
-    const timer = setTimeout(onClose, 3000);
+    const timer = setTimeout(onClose, 4000);
     return () => clearTimeout(timer);
   }, [onClose]);
 
@@ -56,10 +59,14 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
   };
 
   return (
-    <div
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 20, scale: 0.95, transition: { duration: 0.15 } }}
+      transition={{ type: "spring", stiffness: 400, damping: 30 }}
       className={cn(
-        "flex items-center gap-3 rounded-lg bg-surface shadow-lg border px-4 py-3 min-w-[300px]",
-        "transform transition-all duration-200 animate-in slide-in-from-bottom-2"
+        "flex items-center gap-3 rounded-lg bg-surface shadow-lg border px-4 py-3 min-w-[300px]"
       )}
     >
       {icons[toast.type]}
@@ -70,6 +77,6 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
       >
         <X className="h-4 w-4 text-text-secondary" />
       </button>
-    </div>
+    </motion.div>
   );
 }

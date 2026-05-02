@@ -34,9 +34,13 @@ export function Toggle({ checked, onChange, label, className }: ToggleProps) {
       >
         <span
           className={cn(
-            "inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform duration-200",
+            "inline-block h-5 w-5 transform rounded-full bg-white shadow-sm",
+            "will-change-transform",
             checked ? "translate-x-5" : "translate-x-0.5"
           )}
+          style={{
+            transition: "transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
+          }}
         />
       </button>
     </label>

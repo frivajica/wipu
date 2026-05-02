@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { useLedger } from "@/hooks/use-ledger";
 import { useSpaces } from "@/hooks/use-spaces";
@@ -10,6 +11,7 @@ import { SmartDateToggle } from "@/components/ledger/smart-date-toggle";
 import { CustomDateRange } from "@/components/ledger/custom-date-range";
 import { PeriodGroup } from "@/components/ledger/period-group";
 import { SortResetCue } from "@/components/ledger/sort-reset-cue";
+import { InfiniteScrollLoader } from "@/components/ledger/infinite-scroll-loader";
 import { groupItemsByPeriod, sortItemsByDate } from "@/lib/utils";
 import { LedgerItem } from "@/lib/types";
 import { DateTime } from "luxon";
@@ -63,9 +65,7 @@ export default function LedgerPage() {
     let sortedItems = [...items];
 
     // Sort by date if not using custom sort
-    if (true) {
-      sortedItems = sortItemsByDate(sortedItems);
-    }
+    sortedItems = sortItemsByDate(sortedItems);
 
     return groupItemsByPeriod(
       sortedItems,
@@ -92,7 +92,7 @@ export default function LedgerPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-safe">
       {/* Controls */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
@@ -106,8 +106,10 @@ export default function LedgerPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-4">
-          <PeriodSelector value={periodType} onChange={setPeriodType} />
+        <div className="flex items-center gap-4 w-full sm:w-auto">
+          <div className="w-full sm:w-auto">
+            <PeriodSelector value={periodType} onChange={setPeriodType} />
+          </div>
           <SmartDateToggle
             checked={smartDateInheritance}
             onChange={setSmartDateInheritance}
@@ -116,13 +118,22 @@ export default function LedgerPage() {
       </div>
 
       {/* Custom Date Range */}
-      {periodType === "custom" && (
-        <CustomDateRange
-          start={customDateRange?.start || DateTime.now().minus({ months: 1 }).toISODate() || ""}
-          end={customDateRange?.end || DateTime.now().toISODate() || ""}
-          onChange={setCustomDateRange}
-        />
-      )}
+      <AnimatePresence>
+        {periodType === "custom" && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ type: "spring", stiffness: 400, damping: 35 }}
+          >
+            <CustomDateRange
+              start={customDateRange?.start || DateTime.now().minus({ months: 1 }).toISODate() || ""}
+              end={customDateRange?.end || DateTime.now().toISODate() || ""}
+              onChange={setCustomDateRange}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Sort Reset Cue */}
       <SortResetCue
@@ -132,35 +143,38 @@ export default function LedgerPage() {
 
       {/* Period Groups */}
       <div className="space-y-2">
-        {visibleKeys.map((key) => (
-          <PeriodGroup
-            key={key}
-            label={key}
-            items={groupedItems.get(key) || []}
-            onAddItem={handleAddItem}
-            onEditItem={handleEditItem}
-            onDeleteItem={handleDeleteItem}
-            onReorderItems={(itemIds) => handleReorderItems(activeSpaceId || "", itemIds)}
-            currentUserId={user?.id || ""}
-            isDragEnabled={!sortByDate || smartDateInheritance}
-          />
-        ))}
+        <AnimatePresence mode="popLayout">
+          {visibleKeys.map((key) => (
+            <PeriodGroup
+              key={key}
+              label={key}
+              items={groupedItems.get(key) || []}
+              onAddItem={handleAddItem}
+              onEditItem={handleEditItem}
+              onDeleteItem={handleDeleteItem}
+              onReorderItems={(itemIds) => handleReorderItems(activeSpaceId || "", itemIds)}
+              currentUserId={user?.id || ""}
+              isDragEnabled={!sortByDate || smartDateInheritance}
+            />
+          ))}
+        </AnimatePresence>
 
         {visibleKeys.length === 0 && (
-          <div className="text-center py-12 bg-surface rounded-xl border border-border">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center py-12 bg-surface rounded-xl border border-border"
+          >
             <p className="text-text-secondary">No items yet. Add your first transaction!</p>
-          </div>
+          </motion.div>
         )}
 
         {/* Load More */}
-        {visibleCount < periodKeys.length && (
-          <button
-            onClick={() => setVisibleCount((c) => c + 2)}
-            className="w-full py-3 text-sm text-text-secondary hover:text-text-primary transition-colors"
-          >
-            Load older periods...
-          </button>
-        )}
+        <InfiniteScrollLoader
+          isLoading={isLoading}
+          hasMore={visibleCount < periodKeys.length}
+          onLoadMore={() => setVisibleCount((c) => c + 2)}
+        />
       </div>
     </div>
   );

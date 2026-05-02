@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   DndContext,
   closestCenter,
@@ -23,9 +24,10 @@ import { PeriodHeader } from "./period-header";
 import { LedgerRow } from "./ledger-row";
 import { InlineEditRow } from "./inline-edit-row";
 import { AddItemRow } from "./add-item-row";
-import { cn, getPeriodBalance } from "@/lib/utils";
+import { getPeriodBalance } from "@/lib/utils";
 import { mockDb } from "@/lib/data";
 import { Plus } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface SortableLedgerRowProps {
   item: LedgerItem;
@@ -188,7 +190,12 @@ export function PeriodGroup({
   };
 
   return (
-    <section className="mb-8">
+    <motion.section
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", stiffness: 400, damping: 35 }}
+      className="mb-8"
+    >
       <PeriodHeader label={label} balance={balance} />
 
       <div className="bg-surface rounded-xl border border-border overflow-hidden shadow-sm">
@@ -214,80 +221,96 @@ export function PeriodGroup({
               strategy={verticalListSortingStrategy}
             >
               <div className="divide-y divide-border/50">
-                {localItems.map((item) => {
-                  const user = mockDb.getUserById(item.updatedBy);
-                  return (
-                    <SortableLedgerRow
-                      key={item.id}
-                      item={item}
-                      userName={user?.name || "Unknown"}
-                      onEdit={onEditItem}
-                      onDelete={onDeleteItem}
-                      isEditing={editingId === item.id}
-                      onStartEdit={() => setEditingId(item.id)}
-                      onSaveEdit={handleEditSave}
-                      onCancelEdit={() => setEditingId(null)}
-                    />
-                  );
-                })}
+                <AnimatePresence mode="popLayout" initial={false}>
+                  {localItems.map((item) => {
+                    const user = mockDb.getUserById(item.updatedBy);
+                    return (
+                      <SortableLedgerRow
+                        key={item.id}
+                        item={item}
+                        userName={user?.name || "Unknown"}
+                        onEdit={onEditItem}
+                        onDelete={onDeleteItem}
+                        isEditing={editingId === item.id}
+                        onStartEdit={() => setEditingId(item.id)}
+                        onSaveEdit={handleEditSave}
+                        onCancelEdit={() => setEditingId(null)}
+                      />
+                    );
+                  })}
+                </AnimatePresence>
               </div>
             </SortableContext>
           </DndContext>
         ) : (
           <div className="divide-y divide-border/50">
-            {localItems.map((item) => {
-              const user = mockDb.getUserById(item.updatedBy);
-              
-              if (editingId === item.id) {
+            <AnimatePresence mode="popLayout" initial={false}>
+              {localItems.map((item) => {
+                const user = mockDb.getUserById(item.updatedBy);
+                
+                if (editingId === item.id) {
+                  return (
+                    <InlineEditRow
+                      key={item.id}
+                      amount={item.amount}
+                      description={item.description}
+                      category={item.category}
+                      date={item.date}
+                      onSave={handleEditSave}
+                      onCancel={() => setEditingId(null)}
+                    />
+                  );
+                }
+                
                 return (
-                  <InlineEditRow
+                  <LedgerRow
                     key={item.id}
-                    amount={item.amount}
-                    description={item.description}
-                    category={item.category}
-                    date={item.date}
-                    onSave={handleEditSave}
-                    onCancel={() => setEditingId(null)}
+                    item={item}
+                    userName={user?.name || "Unknown"}
+                    onEdit={onEditItem}
+                    onDelete={onDeleteItem}
+                    isEditing={editingId === item.id}
+                    onStartEdit={() => setEditingId(item.id)}
                   />
                 );
-              }
-              
-              return (
-                <LedgerRow
-                  key={item.id}
-                  item={item}
-                  userName={user?.name || "Unknown"}
-                  onEdit={onEditItem}
-                  onDelete={onDeleteItem}
-                  isEditing={editingId === item.id}
-                  onStartEdit={() => setEditingId(item.id)}
-                />
-              );
-            })}
+              })}
+            </AnimatePresence>
           </div>
         )}
 
         {/* Add Item */}
-        {isAdding ? (
-          <AddItemRow
-            onSubmit={handleAdd}
-            onCancel={() => setIsAdding(false)}
-            defaultDate={items[items.length - 1]?.date}
-          />
-        ) : (
-          <button
-            onClick={() => setIsAdding(true)}
-            className={cn(
-              "w-full py-3 px-4 flex items-center justify-center gap-2 text-sm font-medium",
-              "text-primary-accent hover:bg-surface-elevated transition-colors",
-              "border-t border-border"
-            )}
-          >
-            <Plus className="h-4 w-4" />
-            Add to {label}
-          </button>
-        )}
+        <AnimatePresence>
+          {isAdding ? (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ type: "spring", stiffness: 400, damping: 35 }}
+            >
+              <AddItemRow
+                onSubmit={handleAdd}
+                onCancel={() => setIsAdding(false)}
+                defaultDate={items[items.length - 1]?.date}
+              />
+            </motion.div>
+          ) : (
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsAdding(true)}
+              className={cn(
+                "w-full py-3 px-4 flex items-center justify-center gap-2 text-sm font-medium",
+                "text-primary-accent hover:bg-surface-elevated transition-colors",
+                "border-t border-border"
+              )}
+            >
+              <Plus className="h-4 w-4" />
+              Add to {label}
+            </motion.button>
+          )}
+        </AnimatePresence>
       </div>
-    </section>
+    </motion.section>
   );
 }

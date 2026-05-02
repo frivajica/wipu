@@ -4,6 +4,8 @@ import * as React from "react";
 import { cn, getCurrentDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { AutocompleteInput } from "./autocomplete-input";
+import { useAutocomplete } from "@/hooks/use-autocomplete";
 import { Plus, X } from "lucide-react";
 
 interface AddItemRowProps {
@@ -23,6 +25,9 @@ export function AddItemRow({ onSubmit, onCancel, defaultDate }: AddItemRowProps)
   const [category, setCategory] = React.useState("");
   const [date, setDate] = React.useState(defaultDate || getCurrentDate());
   const amountRef = React.useRef<HTMLInputElement>(null);
+
+  const { suggestions: descriptionSuggestions } = useAutocomplete("description", description);
+  const { suggestions: categorySuggestions } = useAutocomplete("category", category);
 
   React.useEffect(() => {
     amountRef.current?.focus();
@@ -48,6 +53,12 @@ export function AddItemRow({ onSubmit, onCancel, defaultDate }: AddItemRowProps)
     }
   };
 
+  const amountColor = amount && !isNaN(parseFloat(amount))
+    ? parseFloat(amount) >= 0
+      ? "text-secondary"
+      : "text-error"
+    : "";
+
   return (
     <form onSubmit={handleSubmit} className="px-4 py-3 border-t border-border">
       <div className="grid md:grid-cols-[32px_120px_1fr_120px_100px_60px] md:gap-4 grid-cols-[32px_1fr] gap-3 items-start">
@@ -63,29 +74,28 @@ export function AddItemRow({ onSubmit, onCancel, defaultDate }: AddItemRowProps)
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           onKeyDown={(e) => handleKeyDown(e, () => document.getElementById("desc-input")?.focus())}
-          className="h-10"
+          className={cn("h-10", amountColor)}
           required
         />
 
-        <Input
-          id="desc-input"
-          type="text"
-          placeholder="Description"
+        <AutocompleteInput
+          inputRef={undefined}
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={setDescription}
+          suggestions={descriptionSuggestions}
+          placeholder="Description"
           onKeyDown={(e) => handleKeyDown(e, () => document.getElementById("cat-input")?.focus())}
-          className="h-10"
           required
         />
 
-        <Input
+        <AutocompleteInput
+          inputRef={undefined}
           id="cat-input"
-          type="text"
-          placeholder="Category"
           value={category}
-          onChange={(e) => setCategory(e.target.value)}
+          onChange={setCategory}
+          suggestions={categorySuggestions}
+          placeholder="Category"
           onKeyDown={(e) => handleKeyDown(e, () => document.getElementById("date-input")?.focus())}
-          className="h-10"
         />
 
         <Input
