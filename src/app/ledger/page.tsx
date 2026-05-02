@@ -12,9 +12,11 @@ import { CustomDateRange } from "@/components/ledger/custom-date-range";
 import { PeriodGroup } from "@/components/ledger/period-group";
 import { SortResetCue } from "@/components/ledger/sort-reset-cue";
 import { InfiniteScrollLoader } from "@/components/ledger/infinite-scroll-loader";
+import { AddItemRow } from "@/components/ledger/add-item-row";
 import { groupItemsByPeriod, sortItemsByDate } from "@/lib/utils";
 import { LedgerItem } from "@/lib/types";
 import { DateTime } from "luxon";
+import { Plus } from "lucide-react";
 
 export default function LedgerPage() {
   const { user } = useAuth();
@@ -31,10 +33,28 @@ export default function LedgerPage() {
     setSortByDate,
   } = useUIStore();
 
+  const [isAddingFirstItem, setIsAddingFirstItem] = React.useState(false);
+
   const handleAddItem = async (
     item: Omit<LedgerItem, "id" | "createdAt" | "updatedAt">
   ) => {
     await addItem(item);
+  };
+
+  const handleAddFirstItem = async (data: {
+    amount: number;
+    description: string;
+    category: string;
+    date: string;
+  }) => {
+    await addItem({
+      ...data,
+      spaceId: activeSpaceId || "",
+      createdBy: user?.id || "",
+      updatedBy: user?.id || "",
+      sortOrder: 0,
+    });
+    setIsAddingFirstItem(false);
   };
 
   const handleEditItem = async (item: LedgerItem) => {
@@ -165,9 +185,27 @@ export default function LedgerPage() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center py-12 bg-surface rounded-xl border border-border"
+            className="bg-surface rounded-xl border border-border overflow-hidden shadow-sm"
           >
-            <p className="text-text-secondary">No items yet. Add your first transaction!</p>
+            {isAddingFirstItem ? (
+              <AddItemRow
+                onSubmit={handleAddFirstItem}
+                onCancel={() => setIsAddingFirstItem(false)}
+              />
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-text-secondary mb-4">
+                  No items yet. Add your first transaction!
+                </p>
+                <button
+                  onClick={() => setIsAddingFirstItem(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary-accent text-white hover:bg-primary-accent/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-accent focus-visible:ring-offset-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add your first transaction
+                </button>
+              </div>
+            )}
           </motion.div>
         )}
 
