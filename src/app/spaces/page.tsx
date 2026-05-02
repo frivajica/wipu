@@ -2,10 +2,12 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { useSpaces } from "@/hooks/use-spaces";
 import { SpaceCard } from "@/components/spaces/space-card";
 import { CreateSpaceModal } from "@/components/spaces/create-space-modal";
 import { InviteLinkModal } from "@/components/spaces/invite-link-modal";
+import { DeleteConfirmationModal } from "@/components/ui/delete-confirmation-modal";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { Space } from "@/lib/types";
@@ -15,6 +17,8 @@ export default function SpacesPage() {
   const { spaces, isLoading, createSpace, deleteSpace, leaveSpace, switchSpace } = useSpaces();
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
   const [selectedSpace, setSelectedSpace] = React.useState<Space | null>(null);
+  const [deleteTarget, setDeleteTarget] = React.useState<{ id: string; name: string } | null>(null);
+  const [leaveTarget, setLeaveTarget] = React.useState<{ id: string; name: string } | null>(null);
 
   const handleSpaceClick = (spaceId: string) => {
     switchSpace(spaceId);
@@ -52,26 +56,33 @@ export default function SpacesPage() {
             <p className="text-text-secondary">No spaces yet. Create one to get started!</p>
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2">
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: {},
+              visible: { transition: { staggerChildren: 0.06 } },
+            }}
+            className="grid gap-4 md:grid-cols-2"
+          >
             {spaces.map((space) => (
-              <div key={space.id} onClick={() => handleSpaceClick(space.id)} className="cursor-pointer">
+              <motion.div
+                key={space.id}
+                variants={{
+                  hidden: { opacity: 0, y: 16 },
+                  visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 400, damping: 30 } },
+                }}
+              >
                 <SpaceCard
                   space={space}
-                  onDelete={(id) => {
-                    if (confirm("Are you sure you want to delete this space?")) {
-                      deleteSpace(id);
-                    }
-                  }}
-                  onLeave={(id) => {
-                    if (confirm("Are you sure you want to leave this space?")) {
-                      leaveSpace(id);
-                    }
-                  }}
+                  onDelete={(id) => setDeleteTarget({ id, name: space.name })}
+                  onLeave={(id) => setLeaveTarget({ id, name: space.name })}
                   onInvite={(space) => setSelectedSpace(space)}
+                  onClick={() => handleSpaceClick(space.id)}
                 />
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
       </div>
 
@@ -89,6 +100,29 @@ export default function SpacesPage() {
           inviteCode={selectedSpace.inviteCode}
         />
       )}
+
+      <DeleteConfirmationModal
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={async () => {
+          if (deleteTarget) await deleteSpace(deleteTarget.id);
+        }}
+        title={`Delete "${deleteTarget?.name}"?`}
+        description="This space and all its ledger data will be permanently deleted. This action cannot be undone."
+        confirmLabel="Delete Space"
+      />
+
+      <DeleteConfirmationModal
+        isOpen={!!leaveTarget}
+        onClose={() => setLeaveTarget(null)}
+        onConfirm={async () => {
+          if (leaveTarget) await leaveSpace(leaveTarget.id);
+        }}
+        title={`Leave "${leaveTarget?.name}"?`}
+        description="You will lose access to this space and its ledger data. This action cannot be undone."
+        confirmLabel="Leave Space"
+        confirmVariant="primary"
+      />
     </div>
   );
 }

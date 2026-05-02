@@ -2,10 +2,18 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
+
+const shakeVariants = {
+  shake: {
+    x: [-4, 4, -4, 4, 0],
+    transition: { duration: 0.3 },
+  },
+};
 
 export function RegisterForm() {
   const router = useRouter();
@@ -13,12 +21,16 @@ export function RegisterForm() {
   const [name, setName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
+  const [showSuccess, setShowSuccess] = React.useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await register({ name, email, password });
-      router.push("/ledger");
+      setShowSuccess(true);
+      setTimeout(() => {
+        router.push("/ledger");
+      }, 400);
     } catch {
       // Error is handled by the mutation
     }
@@ -68,17 +80,33 @@ export function RegisterForm() {
         />
       </div>
 
-      {registerError && (
-        <p className="text-sm text-error">{registerError.message}</p>
-      )}
+      <AnimatePresence mode="wait">
+        {registerError && (
+          <motion.p
+            key="error"
+            variants={shakeVariants}
+            animate="shake"
+            initial={{ opacity: 0 }}
+            exit={{ opacity: 0 }}
+            className="text-sm text-error"
+          >
+            {registerError.message}
+          </motion.p>
+        )}
+      </AnimatePresence>
 
-      <Button
-        type="submit"
-        className="w-full"
-        isLoading={isRegisterLoading}
+      <motion.div
+        animate={showSuccess ? { scale: [1, 1.02, 1] } : {}}
+        transition={{ duration: 0.3 }}
       >
-        Create Account
-      </Button>
+        <Button
+          type="submit"
+          className="w-full"
+          isLoading={isRegisterLoading}
+        >
+          Create Account
+        </Button>
+      </motion.div>
 
       <p className="text-center text-sm text-text-secondary">
         Already have an account?{" "}

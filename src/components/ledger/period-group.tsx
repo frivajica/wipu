@@ -43,6 +43,7 @@ interface SortableLedgerRowProps {
     date: string;
   }) => void;
   onCancelEdit: () => void;
+  isOwned: boolean;
 }
 
 function SortableLedgerRow({
@@ -54,6 +55,7 @@ function SortableLedgerRow({
   onStartEdit,
   onSaveEdit,
   onCancelEdit,
+  isOwned,
 }: SortableLedgerRowProps) {
   const {
     attributes,
@@ -94,6 +96,7 @@ function SortableLedgerRow({
         dragHandleProps={{ ...attributes, ...listeners }}
         isDragging={isDragging}
         onStartEdit={onStartEdit}
+        isOwned={isOwned}
       />
     </div>
   );
@@ -235,6 +238,7 @@ export function PeriodGroup({
                         onStartEdit={() => setEditingId(item.id)}
                         onSaveEdit={handleEditSave}
                         onCancelEdit={() => setEditingId(null)}
+                        isOwned={item.createdBy === currentUserId}
                       />
                     );
                   })}
@@ -271,6 +275,7 @@ export function PeriodGroup({
                     onDelete={onDeleteItem}
                     isEditing={editingId === item.id}
                     onStartEdit={() => setEditingId(item.id)}
+                    isOwned={item.createdBy === currentUserId}
                   />
                 );
               })}

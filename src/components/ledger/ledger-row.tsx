@@ -19,6 +19,7 @@ interface LedgerRowProps {
   isEditing?: boolean;
   onStartEdit?: () => void;
   onCancelEdit?: () => void;
+  isOwned?: boolean;
 }
 
 export function LedgerRow({
@@ -30,6 +31,7 @@ export function LedgerRow({
   isDragging,
   isEditing,
   onStartEdit,
+  isOwned = false,
 }: LedgerRowProps) {
   const isPositive = item.amount >= 0;
 
@@ -46,7 +48,7 @@ export function LedgerRow({
         "md:grid-cols-[32px_120px_1fr_120px_100px_60px] md:gap-4 md:px-4 md:py-2.5",
         "grid-cols-[32px_1fr] gap-3 px-3 py-3",
         "hover:bg-surface-elevated/50",
-        isDragging && "opacity-50 bg-surface-elevated cursor-grabbing",
+        isDragging && "opacity-90 bg-surface-elevated cursor-grabbing shadow-xl rounded-lg z-50 scale-[1.02]",
         isEditing && "bg-primary-accent/5"
       )}
     >
@@ -136,14 +138,20 @@ export function LedgerRow({
     >
       {/* Mobile: Swipe to delete */}
       <div className="md:hidden">
-        <SwipeToDelete onDelete={() => onDelete(item.id)}>
+        <SwipeToDelete
+          onDelete={() => onDelete(item.id)}
+          requiresConfirmation={!isOwned}
+        >
           {rowContent}
         </SwipeToDelete>
       </div>
 
       {/* Desktop: Right-click context menu */}
       <div className="hidden md:block">
-        <RowContextMenu onDelete={() => onDelete(item.id)}>
+        <RowContextMenu
+          onDelete={() => onDelete(item.id)}
+          requiresConfirmation={!isOwned}
+        >
           {rowContent}
         </RowContextMenu>
       </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { Space } from "@/lib/types";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -10,16 +11,23 @@ interface SpaceCardProps {
   onDelete?: (spaceId: string) => void;
   onLeave?: (spaceId: string) => void;
   onInvite?: (space: Space) => void;
+  onClick?: () => void;
 }
 
-export function SpaceCard({ space, onDelete, onLeave, onInvite }: SpaceCardProps) {
+export function SpaceCard({ space, onDelete, onLeave, onInvite, onClick }: SpaceCardProps) {
   const { user } = useAuth();
   const isOwner = user?.id === space.ownerId;
   const isPersonal = space.name === "Personal";
   const memberCount = space.members.length;
 
   return (
-    <div className="bg-surface rounded-xl border border-border p-6 shadow-sm hover:shadow-md transition-shadow">
+    <motion.div
+      whileHover={{ y: -2 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+      onClick={onClick}
+      className="bg-surface rounded-xl border border-border p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+    >
       <div className="flex items-start justify-between mb-4">
         <div>
           <h3 className="text-lg font-semibold text-text-primary">{space.name}</h3>
@@ -38,7 +46,7 @@ export function SpaceCard({ space, onDelete, onLeave, onInvite }: SpaceCardProps
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
         <Button
           variant="secondary"
           size="sm"
@@ -71,6 +79,6 @@ export function SpaceCard({ space, onDelete, onLeave, onInvite }: SpaceCardProps
           </Button>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }
