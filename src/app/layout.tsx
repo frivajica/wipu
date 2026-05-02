@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Manrope } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { AuthGuard } from "@/components/auth-guard";
+import { Header } from "@/components/layout/header";
 import { ToastContainer } from "@/components/ui/toast";
 import "./globals.css";
 
@@ -32,7 +33,10 @@ export default function RootLayout({
       >
         <Providers>
           <AuthGuard>
-            {children}
+            <Header />
+            <main className="max-w-4xl mx-auto px-4 py-6">
+              {children}
+            </main>
           </AuthGuard>
           <ToastContainer />
         </Providers>
