@@ -9,14 +9,15 @@
 ## Phase 1A: Project Setup & Foundation
 
 ### Environment & Tooling
-- [ ] Initialize Next.js 16 project with TypeScript, Tailwind CSS via `create-next-app`
+- [ ] Initialize Next.js 16 project with TypeScript, Tailwind CSS via `create-next-app` in the root folder `./`
+- [ ] Use `pnpm` as package manager for all installations
 - [ ] Install all dependencies:
   - `react`, `react-dom` (v19)
   - `zustand` (v5)
   - `@tanstack/react-query` (v5.71+)
   - `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`
   - `framer-motion`
-  - `date-fns`
+  - `luxon`
   - `lucide-react`
   - `zod`
   - `clsx`, `tailwind-merge`

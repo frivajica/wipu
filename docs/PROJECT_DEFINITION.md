@@ -20,7 +20,8 @@ A ledger-based finance tracker where items are grouped by selectable time period
 
 | Layer | Technology | Version | Notes |
 |---|---|---|---|
-| Framework | Next.js | 16.1.6 | App Router, React Compiler opt-in |
+| Package Manager | pnpm | latest | Fast, disk-space efficient |
+| Framework | Next.js | 16.1.6 | App Router, React Compiler opt-in, initialized in `./` |
 | UI Library | React / React DOM | 19.x | Required by Next.js 16 |
 | Language | TypeScript | 5.x | Strict mode |
 | Styling | Tailwind CSS | 4.x | Custom design token extensions (modern, clean palette) |
@@ -28,7 +29,7 @@ A ledger-based finance tracker where items are grouped by selectable time period
 | Server State | TanStack Query (React) | v5.71+ | Mock data fetching, caching, mutations |
 | Drag & Drop | @dnd-kit/core + sortable | latest | Touch-friendly, accessible |
 | Animations | Framer Motion | latest | Layout animations, transitions, micro-interactions |
-| Date Utils | date-fns | latest | Period grouping, formatting |
+| Date Utils | luxon | latest | Period grouping, formatting |
 | Icons | lucide-react | latest | MIT license, commercial use OK |
 | Forms | Native + Zod | latest | Validation |
 
