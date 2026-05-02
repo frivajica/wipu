@@ -49,12 +49,11 @@ export function PeriodGroup({
 }: PeriodGroupProps) {
   const [isAdding, setIsAdding] = React.useState(false);
   const [editingId, setEditingId] = React.useState<string | null>(null);
-  const [localItems, setLocalItems] = React.useState(items);
+  const [optimisticItems, addOptimisticItems] = React.useOptimistic(
+    items,
+    (_state, newItems: LedgerItem[]) => newItems
+  );
   const balance = getPeriodBalance(items);
-
-  React.useEffect(() => {
-    setLocalItems(items);
-  }, [items]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -68,13 +67,11 @@ export function PeriodGroup({
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
-      setLocalItems((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id);
-        const newIndex = items.findIndex((item) => item.id === over.id);
-        const newItems = arrayMove(items, oldIndex, newIndex);
-        onReorderItems(newItems.map((item) => item.id));
-        return newItems;
-      });
+      const oldIndex = items.findIndex((item) => item.id === active.id);
+      const newIndex = items.findIndex((item) => item.id === over.id);
+      const newItems = arrayMove(items, oldIndex, newIndex);
+      addOptimisticItems(newItems);
+      onReorderItems(newItems.map((item) => item.id));
     }
   };
 
@@ -109,9 +106,11 @@ export function PeriodGroup({
     }
   };
 
+  const displayItems = optimisticItems;
+
   const list = (
     <LedgerItemList
-      items={localItems}
+      items={displayItems}
       editingId={editingId}
       onEdit={onEditItem}
       onDelete={onDeleteItem}
@@ -151,7 +150,7 @@ export function PeriodGroup({
             onDragEnd={handleDragEnd}
           >
             <SortableContext
-              items={localItems.map((item) => item.id)}
+              items={displayItems.map((item) => item.id)}
               strategy={verticalListSortingStrategy}
             >
               {list}

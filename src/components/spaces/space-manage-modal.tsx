@@ -11,6 +11,41 @@ import { Crown, UserMinus, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SPRING_DEFAULT } from "@/lib/animations";
 
+interface SpaceNameEditorProps {
+  space: Space;
+  onUpdateName: (spaceId: string, name: string) => Promise<void>;
+  isUpdating: boolean;
+}
+
+function SpaceNameEditor({ space, onUpdateName, isUpdating }: SpaceNameEditorProps) {
+  const [name, setName] = React.useState(space.name);
+  const hasChanges = name.trim() !== "" && name.trim() !== space.name;
+
+  const handleSave = async () => {
+    if (!hasChanges) return;
+    await onUpdateName(space.id, name.trim());
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <Input
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Space name"
+        className="flex-1"
+      />
+      <Button
+        onClick={handleSave}
+        disabled={!hasChanges || isUpdating}
+        isLoading={isUpdating}
+        size="sm"
+      >
+        Save
+      </Button>
+    </div>
+  );
+}
+
 interface SpaceManageModalProps {
   space: Space;
   currentUserId: string;
@@ -34,20 +69,9 @@ export function SpaceManageModal({
   isUpdating,
   isRemovingMember,
 }: SpaceManageModalProps) {
-  const [name, setName] = React.useState(space.name);
   const [removingId, setRemovingId] = React.useState<string | null>(null);
 
-  React.useEffect(() => {
-    if (isOpen) setName(space.name);
-  }, [isOpen, space.name]);
-
   const isOwner = currentUserId === space.ownerId;
-  const hasChanges = name.trim() !== "" && name.trim() !== space.name;
-
-  const handleSaveName = async () => {
-    if (!hasChanges) return;
-    await onUpdateName(space.id, name.trim());
-  };
 
   const handleRemove = async (userId: string) => {
     setRemovingId(userId);
@@ -68,23 +92,12 @@ export function SpaceManageModal({
           <label htmlFor="space-name" className="text-sm font-medium text-text-primary">
             Space Name
           </label>
-          <div className="flex items-center gap-2">
-            <Input
-              id="space-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Space name"
-              className="flex-1"
-            />
-            <Button
-              onClick={handleSaveName}
-              disabled={!hasChanges || isUpdating}
-              isLoading={isUpdating}
-              size="sm"
-            >
-              Save
-            </Button>
-          </div>
+          <SpaceNameEditor
+            key={space.id}
+            space={space}
+            onUpdateName={onUpdateName}
+            isUpdating={isUpdating}
+          />
         </div>
 
         {/* Members Section */}

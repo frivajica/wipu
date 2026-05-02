@@ -1,4 +1,5 @@
 import * as React from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 export interface AvatarProps {
@@ -12,6 +13,12 @@ const sizeClasses = {
   sm: "h-6 w-6 text-[10px]",
   md: "h-8 w-8 text-xs",
   lg: "h-10 w-10 text-sm",
+};
+
+const sizePixels = {
+  sm: 24,
+  md: 32,
+  lg: 40,
 };
 
 export function Avatar({ name, src, size = "md", className }: AvatarProps) {
@@ -34,9 +41,11 @@ export function Avatar({ name, src, size = "md", className }: AvatarProps) {
 
   if (src) {
     return (
-      <img
+      <Image
         src={src}
         alt={name}
+        width={sizePixels[size]}
+        height={sizePixels[size]}
         className={cn(
           "rounded-full object-cover border border-border transition-transform active:scale-95",
           sizeClasses[size],

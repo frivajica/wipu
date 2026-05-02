@@ -15,8 +15,7 @@ export function useSpaces() {
   const activeSpaceId = useSpaceStore((s) => s.activeSpaceId);
   const setSpaces = useSpaceStore((s) => s.setSpaces);
   const setActiveSpace = useSpaceStore((s) => s.setActiveSpace);
-  const addSpace = useSpaceStore((s) => s.addSpace);
-  const removeSpace = useSpaceStore((s) => s.removeSpace);
+
   const { addToast } = useToastStore();
 
   const { data: spacesData, isLoading } = useQuery({

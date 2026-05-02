@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { LedgerItem } from "@/lib/types";
 import { LedgerRowContent } from "./ledger-row-content";
 import { DragHandle } from "../drag-handle";
@@ -10,7 +9,7 @@ import { cn } from "@/lib/utils";
 interface LedgerRowDesktopProps {
   item: LedgerItem;
   userName: string;
-  onEdit: (item: LedgerItem) => void;
+  onEdit: (_item: LedgerItem) => void;
   onDelete: (id: string) => void;
   dragHandleProps?: React.HTMLAttributes<HTMLButtonElement>;
   isDragging?: boolean;
@@ -22,7 +21,7 @@ interface LedgerRowDesktopProps {
 export function LedgerRowDesktop({
   item,
   userName,
-  onEdit,
+  onEdit: _onEdit,
   onDelete,
   dragHandleProps,
   isDragging,

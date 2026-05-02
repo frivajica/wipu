@@ -4,7 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/auth-store";
 import { useSpaceStore } from "@/stores/space-store";
 import { mockDb } from "@/lib/data";
-import { generateId, generateInviteCode } from "@/lib/id-utils";
+import { generateId } from "@/lib/id-utils";
 
 export function useAuth() {
   const user = useAuthStore((s) => s.user);
