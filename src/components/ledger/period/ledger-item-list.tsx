@@ -5,7 +5,6 @@ import { LedgerItem } from "@/lib/types";
 import { SortableLedgerRow } from "../row/sortable-ledger-row";
 import { InlineEditRow } from "../inline-edit-row";
 import { LedgerRow } from "../row/ledger-row";
-import { mockDb } from "@/lib/data";
 
 interface LedgerItemListProps {
   items: LedgerItem[];
@@ -39,7 +38,6 @@ export function LedgerItemList({
     <div className="divide-y divide-border/50">
       <AnimatePresence mode="popLayout" initial={false}>
         {items.map((item) => {
-          const user = mockDb.getUserById(item.updatedBy);
           const isEditing = editingId === item.id;
 
           if (!isDragEnabled && isEditing) {
@@ -61,7 +59,7 @@ export function LedgerItemList({
               <SortableLedgerRow
                 key={item.id}
                 item={item}
-                userName={user?.name || "Unknown"}
+                userName={item.updatedByName || "Unknown"}
                 onEdit={onEdit}
                 onDelete={onDelete}
                 isEditing={isEditing}
@@ -77,7 +75,7 @@ export function LedgerItemList({
             <LedgerRow
               key={item.id}
               item={item}
-              userName={user?.name || "Unknown"}
+              userName={item.updatedByName || "Unknown"}
               onEdit={onEdit}
               onDelete={onDelete}
               isEditing={isEditing}

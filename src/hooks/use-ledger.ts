@@ -12,23 +12,27 @@ export function useLedger() {
 
   const { data: items, isLoading } = useQuery({
     queryKey: ["ledger", activeSpaceId],
-    queryFn: async () => {
+    queryFn: async (): Promise<LedgerItem[]> => {
       if (!activeSpaceId) return [];
       await simulateDelay(300);
-      return mockDb.getLedgerItems(activeSpaceId);
+      const rawItems = mockDb.getLedgerItems(activeSpaceId);
+      return rawItems.map((item) => {
+        const user = mockDb.getUserById(item.updatedBy);
+        return { ...item, updatedByName: user?.name || "Unknown" };
+      });
     },
     enabled: !!activeSpaceId,
   });
 
   const addItem = useMutationWithToast({
-    mutationFn: (item: Omit<LedgerItem, "id" | "createdAt" | "updatedAt">) =>
+    mutationFn: (item: Parameters<typeof mockDb.createLedgerItem>[0]) =>
       mockDb.createLedgerItem(item),
     successMessage: "Item added",
     invalidateKeys: [["ledger", activeSpaceId]],
   });
 
   const updateItem = useMutationWithToast({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<LedgerItem> }) =>
+    mutationFn: ({ id, updates }: { id: string; updates: Parameters<typeof mockDb.updateLedgerItem>[1] }) =>
       mockDb.updateLedgerItem(id, updates),
     successMessage: "Item updated",
     invalidateKeys: [["ledger", activeSpaceId]],

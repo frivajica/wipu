@@ -26,6 +26,7 @@ export interface LedgerItem {
   date: string;
   createdBy: string;
   updatedBy: string;
+  updatedByName?: string;
   createdAt: string;
   updatedAt: string;
   sortOrder: number;
