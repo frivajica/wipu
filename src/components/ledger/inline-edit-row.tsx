@@ -5,6 +5,8 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { LedgerFormFields } from "./forms/ledger-form-fields";
 import { Check, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { SPRING_DEFAULT } from "@/lib/animations";
 
 interface InlineEditRowProps {
   amount: number;
@@ -61,10 +63,15 @@ export function InlineEditRow({
       initial={{ opacity: 0, height: 0 }}
       animate={{ opacity: 1, height: "auto" }}
       exit={{ opacity: 0, height: 0 }}
-      transition={{ type: "spring" as const, stiffness: 400, damping: 35 }}
+      transition={SPRING_DEFAULT}
       onSubmit={handleSubmit}
       onKeyDown={handleKeyDown}
-      className="px-4 py-3 bg-primary-accent/5 border-y border-primary-accent/20 border-l-2 border-l-primary-accent"
+      className={cn(
+        "px-4 py-3.5",
+        // Editing card: warm indigo tint with glow
+        "rounded-xl bg-primary-accent/[0.04] border border-primary-accent/20",
+        "shadow-glow-focus"
+      )}
     >
       <div className="grid md:grid-cols-[32px_120px_1fr_120px_100px_80px] md:gap-4 grid-cols-[32px_1fr] gap-3 items-center">
         <div></div>
@@ -79,11 +86,11 @@ export function InlineEditRow({
           onCategoryChange={setEditCategory}
           onDateChange={setEditDate}
           amountRef={amountRef}
-          amountClassName="h-9"
+          amountClassName="h-9 bg-surface"
         />
 
-        <div className="flex items-center gap-1">
-          <Button type="submit" size="sm" className="h-8 px-2">
+        <div className="flex items-center gap-1.5">
+          <Button type="submit" size="sm" className="h-8 px-2.5">
             <Check className="h-4 w-4" />
           </Button>
           <Button type="button" variant="ghost" size="sm" className="h-8 px-2" onClick={onCancel}>

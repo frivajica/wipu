@@ -25,6 +25,7 @@ import { getPeriodBalance } from "@/lib/grouping";
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AnimatePresence } from "framer-motion";
+import { SPRING_DEFAULT } from "@/lib/animations";
 
 interface PeriodGroupProps {
   label: string;
@@ -126,73 +127,73 @@ export function PeriodGroup({
     <motion.section
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ type: "spring" as const, stiffness: 400, damping: 35 }}
-      className="mb-8"
+      transition={SPRING_DEFAULT}
+      className="mb-10"
     >
       <PeriodHeader label={label} balance={balance} />
 
-      <div className="bg-surface rounded-xl border border-border overflow-hidden shadow-sm">
-        {/* Desktop Headers */}
-        <div className="hidden md:grid grid-cols-[32px_120px_1fr_120px_100px_60px] gap-4 px-4 py-2 bg-surface-elevated border-b border-border text-xs font-medium text-text-secondary uppercase tracking-wider">
-          <div></div>
-          <div>Amount</div>
-          <div>Description</div>
-          <div>Category</div>
-          <div>Date</div>
-          <div className="text-center">Profile</div>
-        </div>
-
-        {/* Items */}
-        {isDragEnabled ? (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={displayItems.map((item) => item.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              {list}
-            </SortableContext>
-          </DndContext>
-        ) : (
-          list
-        )}
-
-        {/* Add Item */}
-        <AnimatePresence>
-          {isAdding ? (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ type: "spring" as const, stiffness: 400, damping: 35 }}
-            >
-              <AddItemRow
-                onSubmit={handleAdd}
-                onCancel={() => setIsAdding(false)}
-                defaultDate={items[items.length - 1]?.date}
-              />
-            </motion.div>
-          ) : (
-            <motion.button
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsAdding(true)}
-              className={cn(
-                "w-full py-3 px-4 flex items-center justify-center gap-2 text-sm font-medium cursor-pointer",
-                "text-primary-accent hover:bg-surface-elevated transition-colors",
-                "border-t border-border"
-              )}
-            >
-              <Plus className="h-4 w-4" />
-              Add to {label}
-            </motion.button>
-          )}
-        </AnimatePresence>
+      {/* Desktop Headers — standalone, no container border */}
+      <div className="hidden md:grid grid-cols-[32px_120px_1fr_120px_100px_60px] gap-4 px-4 pb-2 text-xs font-semibold text-text-tertiary uppercase tracking-wider">
+        <div></div>
+        <div>Amount</div>
+        <div>Description</div>
+        <div>Category</div>
+        <div>Date</div>
+        <div className="text-center">Profile</div>
       </div>
+
+      {/* Items — individual cards with gap */}
+      {isDragEnabled ? (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={displayItems.map((item) => item.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            {list}
+          </SortableContext>
+        </DndContext>
+      ) : (
+        list
+      )}
+
+      {/* Add Item */}
+      <AnimatePresence>
+        {isAdding ? (
+          <motion.div
+            initial={{ opacity: 0, height: 0, marginTop: 0 }}
+            animate={{ opacity: 1, height: "auto", marginTop: 8 }}
+            exit={{ opacity: 0, height: 0, marginTop: 0 }}
+            transition={SPRING_DEFAULT}
+          >
+            <AddItemRow
+              onSubmit={handleAdd}
+              onCancel={() => setIsAdding(false)}
+              defaultDate={items[items.length - 1]?.date}
+            />
+          </motion.div>
+        ) : (
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsAdding(true)}
+            className={cn(
+              "w-full mt-2 py-3 px-4 flex items-center justify-center gap-2 text-sm font-medium cursor-pointer",
+              // Card-style add button
+              "rounded-xl bg-surface border border-border/40 border-dashed",
+              "text-text-tertiary hover:text-primary-accent hover:border-primary-accent/30 hover:bg-primary-accent/[0.02]",
+              "transition-all duration-200 ease-out"
+            )}
+          >
+            <Plus className="h-4 w-4" />
+            Add to {label}
+          </motion.button>
+        )}
+      </AnimatePresence>
     </motion.section>
   );
 }

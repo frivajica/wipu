@@ -55,10 +55,20 @@ export function AddItemRow({ onSubmit, onCancel, defaultDate }: AddItemRowProps)
     : "";
 
   return (
-    <form onSubmit={handleSubmit} className="px-4 py-3 border-t border-border">
+    <form
+      onSubmit={handleSubmit}
+      className={cn(
+        "px-4 py-3.5",
+        // Distinctive "new row" card styling
+        "rounded-xl bg-primary-accent/[0.03] border border-primary-accent/15",
+        "shadow-card"
+      )}
+    >
       <div className="grid md:grid-cols-[32px_120px_1fr_120px_100px_60px] md:gap-4 grid-cols-[32px_1fr] gap-3 items-start">
         <div className="flex items-center justify-center h-10">
-          <Plus className="h-5 w-5 text-primary-accent" />
+          <div className="h-8 w-8 rounded-lg bg-primary-accent/10 flex items-center justify-center">
+            <Plus className="h-4 w-4 text-primary-accent" />
+          </div>
         </div>
 
         <LedgerFormFields
@@ -72,11 +82,11 @@ export function AddItemRow({ onSubmit, onCancel, defaultDate }: AddItemRowProps)
           onDateChange={setDate}
           onKeyDown={handleKeyDown}
           amountRef={amountRef}
-          amountClassName={cn("h-10", amountColor)}
+          amountClassName={cn("h-10 bg-surface", amountColor)}
         />
 
         <div className="flex items-center gap-2">
-          <Button type="submit" size="sm" className="h-8 px-2">
+          <Button type="submit" size="sm" className="h-8 px-3">
             Add
           </Button>
           <Button type="button" variant="ghost" size="sm" className="h-8 px-2" onClick={onCancel}>

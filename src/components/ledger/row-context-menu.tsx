@@ -85,13 +85,16 @@ export function RowContextMenu({
                   left: Math.min(position.x, window.innerWidth - 160),
                   top: Math.min(position.y, window.innerHeight - 80),
                 }}
-                className="z-50 w-40 bg-surface rounded-lg border border-border shadow-lg py-1 overflow-hidden"
+                className={cn(
+                  "z-50 w-44 bg-surface rounded-2xl border border-border/60",
+                  "shadow-elevated py-1.5 overflow-hidden"
+                )}
               >
                 <button
                   onClick={handleDeleteClick}
                   className={cn(
-                    "w-full text-left px-3 py-2 text-sm flex items-center gap-2 cursor-pointer",
-                    "text-error hover:bg-error/10 transition-colors"
+                    "w-full text-left mx-1 w-[calc(100%-8px)] rounded-lg px-3 py-2 text-sm flex items-center gap-2 cursor-pointer",
+                    "text-error hover:bg-error/10 hover:text-error-hover transition-all duration-150"
                   )}
                 >
                   <Trash2 className="h-4 w-4" />

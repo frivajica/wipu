@@ -23,22 +23,22 @@ export function SpaceCard({ space, onDelete, onLeave, onInvite, onManage, onClic
 
   return (
     <motion.div
-      whileHover={{ y: -2 }}
+      whileHover={{ y: -3 }}
       whileTap={{ scale: 0.98 }}
       transition={{ type: "spring", stiffness: 400, damping: 30 }}
       onClick={onClick}
-      className="bg-surface rounded-xl border border-border p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer h-full flex flex-col"
+      className="bg-surface rounded-2xl border border-border/50 p-6 shadow-card hover:shadow-card-hover transition-all duration-200 ease-out cursor-pointer h-full flex flex-col"
     >
-      <div className="flex items-start justify-between mb-4 flex-1">
+      <div className="flex items-start justify-between mb-5 flex-1">
         <div>
-          <h3 className="text-lg font-semibold text-text-primary">{space.name}</h3>
-          <div className="flex items-center gap-2 mt-1 text-sm text-text-secondary">
-            <Users className="h-4 w-4" />
+          <h3 className="text-lg font-bold text-text-primary tracking-tight">{space.name}</h3>
+          <div className="flex items-center gap-2.5 mt-2 text-sm text-text-secondary">
+            <Users className="h-4 w-4 text-text-tertiary" />
             <span>
               {memberCount} {memberCount === 1 ? "member" : "members"}
             </span>
             {isOwner && (
-              <span className="flex items-center gap-1 text-primary-accent">
+              <span className="flex items-center gap-1 text-primary-accent font-medium text-xs">
                 <Crown className="h-3 w-3" />
                 Owner
               </span>
@@ -63,7 +63,7 @@ export function SpaceCard({ space, onDelete, onLeave, onInvite, onManage, onClic
               variant="ghost"
               size="sm"
               onClick={() => onManage?.(space)}
-              className="text-text-primary"
+              className="text-text-secondary hover:text-text-primary"
             >
               <Settings className="h-4 w-4 mr-1" />
               Manage
@@ -72,7 +72,7 @@ export function SpaceCard({ space, onDelete, onLeave, onInvite, onManage, onClic
               variant="ghost"
               size="sm"
               onClick={() => onDelete?.(space.id)}
-              className="text-error hover:text-error"
+              className="text-error hover:text-error-hover"
             >
               <Trash2 className="h-4 w-4 mr-1" />
               Delete
@@ -85,7 +85,7 @@ export function SpaceCard({ space, onDelete, onLeave, onInvite, onManage, onClic
             variant="ghost"
             size="sm"
             onClick={() => onLeave?.(space.id)}
-            className="text-text-secondary"
+            className="text-text-tertiary hover:text-text-secondary"
           >
             <LogOut className="h-4 w-4 mr-1" />
             Leave

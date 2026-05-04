@@ -6,7 +6,7 @@ export function SpacesSkeleton() {
   return (
     <div className="grid gap-4 md:grid-cols-2">
       {[1, 2, 3, 4].map((i) => (
-        <div key={i} className="bg-surface rounded-xl border border-border p-6 shadow-sm space-y-4">
+        <div key={i} className="bg-surface rounded-2xl border border-border/50 p-6 shadow-card space-y-4">
           <div className="flex items-start justify-between">
             <div className="space-y-2 w-full">
               <SkeletonPulse className="h-6 w-32" />
@@ -17,8 +17,8 @@ export function SpacesSkeleton() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <SkeletonPulse className="h-8 w-20" />
-            <SkeletonPulse className="h-8 w-20" />
+            <SkeletonPulse className="h-8 w-20 rounded-lg" />
+            <SkeletonPulse className="h-8 w-20 rounded-lg" />
           </div>
         </div>
       ))}

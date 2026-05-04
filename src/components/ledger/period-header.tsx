@@ -12,17 +12,17 @@ export function PeriodHeader({ label, balance }: PeriodHeaderProps) {
   const isPositive = balance >= 0;
 
   return (
-    <div className="flex items-end justify-between mb-3 px-2">
-      <h3 className="text-lg font-semibold font-display text-text-primary">
+    <div className="flex items-end justify-between mb-4 px-1">
+      <h3 className="text-xl font-bold font-display text-text-primary tracking-tight">
         {label}
       </h3>
       <div className="text-right">
-        <span className="text-xs font-medium text-text-secondary uppercase tracking-wider block mb-0.5">
+        <span className="text-[11px] font-semibold text-text-tertiary uppercase tracking-wider block mb-1">
           Period Balance
         </span>
         <span
           className={cn(
-            "text-lg font-semibold font-display",
+            "text-xl font-bold font-display tabular-nums tracking-tight",
             isPositive ? "text-secondary" : "text-error"
           )}
         >

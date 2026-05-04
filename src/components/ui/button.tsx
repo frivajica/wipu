@@ -13,20 +13,34 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         className={cn(
-          "inline-flex items-center justify-center rounded-lg font-medium transition-all duration-200 cursor-pointer",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-accent focus-visible:ring-offset-2",
-          "active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none",
-          "hover:-translate-y-0.5 hover:shadow-md",
+          // Base
+          "inline-flex items-center justify-center font-medium cursor-pointer",
+          "transition-all duration-200 ease-out",
+          // Radius hierarchy: xl for buttons
+          "rounded-xl",
+          // Focus glow
+          "focus-visible:outline-none focus-visible:shadow-glow-focus",
+          // Active tactile press
+          "active:scale-[0.97] active:shadow-inner-active",
+          // Disabled
+          "disabled:opacity-40 disabled:pointer-events-none disabled:active:scale-100 disabled:active:shadow-none",
+          // Hover lift (except ghost)
+          variant !== "ghost" && "hover:-translate-y-px hover:shadow-card-hover",
           {
-            "bg-primary-accent text-white hover:bg-primary-accent/90": variant === "primary",
-            "bg-surface-elevated text-text-primary hover:bg-border": variant === "secondary",
-            "hover:bg-surface-elevated text-text-primary": variant === "ghost",
-            "bg-error text-white hover:bg-error/90": variant === "danger",
+            // Primary: Indigo with depth
+            "bg-primary-accent text-white shadow-card hover:bg-primary-accent-hover": variant === "primary",
+            // Secondary: Warm elevated surface
+            "bg-surface-elevated text-text-primary border border-border shadow-card hover:bg-surface-warm hover:border-border-hover": variant === "secondary",
+            // Ghost: Minimal, only hover
+            "text-text-secondary hover:text-text-primary hover:bg-surface-elevated": variant === "ghost",
+            // Danger: Red with depth
+            "bg-error text-white shadow-card hover:bg-error-hover": variant === "danger",
           },
+          // Size scale
           {
-            "h-8 px-3 text-sm": size === "sm",
-            "h-10 px-4 text-base": size === "md",
-            "h-12 px-6 text-lg": size === "lg",
+            "h-8 px-3 text-sm rounded-lg": size === "sm",
+            "h-10 px-5 text-base": size === "md",
+            "h-12 px-7 text-lg": size === "lg",
           },
           className
         )}

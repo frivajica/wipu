@@ -21,7 +21,7 @@ export function Menu({ trigger, children, className }: MenuProps) {
       trigger={<div onClick={toggle}>{trigger}</div>}
       isOpen={isOpen}
       onClose={close}
-      className={cn("w-48 py-1", className)}
+      className={cn("w-52 py-1.5", className)}
       align="right"
     >
       {children}
@@ -43,9 +43,9 @@ export function MenuItem({
   return (
     <button
       className={cn(
-        "w-full text-left px-4 py-2 text-sm transition-colors active:scale-[0.98] cursor-pointer inline-flex items-center",
-        "hover:bg-surface-elevated",
-        danger ? "text-error" : "text-text-primary",
+        "w-full text-left px-3.5 py-2 text-sm transition-all duration-150 cursor-pointer inline-flex items-center rounded-lg mx-1 w-[calc(100%-8px)]",
+        "hover:bg-surface-elevated active:scale-[0.98]",
+        danger ? "text-error hover:text-error-hover" : "text-text-primary",
         className
       )}
       {...props}

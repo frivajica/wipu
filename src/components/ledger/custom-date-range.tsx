@@ -18,18 +18,22 @@ export function CustomDateRange({ start, end, onChange, className }: CustomDateR
         value={start}
         onChange={(e) => onChange({ start: e.target.value, end })}
         className={cn(
-          "h-10 px-3 rounded-lg border border-border bg-surface text-sm",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-accent focus-visible:ring-offset-2"
+          "h-10 px-3 rounded-lg border border-border bg-surface-warm text-sm",
+          "transition-all duration-200 ease-out",
+          "hover:border-border-hover",
+          "focus-visible:outline-none focus-visible:border-primary-accent focus-visible:shadow-glow-focus focus-visible:bg-surface"
         )}
       />
-      <span className="text-text-secondary">to</span>
+      <span className="text-text-tertiary text-sm font-medium">to</span>
       <input
         type="date"
         value={end}
         onChange={(e) => onChange({ start, end: e.target.value })}
         className={cn(
-          "h-10 px-3 rounded-lg border border-border bg-surface text-sm",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-accent focus-visible:ring-offset-2"
+          "h-10 px-3 rounded-lg border border-border bg-surface-warm text-sm",
+          "transition-all duration-200 ease-out",
+          "hover:border-border-hover",
+          "focus-visible:outline-none focus-visible:border-primary-accent focus-visible:shadow-glow-focus focus-visible:bg-surface"
         )}
       />
     </div>

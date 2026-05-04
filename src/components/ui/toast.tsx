@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { create } from "zustand";
 import { cn } from "@/lib/utils";
 import { CheckCircle, XCircle, Info, X } from "lucide-react";
+import { SPRING_DEFAULT } from "@/lib/animations";
 
 export type ToastType = "success" | "error" | "info";
 
@@ -64,18 +65,18 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 20, scale: 0.95, transition: { duration: 0.15 } }}
-      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+      transition={SPRING_DEFAULT}
       className={cn(
-        "flex items-center gap-3 rounded-lg bg-surface shadow-lg border px-4 py-3 min-w-[300px]"
+        "flex items-center gap-3 rounded-xl bg-surface shadow-elevated border border-border/60 px-4 py-3 min-w-[300px]"
       )}
     >
       {icons[toast.type]}
-      <span className="text-sm text-text-primary flex-1">{toast.message}</span>
+      <span className="text-sm text-text-primary flex-1 font-medium">{toast.message}</span>
       <button
         onClick={onClose}
-        className="p-1 rounded hover:bg-surface-elevated transition-colors cursor-pointer"
+        className="p-1.5 rounded-lg hover:bg-surface-elevated transition-colors cursor-pointer focus-visible:outline-none focus-visible:shadow-glow-focus"
       >
-        <X className="h-4 w-4 text-text-secondary" />
+        <X className="h-4 w-4 text-text-tertiary" />
       </button>
     </motion.div>
   );

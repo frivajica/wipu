@@ -29,16 +29,26 @@ export function Toggle({ checked, onChange, label, className }: ToggleProps) {
         aria-checked={checked}
         onClick={() => onChange(!checked)}
         className={cn(
-          "relative inline-flex h-6 w-11 items-center rounded-full cursor-pointer",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-accent focus-visible:ring-offset-2",
-          checked ? "bg-primary-accent" : "bg-border"
+          "relative inline-flex h-[26px] w-[46px] items-center shrink-0 cursor-pointer",
+          "rounded-full transition-colors duration-200 ease-out",
+          "focus-visible:outline-none focus-visible:shadow-glow-focus",
+          // Track: warm gray when off, indigo when on
+          checked
+            ? "bg-primary-accent shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]"
+            : "bg-surface-elevated border border-border shadow-inner-active"
         )}
       >
         <motion.span
-          className="inline-block h-5 w-5 rounded-full bg-white shadow-sm will-change-transform"
+          className={cn(
+            "inline-block h-[22px] w-[22px] rounded-full will-change-transform",
+            // Thumb: white with subtle shadow when on, warm surface when off
+            checked
+              ? "bg-white shadow-[0_1px_3px_rgba(0,0,0,0.15)]"
+              : "bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.1)]"
+          )}
           initial={false}
           animate={{
-            x: checked ? 20 : 2,
+            x: checked ? 21 : 2,
           }}
           transition={SPRING_SNAP}
         />

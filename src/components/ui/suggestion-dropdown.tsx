@@ -33,7 +33,7 @@ export function SuggestionDropdown({
           exit={{ opacity: 0, y: -4 }}
           transition={{ duration: 0.15 }}
           className={cn(
-            "absolute z-50 w-full mt-1 bg-surface rounded-lg border border-border shadow-lg overflow-hidden",
+            "absolute z-50 w-full mt-1.5 bg-surface rounded-xl border border-border/60 shadow-elevated overflow-hidden py-1",
             className
           )}
           role="listbox"
@@ -46,9 +46,9 @@ export function SuggestionDropdown({
               onClick={() => onSelect(suggestion)}
               onMouseEnter={() => onHover(index)}
               className={cn(
-                "px-3 py-2 text-sm cursor-pointer transition-colors",
+                "mx-1 w-[calc(100%-8px)] rounded-lg px-3 py-2 text-sm cursor-pointer transition-all duration-150",
                 index === highlightedIndex
-                  ? "bg-primary-accent/10 text-text-primary"
+                  ? "bg-primary-accent/[0.08] text-text-primary"
                   : "text-text-secondary hover:bg-surface-elevated"
               )}
             >

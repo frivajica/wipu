@@ -13,10 +13,10 @@ export function DragHandle({ isDragging, className, ...props }: DragHandleProps)
     <button
       {...props}
       className={cn(
-        "flex items-center justify-center text-text-secondary hover:text-text-primary",
+        "flex items-center justify-center text-text-tertiary hover:text-text-secondary",
         "transition-colors touch-none select-none",
         "md:w-8 md:h-8 w-11 h-11",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-accent focus-visible:ring-offset-2 rounded",
+        "focus-visible:outline-none focus-visible:shadow-glow-focus rounded-lg",
         isDragging ? "cursor-grabbing text-text-primary" : "cursor-grab",
         className
       )}

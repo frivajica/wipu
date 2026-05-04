@@ -34,12 +34,15 @@ export function Dropdown({
           <>
             <div className="fixed inset-0 z-40" onClick={onClose} />
             <motion.div
-              initial={{ opacity: 0, y: -8, scale: 0.98 }}
+              initial={{ opacity: 0, y: -6, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -8, scale: 0.98 }}
+              exit={{ opacity: 0, y: -6, scale: 0.97 }}
               transition={SPRING_DEFAULT}
               className={cn(
-                "absolute top-full mt-1 bg-surface rounded-xl border border-border shadow-lg py-1 z-50 overflow-hidden",
+                "absolute top-full mt-2 bg-surface rounded-2xl z-50 overflow-hidden",
+                // Warm elevated shadow
+                "shadow-elevated border border-border/60",
+                "py-1.5",
                 align === "right" ? "right-0" : "left-0",
                 className
               )}

@@ -18,13 +18,13 @@ export function LedgerRowContent({ item, userName, onClick }: LedgerRowContentPr
     <>
       {/* Mobile Layout */}
       <div
-        className="md:hidden flex flex-col gap-1 cursor-pointer"
+        className="md:hidden flex flex-col gap-1.5 cursor-pointer"
         onClick={onClick}
       >
         <div className="flex items-center justify-between">
           <span
             className={cn(
-              "font-semibold",
+              "font-semibold tabular-nums",
               isPositive ? "text-secondary" : "text-error"
             )}
           >
@@ -32,21 +32,21 @@ export function LedgerRowContent({ item, userName, onClick }: LedgerRowContentPr
           </span>
           <Avatar name={userName} size="sm" />
         </div>
-        <span className="text-sm text-text-primary truncate">
+        <span className="text-sm text-text-primary font-medium truncate">
           {item.description}
         </span>
         <div className="flex items-center gap-2 text-xs text-text-secondary">
-          <span className="px-1.5 py-0.5 bg-surface-elevated rounded">
+          <span className="px-2 py-0.5 bg-surface-warm border border-border/50 rounded-full font-medium text-text-secondary">
             {item.category}
           </span>
-          <span>{formatDate(item.date)}</span>
+          <span className="text-text-tertiary">{formatDate(item.date)}</span>
         </div>
       </div>
 
       {/* Desktop Layout */}
       <div
         className={cn(
-          "hidden md:block font-medium tabular-nums cursor-pointer",
+          "hidden md:block font-semibold tabular-nums cursor-pointer",
           isPositive ? "text-secondary" : "text-error"
         )}
         onClick={onClick}
@@ -55,20 +55,20 @@ export function LedgerRowContent({ item, userName, onClick }: LedgerRowContentPr
       </div>
 
       <div
-        className="hidden md:block text-sm text-text-primary truncate cursor-pointer"
+        className="hidden md:block text-sm text-text-primary font-medium truncate cursor-pointer"
         onClick={onClick}
       >
         {item.description}
       </div>
 
       <div className="hidden md:block cursor-pointer" onClick={onClick}>
-        <span className="inline-flex px-2 py-0.5 text-xs bg-surface-elevated rounded-full text-text-secondary">
+        <span className="inline-flex px-2.5 py-0.5 text-xs bg-surface-warm border border-border/50 rounded-full text-text-secondary font-medium">
           {item.category}
         </span>
       </div>
 
       <div
-        className="hidden md:block text-sm text-text-secondary cursor-pointer"
+        className="hidden md:block text-sm text-text-tertiary cursor-pointer"
         onClick={onClick}
       >
         {formatDate(item.date)}
@@ -76,7 +76,7 @@ export function LedgerRowContent({ item, userName, onClick }: LedgerRowContentPr
 
       <div className="hidden md:flex justify-center">
         <button
-          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-accent focus-visible:ring-offset-2 rounded-full"
+          className="focus-visible:outline-none focus-visible:shadow-glow-focus rounded-full"
           onClick={onClick}
         >
           <Avatar name={userName} size="sm" />
