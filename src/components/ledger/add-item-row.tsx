@@ -64,9 +64,7 @@ export function AddItemRow({ onSubmit, onCancel, defaultDate }: AddItemRowProps)
         "shadow-card"
       )}
     >
-      <div className="grid md:grid-cols-[32px_120px_1fr_1fr_100px_80px] md:gap-4 grid-cols-[32px_1fr] gap-3 items-start">
-        <div></div>
-
+      <div className="grid md:grid-cols-[120px_1fr_1fr_120px_80px] md:gap-4 grid-cols-[32px_1fr] gap-3 items-start">
         <LedgerFormFields
           amount={amount}
           description={description}
