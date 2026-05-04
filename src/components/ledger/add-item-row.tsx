@@ -64,12 +64,8 @@ export function AddItemRow({ onSubmit, onCancel, defaultDate }: AddItemRowProps)
         "shadow-card"
       )}
     >
-      <div className="grid md:grid-cols-[32px_120px_1fr_120px_100px_60px] md:gap-4 grid-cols-[32px_1fr] gap-3 items-start">
-        <div className="flex items-center justify-center h-10">
-          <div className="h-8 w-8 rounded-lg bg-primary-accent/10 flex items-center justify-center">
-            <Plus className="h-4 w-4 text-primary-accent" />
-          </div>
-        </div>
+      <div className="grid md:grid-cols-[32px_120px_1fr_1fr_100px_80px] md:gap-4 grid-cols-[32px_1fr] gap-3 items-start">
+        <div></div>
 
         <LedgerFormFields
           amount={amount}
@@ -86,9 +82,20 @@ export function AddItemRow({ onSubmit, onCancel, defaultDate }: AddItemRowProps)
         />
 
         <div className="flex items-center gap-2">
-          <Button type="submit" size="sm" className="h-8 px-3">
-            Add
-          </Button>
+          <button
+            type="submit"
+            className={cn(
+              "h-9 w-9 flex items-center justify-center rounded-xl",
+              "bg-primary-accent text-white shadow-card",
+              "hover:bg-primary-accent-hover hover:shadow-card-hover hover:-translate-y-px",
+              "active:scale-[0.97] active:shadow-inner-active",
+              "transition-all duration-200 ease-out",
+              "focus-visible:outline-none focus-visible:shadow-glow-focus cursor-pointer"
+            )}
+            aria-label="Add transaction"
+          >
+            <Plus className="h-5 w-5" />
+          </button>
           <Button type="button" variant="ghost" size="sm" className="h-8 px-2" onClick={onCancel}>
             <X className="h-4 w-4" />
           </Button>

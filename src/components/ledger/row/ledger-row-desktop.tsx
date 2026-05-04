@@ -41,7 +41,7 @@ export function LedgerRowDesktop({
       <div
         className={cn(
           "group hidden md:grid items-center transition-all duration-200 ease-out",
-          "grid-cols-[32px_120px_1fr_120px_100px_60px] gap-4 px-4 py-3",
+          "grid-cols-[32px_120px_1fr_1fr_100px_80px] gap-4 px-4 py-3",
           // Card shell: individual rounded row card
           "rounded-xl bg-surface border border-border/40",
           "shadow-card hover:shadow-card-hover hover:border-border-hover",

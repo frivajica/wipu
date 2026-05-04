@@ -133,7 +133,7 @@ export function PeriodGroup({
       <PeriodHeader label={label} balance={balance} />
 
       {/* Desktop Headers — standalone, no container border */}
-      <div className="hidden md:grid grid-cols-[32px_120px_1fr_120px_100px_60px] gap-4 px-4 pb-2 text-xs font-semibold text-text-tertiary uppercase tracking-wider">
+      <div className="hidden md:grid grid-cols-[32px_120px_1fr_1fr_100px_80px] gap-4 px-4 pb-2 text-xs font-semibold text-text-tertiary uppercase tracking-wider">
         <div></div>
         <div>Amount</div>
         <div>Description</div>

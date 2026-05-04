@@ -32,14 +32,20 @@ export function LedgerRowContent({ item, userName, onClick }: LedgerRowContentPr
           </span>
           <Avatar name={userName} size="sm" />
         </div>
-        <span className="text-sm text-text-primary font-medium truncate">
+        <span
+          className="text-sm text-text-primary font-medium truncate"
+          title={item.description}
+        >
           {item.description}
         </span>
-        <div className="flex items-center gap-2 text-xs text-text-secondary">
-          <span className="px-2 py-0.5 bg-surface-warm border border-border/50 rounded-full font-medium text-text-secondary">
+        <div className="flex items-center gap-2 text-xs text-text-secondary min-w-0">
+          <span
+            className="px-2 py-0.5 bg-surface-warm border border-border/50 rounded-full font-medium text-text-secondary truncate max-w-full"
+            title={item.category}
+          >
             {item.category}
           </span>
-          <span className="text-text-tertiary">{formatDate(item.date)}</span>
+          <span className="text-text-tertiary shrink-0">{formatDate(item.date)}</span>
         </div>
       </div>
 
@@ -57,12 +63,16 @@ export function LedgerRowContent({ item, userName, onClick }: LedgerRowContentPr
       <div
         className="hidden md:block text-sm text-text-primary font-medium truncate cursor-pointer"
         onClick={onClick}
+        title={item.description}
       >
         {item.description}
       </div>
 
-      <div className="hidden md:block cursor-pointer" onClick={onClick}>
-        <span className="inline-flex px-2.5 py-0.5 text-xs bg-surface-warm border border-border/50 rounded-full text-text-secondary font-medium">
+      <div className="hidden md:block min-w-0 cursor-pointer" onClick={onClick}>
+        <span
+          className="inline-flex px-2.5 py-0.5 text-xs bg-surface-warm border border-border/50 rounded-full text-text-secondary font-medium truncate max-w-full"
+          title={item.category}
+        >
           {item.category}
         </span>
       </div>

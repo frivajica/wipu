@@ -21,11 +21,11 @@ export function LedgerSkeleton() {
           </div>
 
           {/* Desktop column headers */}
-          <div className="hidden md:grid grid-cols-[32px_120px_1fr_120px_100px_60px] gap-4 px-4 pb-2">
+          <div className="hidden md:grid grid-cols-[32px_120px_1fr_1fr_100px_80px] gap-4 px-4 pb-2">
             <div />
             <SkeletonPulse className="h-4 w-16" />
             <SkeletonPulse className="h-4 w-24" />
-            <SkeletonPulse className="h-4 w-16" />
+            <SkeletonPulse className="h-4 w-24" />
             <SkeletonPulse className="h-4 w-12" />
             <div />
           </div>
@@ -34,7 +34,7 @@ export function LedgerSkeleton() {
           {[1, 2, 3].map((row) => (
             <div
               key={row}
-              className="grid md:grid-cols-[32px_120px_1fr_120px_100px_60px] md:gap-4 grid-cols-[32px_1fr] gap-3 px-4 py-3 items-center rounded-xl bg-surface border border-border/40 shadow-card"
+              className="grid md:grid-cols-[32px_120px_1fr_1fr_100px_80px] md:gap-4 grid-cols-[32px_1fr] gap-3 px-4 py-3 items-center rounded-xl bg-surface border border-border/40 shadow-card"
             >
               <SkeletonPulse className="h-5 w-5 rounded" />
               <SkeletonPulse className="h-5 w-20" />

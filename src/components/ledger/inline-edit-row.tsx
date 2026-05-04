@@ -73,7 +73,7 @@ export function InlineEditRow({
         "shadow-glow-focus"
       )}
     >
-      <div className="grid md:grid-cols-[32px_120px_1fr_120px_100px_80px] md:gap-4 grid-cols-[32px_1fr] gap-3 items-center">
+      <div className="grid md:grid-cols-[32px_120px_1fr_1fr_100px_80px] md:gap-4 grid-cols-[32px_1fr] gap-3 items-center">
         <div></div>
 
         <LedgerFormFields
