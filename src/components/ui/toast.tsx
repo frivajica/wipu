@@ -36,11 +36,19 @@ export const useToastStore = create<ToastStore>((set) => ({
 export function ToastContainer() {
   const { toasts, removeToast } = useToastStore();
 
+  // Stable callback reference — prevents ToastItem useEffect from re-running
+  const handleClose = React.useCallback(
+    (id: string) => {
+      removeToast(id);
+    },
+    [removeToast]
+  );
+
   return (
     <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
       <AnimatePresence mode="popLayout">
         {toasts.map((toast) => (
-          <ToastItem key={toast.id} toast={toast} onClose={() => removeToast(toast.id)} />
+          <ToastItem key={toast.id} toast={toast} onClose={() => handleClose(toast.id)} />
         ))}
       </AnimatePresence>
     </div>
@@ -67,7 +75,7 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
       exit={{ opacity: 0, y: 20, scale: 0.95, transition: { duration: 0.15 } }}
       transition={SPRING_DEFAULT}
       className={cn(
-        "flex items-center gap-3 rounded-xl bg-surface shadow-elevated border border-border/60 px-4 py-3 min-w-[300px]"
+        "flex items-center gap-3 rounded-lg bg-surface shadow-elevated border border-border/60 px-4 py-3 min-w-[300px]"
       )}
     >
       {icons[toast.type]}

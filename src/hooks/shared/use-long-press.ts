@@ -6,8 +6,18 @@ export function useLongPress(
   onLongPress: (e: React.TouchEvent) => void,
   duration: number = 600
 ) {
-  const timer = React.useRef<NodeJS.Timeout | null>(null);
+  const timer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const isLongPress = React.useRef(false);
+
+  // Cleanup timer on unmount
+  React.useEffect(() => {
+    return () => {
+      if (timer.current) {
+        clearTimeout(timer.current);
+        timer.current = null;
+      }
+    };
+  }, []);
 
   const onTouchStart = (e: React.TouchEvent) => {
     isLongPress.current = false;

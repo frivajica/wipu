@@ -17,13 +17,25 @@ export function InviteLinkModal({ isOpen, onClose, inviteCode }: InviteLinkModal
   const [copied, setCopied] = React.useState(false);
   const { addToast } = useToastStore();
   const inviteLink = `https://wipu.app/join/${inviteCode}`;
+  const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup timer on unmount or modal close
+  React.useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, []);
 
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(inviteLink);
       setCopied(true);
       addToast("Invite link copied to clipboard!", "success");
-      setTimeout(() => setCopied(false), 2500);
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => setCopied(false), 2500);
     } catch {
       addToast("Failed to copy link", "error");
     }

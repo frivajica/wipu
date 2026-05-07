@@ -4,7 +4,6 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useSpaces } from "@/hooks/use-spaces";
 import { useAuth } from "@/hooks/use-auth";
-import { mockDb } from "@/lib/data";
 import { SpaceCard } from "@/components/spaces/space-card";
 import { CreateSpaceModal } from "@/components/spaces/create-space-modal";
 import { InviteLinkModal } from "@/components/spaces/invite-link-modal";
@@ -13,7 +12,7 @@ import { SpaceModals } from "@/components/spaces/space-modals";
 import { SpacesSkeleton } from "@/components/spaces/spaces-skeleton";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { Space, User } from "@/lib/types";
+import { Space } from "@/lib/types";
 import { motion } from "framer-motion";
 
 export default function SpacesPage() {
@@ -28,8 +27,10 @@ export default function SpacesPage() {
     deleteSpace,
     leaveSpace,
     switchSpace,
+    isCreating,
     isUpdating,
     isRemovingMember,
+    getSpaceMembers,
   } = useSpaces();
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
   const [selectedSpace, setSelectedSpace] = React.useState<Space | null>(null);
@@ -40,14 +41,6 @@ export default function SpacesPage() {
   const handleSpaceClick = (spaceId: string) => {
     switchSpace(spaceId);
     router.push("/ledger");
-  };
-
-  // Enrich members with user data for the manage modal
-  const getMembersForSpace = (space: Space | null): User[] => {
-    if (!space) return [];
-    return space.members
-      .map((memberId) => mockDb.getUserById(memberId))
-      .filter((u): u is User => u !== undefined);
   };
 
   if (isLoading) {
@@ -118,7 +111,7 @@ export default function SpacesPage() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onCreate={createSpace}
-        isCreating={false}
+        isCreating={isCreating}
       />
 
       {selectedSpace && (
@@ -133,7 +126,7 @@ export default function SpacesPage() {
         <SpaceManageModal
           space={manageSpace}
           currentUserId={user.id}
-          members={getMembersForSpace(manageSpace)}
+          members={getSpaceMembers(manageSpace.id)}
           isOpen={!!manageSpace}
           onClose={() => setManageSpace(null)}
           onUpdateName={async (spaceId, name) => {

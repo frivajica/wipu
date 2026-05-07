@@ -12,33 +12,33 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const hasHydrated = useAuthStore((s) => s.hasHydrated);
+  const hydrateFromCookie = useAuthStore((s) => s.hydrateFromCookie);
 
+  // Hydrate auth state from cookie on mount
+  useEffect(() => {
+    if (!hasHydrated) {
+      hydrateFromCookie();
+    }
+  }, [hasHydrated, hydrateFromCookie]);
+
+  // Client-side navigation safety net
   useEffect(() => {
     if (!hasHydrated) return;
 
     const isPublicRoute = publicRoutes.includes(pathname);
-    
+
     if (!isAuthenticated && !isPublicRoute) {
       router.push("/login");
     }
-    
-    if (isAuthenticated && isPublicRoute) {
-      router.push("/ledger");
-    }
   }, [isAuthenticated, pathname, router, hasHydrated]);
 
-  // Show spinner while hydrating
+  // Show spinner while hydrating from cookie
   if (!hasHydrated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary-accent" />
       </div>
     );
-  }
-
-  // Show nothing while redirecting unauthenticated users
-  if (!isAuthenticated && !publicRoutes.includes(pathname)) {
-    return null;
   }
 
   return <>{children}</>;

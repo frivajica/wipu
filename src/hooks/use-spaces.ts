@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/auth-store";
 import { useSpaceStore } from "@/stores/space-store";
 import { mockDb } from "@/lib/data";
+import { User } from "@/lib/types";
 import { simulateDelay } from "@/lib/api-simulation";
 import { useMutationWithToast } from "@/hooks/shared/use-mutation-with-toast";
 import { useToastStore } from "@/components/ui/toast";
@@ -93,6 +94,18 @@ export function useSpaces() {
     if (space) addToast(`Switched to ${space.name}`, "info");
   };
 
+  // Enrich member IDs with user data — called by presentation layer
+  const getSpaceMembers = React.useCallback(
+    (spaceId: string): User[] => {
+      const space = spaces.find((s) => s.id === spaceId);
+      if (!space) return [];
+      return space.members
+        .map((memberId) => mockDb.getUserById(memberId))
+        .filter((u): u is User => u !== undefined);
+    },
+    [spaces]
+  );
+
   return {
     spaces,
     activeSpaceId,
@@ -104,6 +117,7 @@ export function useSpaces() {
     deleteSpace: deleteSpace.mutateAsync,
     leaveSpace: leaveSpace.mutateAsync,
     switchSpace,
+    getSpaceMembers,
     isCreating: createSpace.isPending,
     isUpdating: updateSpaceName.isPending,
     isRemovingMember: removeMember.isPending,

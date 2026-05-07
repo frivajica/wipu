@@ -21,16 +21,16 @@ export default function LedgerPage() {
   const { user } = useAuth();
   const { activeSpaceId } = useSpaces();
   const { items, isLoading, addItem, updateItem, deleteItem, reorderItems } = useLedger();
-  const {
-    periodType,
-    smartDateInheritance,
-    customDateRange,
-    sortByDate,
-    setPeriodType,
-    setSmartDateInheritance,
-    setCustomDateRange,
-    setSortByDate,
-  } = useUIStore();
+
+  // Granular Zustand selectors — each subscribes to only one property
+  const periodType = useUIStore((s) => s.periodType);
+  const smartDateInheritance = useUIStore((s) => s.smartDateInheritance);
+  const customDateRange = useUIStore((s) => s.customDateRange);
+  const sortByDate = useUIStore((s) => s.sortByDate);
+  const setPeriodType = useUIStore((s) => s.setPeriodType);
+  const setSmartDateInheritance = useUIStore((s) => s.setSmartDateInheritance);
+  const setCustomDateRange = useUIStore((s) => s.setCustomDateRange);
+  const setSortByDate = useUIStore((s) => s.setSortByDate);
 
   const { groupedItems, visibleKeys, hasMore, loadMore } = useGroupedLedger({
     items,
