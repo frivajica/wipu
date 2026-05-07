@@ -21,6 +21,16 @@ const sizePixels = {
   lg: 40,
 };
 
+// Stable color array — defined outside component to avoid recreation
+const bgColors = [
+  "bg-blue-500",
+  "bg-emerald-500",
+  "bg-violet-500",
+  "bg-amber-500",
+  "bg-rose-500",
+  "bg-cyan-500",
+];
+
 export function Avatar({ name, src, size = "md", className }: AvatarProps) {
   const initials = name
     .split(" ")
@@ -29,14 +39,6 @@ export function Avatar({ name, src, size = "md", className }: AvatarProps) {
     .toUpperCase()
     .slice(0, 2);
 
-  const bgColors = [
-    "bg-blue-500",
-    "bg-emerald-500",
-    "bg-violet-500",
-    "bg-amber-500",
-    "bg-rose-500",
-    "bg-cyan-500",
-  ];
   const bgColor = bgColors[name.charCodeAt(0) % bgColors.length];
 
   if (src) {

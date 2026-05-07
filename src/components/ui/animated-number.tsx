@@ -17,11 +17,17 @@ export function AnimatedNumber({
   className,
   duration = 0.5,
 }: AnimatedNumberProps) {
-  const spring = useSpring(value, {
-    stiffness: 100,
-    damping: 30,
-    duration: duration * 1000,
-  });
+  // Memoize spring config to avoid re-initialization on every render
+  const springConfig = React.useMemo(
+    () => ({
+      stiffness: 100,
+      damping: 30,
+      duration: duration * 1000,
+    }),
+    [duration]
+  );
+
+  const spring = useSpring(value, springConfig);
 
   const display = useTransform(spring, (latest) =>
     new Intl.NumberFormat("en-US", {

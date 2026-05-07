@@ -39,6 +39,15 @@ export default function LedgerPage() {
     sortByDate,
   });
 
+  // Memoize default date range to avoid recomputing on every render
+  const defaultDateRange = React.useMemo(
+    () => ({
+      start: DateTime.now().minus({ months: 1 }).toISODate() || "",
+      end: DateTime.now().toISODate() || "",
+    }),
+    []
+  );
+
   const handleAddFirstItem = React.useCallback(
     async (data: {
       amount: number;
@@ -118,8 +127,8 @@ export default function LedgerPage() {
             transition={{ type: "spring" as const, stiffness: 400, damping: 35 }}
           >
             <CustomDateRange
-              start={customDateRange?.start || DateTime.now().minus({ months: 1 }).toISODate() || ""}
-              end={customDateRange?.end || DateTime.now().toISODate() || ""}
+              start={customDateRange?.start || defaultDateRange.start}
+              end={customDateRange?.end || defaultDateRange.end}
               onChange={setCustomDateRange}
             />
           </motion.div>

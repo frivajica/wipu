@@ -38,6 +38,7 @@ export function RowContextMenu({
   };
 
   const handleLongPress = (e: React.TouchEvent) => {
+    if (!e.touches.length) return;
     const touch = e.touches[0];
     setPosition({ x: touch.clientX, y: touch.clientY });
     setIsOpen(true);
@@ -86,7 +87,7 @@ export function RowContextMenu({
                   top: Math.min(position.y, window.innerHeight - 80),
                 }}
                 className={cn(
-                  "z-50 w-44 bg-surface rounded-2xl border border-border/60",
+                  "z-50 w-44 bg-surface rounded-lg border border-border/60",
                   "shadow-elevated py-1.5 overflow-hidden"
                 )}
               >

@@ -28,6 +28,13 @@ export function AddItemRow({ onSubmit, onCancel, defaultDate }: AddItemRowProps)
     amountRef.current?.focus();
   }, []);
 
+  // Sync defaultDate prop when it changes (e.g., parent adds items)
+  React.useEffect(() => {
+    if (defaultDate && !date) {
+      setDate(defaultDate);
+    }
+  }, [defaultDate, date]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const numAmount = parseFloat(amount);
@@ -83,7 +90,7 @@ export function AddItemRow({ onSubmit, onCancel, defaultDate }: AddItemRowProps)
           <button
             type="submit"
             className={cn(
-              "h-9 w-9 flex items-center justify-center rounded-xl",
+              "h-9 w-9 flex items-center justify-center rounded-lg",
               "bg-primary-accent text-white shadow-card",
               "hover:bg-primary-accent-hover hover:shadow-card-hover hover:-translate-y-px",
               "active:scale-[0.97] active:shadow-inner-active",
