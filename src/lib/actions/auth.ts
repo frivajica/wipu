@@ -18,7 +18,12 @@ export async function loginAction(email: string, password: string) {
 
   await createSession(foundUser);
 
-  return { user: stripPassword(foundUser) };
+  const userSpaces = mockDb.getSpacesByUserId(foundUser.id);
+
+  return {
+    user: stripPassword(foundUser),
+    defaultSpaceId: userSpaces[0]?.id ?? null,
+  };
 }
 
 export async function registerAction(

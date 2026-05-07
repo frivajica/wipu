@@ -1,10 +1,9 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/auth-store";
 import { useSpaceStore } from "@/stores/space-store";
 import { loginAction, registerAction, logoutAction } from "@/lib/actions/auth";
-import { mockDb } from "@/lib/data";
+import { useMutationWithToast } from "@/hooks/shared/use-mutation-with-toast";
 
 export function useAuth() {
   const user = useAuthStore((s) => s.user);
@@ -12,25 +11,31 @@ export function useAuth() {
   const clearUser = useAuthStore((s) => s.clearUser);
   const setActiveSpace = useSpaceStore((s) => s.setActiveSpace);
 
-  const loginMutation = useMutation({
-    mutationFn: async ({ email, password }: { email: string; password: string }) => {
-      const result = await loginAction(email, password);
-      return result;
-    },
-    onSuccess: ({ user }) => {
-      setUser(user);
-      const userSpaces = mockDb.getSpacesByUserId(user.id);
-      if (userSpaces.length > 0) setActiveSpace(userSpaces[0].id);
+  const loginMutation = useMutationWithToast({
+    mutationFn: ({ email, password }: { email: string; password: string }) =>
+      loginAction(email, password),
+    successMessage: "Signed in successfully",
+    invalidateKeys: [["spaces"]],
+    onSuccess: ({ user: loggedInUser, defaultSpaceId }) => {
+      setUser(loggedInUser);
+      if (defaultSpaceId) setActiveSpace(defaultSpaceId);
     },
   });
 
-  const registerMutation = useMutation({
-    mutationFn: async ({ name, email, password }: { name: string; email: string; password: string }) => {
-      const result = await registerAction(name, email, password);
-      return result;
-    },
-    onSuccess: ({ user, space }) => {
-      setUser(user);
+  const registerMutation = useMutationWithToast({
+    mutationFn: ({
+      name,
+      email,
+      password,
+    }: {
+      name: string;
+      email: string;
+      password: string;
+    }) => registerAction(name, email, password),
+    successMessage: "Account created successfully",
+    invalidateKeys: [["spaces"]],
+    onSuccess: ({ user: newUser, space }) => {
+      setUser(newUser);
       setActiveSpace(space.id);
     },
   });

@@ -8,6 +8,7 @@ interface UseMutationWithToastOptions<TData, TVariables> {
   successMessage: string;
   errorMessage?: string;
   invalidateKeys?: (string | null)[][];
+  onSuccess?: (data: TData) => void;
 }
 
 export function useMutationWithToast<TData, TVariables>({
@@ -15,6 +16,7 @@ export function useMutationWithToast<TData, TVariables>({
   successMessage,
   errorMessage,
   invalidateKeys = [],
+  onSuccess: onSuccessCallback,
 }: UseMutationWithToastOptions<TData, TVariables>) {
   const queryClient = useQueryClient();
   const { addToast } = useToastStore();
@@ -23,7 +25,7 @@ export function useMutationWithToast<TData, TVariables>({
     mutationFn: async (vars: TVariables) => {
       return await mutationFn(vars);
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       invalidateKeys.forEach((key) => {
         const validKey = key.filter((k): k is string => k !== null);
         if (validKey.length > 0) {
@@ -31,6 +33,7 @@ export function useMutationWithToast<TData, TVariables>({
         }
       });
       addToast(successMessage, "success");
+      onSuccessCallback?.(data);
     },
     onError: (error) => {
       const message = errorMessage || (error instanceof Error ? error.message : "Something went wrong");

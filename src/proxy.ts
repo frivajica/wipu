@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
 
+const SESSION_COOKIE = "wipu_session";
 const protectedRoutes = ["/ledger", "/spaces"];
 const publicRoutes = ["/login", "/register"];
 
@@ -10,13 +10,28 @@ function matchesRoute(path: string, routes: string[]) {
   );
 }
 
+function parseSession(cookieValue: string): { userId: string } | null {
+  try {
+    const payload = JSON.parse(cookieValue) as {
+      userId: string;
+      expiresAt: string;
+    };
+    const expiresAt = new Date(payload.expiresAt);
+    if (expiresAt < new Date()) return null;
+    return { userId: payload.userId };
+  } catch {
+    return null;
+  }
+}
+
 export default async function proxy(req: NextRequest) {
   const path = req.nextUrl.pathname;
 
   const isProtectedRoute = matchesRoute(path, protectedRoutes);
   const isPublicRoute = matchesRoute(path, publicRoutes);
 
-  const session = await getSession();
+  const cookie = req.cookies.get(SESSION_COOKIE)?.value;
+  const session = cookie ? parseSession(cookie) : null;
   const isAuthenticated = !!session;
 
   // Unauthenticated user hitting a protected route
