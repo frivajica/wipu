@@ -10,44 +10,27 @@ export function useAuth() {
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
   const clearUser = useAuthStore((s) => s.clearUser);
-  const setSpaces = useSpaceStore((s) => s.setSpaces);
   const setActiveSpace = useSpaceStore((s) => s.setActiveSpace);
 
   const loginMutation = useMutation({
-    mutationFn: async ({
-      email,
-      password,
-    }: {
-      email: string;
-      password: string;
-    }) => {
+    mutationFn: async ({ email, password }: { email: string; password: string }) => {
       const result = await loginAction(email, password);
       return result;
     },
     onSuccess: ({ user }) => {
       setUser(user);
       const userSpaces = mockDb.getSpacesByUserId(user.id);
-      setSpaces(userSpaces);
       if (userSpaces.length > 0) setActiveSpace(userSpaces[0].id);
     },
   });
 
   const registerMutation = useMutation({
-    mutationFn: async ({
-      name,
-      email,
-      password,
-    }: {
-      name: string;
-      email: string;
-      password: string;
-    }) => {
+    mutationFn: async ({ name, email, password }: { name: string; email: string; password: string }) => {
       const result = await registerAction(name, email, password);
       return result;
     },
     onSuccess: ({ user, space }) => {
       setUser(user);
-      setSpaces([space]);
       setActiveSpace(space.id);
     },
   });
@@ -55,7 +38,6 @@ export function useAuth() {
   const logout = async () => {
     await logoutAction();
     clearUser();
-    setSpaces([]);
     setActiveSpace(null);
   };
 

@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/auth-store";
 import { useSpaceStore } from "@/stores/space-store";
@@ -12,14 +11,13 @@ import { useToastStore } from "@/components/ui/toast";
 
 export function useSpaces() {
   const user = useAuthStore((s) => s.user);
-  const spaces = useSpaceStore((s) => s.spaces);
   const activeSpaceId = useSpaceStore((s) => s.activeSpaceId);
-  const setSpaces = useSpaceStore((s) => s.setSpaces);
   const setActiveSpace = useSpaceStore((s) => s.setActiveSpace);
 
   const { addToast } = useToastStore();
 
-  const { data: spacesData, isLoading } = useQuery({
+  // Single source of truth: TanStack Query
+  const { data: spaces = [], isLoading } = useQuery({
     queryKey: ["spaces", user?.id],
     queryFn: async () => {
       if (!user) return [];
@@ -29,10 +27,6 @@ export function useSpaces() {
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
   });
-
-  React.useEffect(() => {
-    if (spacesData) setSpaces(spacesData);
-  }, [spacesData, setSpaces]);
 
   const createSpace = useMutationWithToast({
     mutationFn: async (name: string) => {
@@ -95,16 +89,13 @@ export function useSpaces() {
   };
 
   // Enrich member IDs with user data — called by presentation layer
-  const getSpaceMembers = React.useCallback(
-    (spaceId: string): User[] => {
-      const space = spaces.find((s) => s.id === spaceId);
-      if (!space) return [];
-      return space.members
-        .map((memberId) => mockDb.getUserById(memberId))
-        .filter((u): u is User => u !== undefined);
-    },
-    [spaces]
-  );
+  const getSpaceMembers = (spaceId: string): User[] => {
+    const space = spaces.find((s) => s.id === spaceId);
+    if (!space) return [];
+    return space.members
+      .map((memberId) => mockDb.getUserById(memberId))
+      .filter((u): u is User => u !== undefined);
+  };
 
   return {
     spaces,
