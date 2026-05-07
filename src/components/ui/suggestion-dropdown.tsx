@@ -33,14 +33,14 @@ export function SuggestionDropdown({
           exit={{ opacity: 0, y: -4 }}
           transition={{ duration: 0.15 }}
           className={cn(
-            "absolute z-50 w-full mt-1.5 bg-surface rounded-xl border border-border/60 shadow-elevated overflow-hidden py-1",
+            "absolute z-50 w-full mt-1.5 bg-surface rounded-lg border border-border/60 shadow-elevated overflow-hidden py-1",
             className
           )}
           role="listbox"
         >
           {suggestions.map((suggestion, index) => (
             <li
-              key={suggestion}
+              key={`${suggestion}-${index}`}
               role="option"
               aria-selected={index === highlightedIndex}
               onClick={() => onSelect(suggestion)}

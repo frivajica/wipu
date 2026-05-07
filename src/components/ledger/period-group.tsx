@@ -68,9 +68,10 @@ export function PeriodGroup({
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
-      const oldIndex = items.findIndex((item) => item.id === active.id);
-      const newIndex = items.findIndex((item) => item.id === over.id);
-      const newItems = arrayMove(items, oldIndex, newIndex);
+      // Use optimisticItems for index lookup to handle pending optimistic updates
+      const oldIndex = optimisticItems.findIndex((item) => item.id === active.id);
+      const newIndex = optimisticItems.findIndex((item) => item.id === over.id);
+      const newItems = arrayMove(optimisticItems, oldIndex, newIndex);
       addOptimisticItems(newItems);
       onReorderItems(newItems.map((item) => item.id));
     }

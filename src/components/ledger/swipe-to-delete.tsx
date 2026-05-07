@@ -14,7 +14,6 @@ interface SwipeToDeleteProps {
 }
 
 export function SwipeToDelete({ children, onDelete, className, requiresConfirmation = false }: SwipeToDeleteProps) {
-  const [isConfirming, setIsConfirming] = React.useState(false);
   const [showModal, setShowModal] = React.useState(false);
   const x = useMotionValue(0);
   const opacity = useTransform(x, [-150, -100, 0], [1, 0.5, 0]);
@@ -30,19 +29,16 @@ export function SwipeToDelete({ children, onDelete, className, requiresConfirmat
       }
     } else {
       animate(x, 0, { type: "spring", stiffness: 500, damping: 30 });
-      setIsConfirming(false);
     }
   };
 
   const handleConfirmDelete = () => {
     onDelete();
-    setIsConfirming(false);
     setShowModal(false);
     animate(x, 0, { type: "spring", stiffness: 500, damping: 30 });
   };
 
   const handleCancel = () => {
-    setIsConfirming(false);
     setShowModal(false);
     animate(x, 0, { type: "spring", stiffness: 500, damping: 30 });
   };
@@ -71,37 +67,11 @@ export function SwipeToDelete({ children, onDelete, className, requiresConfirmat
         >
           {children}
         </motion.div>
-
-        {/* Confirmation overlay */}
-        {isConfirming && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="absolute inset-0 z-20 flex items-center justify-center gap-2 bg-error/95 rounded-lg"
-          >
-            <span className="text-white text-sm font-medium">Delete?</span>
-            <button
-              onClick={handleConfirmDelete}
-              className="px-3 py-1 bg-white text-error rounded-md text-sm font-medium hover:bg-white/90 transition-colors cursor-pointer"
-            >
-              Yes
-            </button>
-            <button
-              onClick={handleCancel}
-              className="px-3 py-1 bg-white/20 text-white rounded-md text-sm font-medium hover:bg-white/30 transition-colors cursor-pointer"
-            >
-              No
-            </button>
-          </motion.div>
-        )}
       </div>
 
       <DeleteConfirmationModal
         isOpen={showModal}
-        onClose={() => {
-          setShowModal(false);
-          animate(x, 0, { type: "spring", stiffness: 500, damping: 30 });
-        }}
+        onClose={handleCancel}
         onConfirm={handleConfirmDelete}
         title="Delete this item?"
         description="This action cannot be undone. The item will be permanently removed from the ledger."

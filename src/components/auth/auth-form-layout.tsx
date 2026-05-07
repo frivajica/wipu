@@ -28,21 +28,8 @@ export function AuthFormLayout({
   footer,
   children,
 }: AuthFormLayoutProps) {
-  const [showSuccess, setShowSuccess] = React.useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    setShowSuccess(false);
-    onSubmit(e);
-  };
-
-  React.useEffect(() => {
-    if (!isLoading && !error && showSuccess) {
-      // Success state handled by parent redirect
-    }
-  }, [isLoading, error, showSuccess]);
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={onSubmit} className="space-y-4">
       {children}
 
       <AnimatePresence mode="wait">
@@ -60,14 +47,9 @@ export function AuthFormLayout({
         )}
       </AnimatePresence>
 
-      <motion.div
-        animate={showSuccess ? { scale: [1, 1.02, 1] } : {}}
-        transition={{ duration: 0.3 }}
-      >
-        <Button type="submit" className="w-full" isLoading={isLoading}>
-          {submitLabel}
-        </Button>
-      </motion.div>
+      <Button type="submit" className="w-full" isLoading={isLoading}>
+        {submitLabel}
+      </Button>
 
       {footer}
     </form>

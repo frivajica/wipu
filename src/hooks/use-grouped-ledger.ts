@@ -17,7 +17,7 @@ export function useGroupedLedger({
   periodType,
   customDateRange,
   sortByDate,
-  pageSize = 2,
+  pageSize = 5,
 }: UseGroupedLedgerOptions) {
   const groupedItems = React.useMemo(() => {
     if (!items.length) return new Map<string, LedgerItem[]>();

@@ -20,10 +20,22 @@ export function InfiniteScrollLoader({
   hasItems = true,
 }: InfiniteScrollLoaderProps) {
   const internalRef = React.useRef<HTMLDivElement>(null);
-  const ref = (loaderRef as React.RefObject<HTMLDivElement>) || internalRef;
+
+  // Merge external ref with internal ref
+  const setRefs = React.useCallback(
+    (node: HTMLDivElement | null) => {
+      internalRef.current = node;
+      if (typeof loaderRef === "function") {
+        loaderRef(node);
+      } else if (loaderRef) {
+        (loaderRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+      }
+    },
+    [loaderRef]
+  );
 
   React.useEffect(() => {
-    const element = ref.current;
+    const element = internalRef.current;
     if (!element || !hasMore) return;
 
     const observer = new IntersectionObserver(
@@ -37,7 +49,7 @@ export function InfiniteScrollLoader({
 
     observer.observe(element);
     return () => observer.disconnect();
-  }, [ref, hasMore, isLoading, onLoadMore]);
+  }, [hasMore, isLoading, onLoadMore]);
 
   if (!hasMore) {
     if (!hasItems) return null;
@@ -53,7 +65,7 @@ export function InfiniteScrollLoader({
   }
 
   return (
-    <div ref={ref} className="flex items-center justify-center py-6 gap-2 text-sm text-text-secondary">
+    <div ref={setRefs} className="flex items-center justify-center py-6 gap-2 text-sm text-text-secondary">
       {isLoading ? (
         <>
           <Loader2 className="h-4 w-4 animate-spin" />

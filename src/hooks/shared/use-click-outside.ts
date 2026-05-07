@@ -7,14 +7,20 @@ export function useClickOutside(
   onClickOutside: () => void,
   events: ("mousedown" | "touchstart")[] = ["mousedown", "touchstart"]
 ) {
+  // Store callback in a ref to avoid re-attaching listeners on every render
+  const callbackRef = React.useRef(onClickOutside);
+  React.useEffect(() => {
+    callbackRef.current = onClickOutside;
+  }, [onClickOutside]);
+
   React.useEffect(() => {
     function handler(event: Event) {
       if (ref.current && !ref.current.contains(event.target as Node)) {
-        onClickOutside();
+        callbackRef.current();
       }
     }
 
     events.forEach((event) => document.addEventListener(event, handler));
     return () => events.forEach((event) => document.removeEventListener(event, handler));
-  }, [ref, onClickOutside, events]);
+  }, [ref, events]);
 }
