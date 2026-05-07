@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 const shakeVariants = {
   shake: {
     x: [-4, 4, -4, 4, 0],
+    opacity: 1,
     transition: { duration: 0.3 },
   },
 };
@@ -34,16 +35,18 @@ export function AuthFormLayout({
 
       <AnimatePresence mode="wait">
         {error && (
-          <motion.p
+          <motion.div
             key="error"
             variants={shakeVariants}
             animate="shake"
             initial={{ opacity: 0 }}
             exit={{ opacity: 0 }}
-            className="text-sm text-error"
+            className="rounded-lg bg-error/10 px-3 py-2"
           >
-            {error.message}
-          </motion.p>
+            <p className="text-sm font-medium text-error">
+              {error.message}
+            </p>
+          </motion.div>
         )}
       </AnimatePresence>
 
