@@ -50,7 +50,7 @@ export function SpaceSelector() {
           className={cn(
             "w-full text-left mx-1 w-[calc(100%-8px)] rounded-lg px-3 py-2 text-sm transition-all duration-150 flex items-center gap-2 cursor-pointer",
             space.id === activeSpace.id
-              ? "bg-primary-accent/[0.08] text-primary-accent font-medium"
+              ? "bg-primary-accent/8 text-primary-accent font-medium"
               : "text-text-primary hover:bg-surface-elevated"
           )}
         >

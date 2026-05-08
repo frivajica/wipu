@@ -60,7 +60,7 @@ export function AddItemRow({ onSubmit, onCancel, defaultDate }: AddItemRowProps)
       className={cn(
         "px-4 py-3.5",
         // Distinctive "new row" card styling
-        "rounded-xl bg-primary-accent/[0.03] border border-primary-accent/15",
+        "rounded-xl bg-primary-accent/3 border border-primary-accent/15",
         "shadow-card"
       )}
     >

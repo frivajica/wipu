@@ -48,7 +48,7 @@ export function SuggestionDropdown({
               className={cn(
                 "mx-1 w-[calc(100%-8px)] rounded-lg px-3 py-2 text-sm cursor-pointer transition-all duration-150",
                 index === highlightedIndex
-                  ? "bg-primary-accent/[0.08] text-text-primary"
+                  ? "bg-primary-accent/8 text-text-primary"
                   : "text-text-secondary hover:bg-surface-elevated"
               )}
             >

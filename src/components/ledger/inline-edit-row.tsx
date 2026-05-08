@@ -69,7 +69,7 @@ export function InlineEditRow({
       className={cn(
         "px-4 py-3.5",
         // Editing card: warm indigo tint with glow
-        "rounded-xl bg-primary-accent/[0.04] border border-primary-accent/20",
+        "rounded-xl bg-primary-accent/4 border border-primary-accent/20",
         "shadow-glow-focus"
       )}
     >

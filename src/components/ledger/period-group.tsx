@@ -186,7 +186,7 @@ export function PeriodGroup({
               "w-full mt-2 py-3 px-4 flex items-center justify-center gap-2 text-sm font-medium cursor-pointer",
               // Card-style add button
               "rounded-xl bg-surface border border-border/40 border-dashed",
-              "text-text-tertiary hover:text-primary-accent hover:border-primary-accent/30 hover:bg-primary-accent/[0.02]",
+              "text-text-tertiary hover:text-primary-accent hover:border-primary-accent/30 hover:bg-primary-accent/2",
               "transition-all duration-200 ease-out"
             )}
           >
