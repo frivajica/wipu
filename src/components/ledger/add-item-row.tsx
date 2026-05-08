@@ -28,13 +28,6 @@ export function AddItemRow({ onSubmit, onCancel, defaultDate }: AddItemRowProps)
     amountRef.current?.focus();
   }, []);
 
-  // Sync defaultDate prop when it changes (e.g., parent adds items)
-  React.useEffect(() => {
-    if (defaultDate && !date) {
-      setDate(defaultDate);
-    }
-  }, [defaultDate, date]);
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const numAmount = parseFloat(amount);

@@ -22,7 +22,14 @@ export function useSpaces() {
     queryFn: async () => {
       if (!user) return [];
       await simulateDelay(300);
-      return mockDb.getSpacesByUserId(user.id);
+      const rawSpaces = mockDb.getSpacesByUserId(user.id);
+      // Enrich member IDs with user data
+      return rawSpaces.map((space) => ({
+        ...space,
+        membersData: space.members
+          .map((memberId) => mockDb.getUserById(memberId))
+          .filter((u): u is User => u !== undefined),
+      }));
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
@@ -88,15 +95,6 @@ export function useSpaces() {
     if (space) addToast(`Switched to ${space.name}`, "info");
   };
 
-  // Enrich member IDs with user data — called by presentation layer
-  const getSpaceMembers = (spaceId: string): User[] => {
-    const space = spaces.find((s) => s.id === spaceId);
-    if (!space) return [];
-    return space.members
-      .map((memberId) => mockDb.getUserById(memberId))
-      .filter((u): u is User => u !== undefined);
-  };
-
   return {
     spaces,
     activeSpaceId,
@@ -108,7 +106,6 @@ export function useSpaces() {
     deleteSpace: deleteSpace.mutateAsync,
     leaveSpace: leaveSpace.mutateAsync,
     switchSpace,
-    getSpaceMembers,
     isCreating: createSpace.isPending,
     isUpdating: updateSpaceName.isPending,
     isRemovingMember: removeMember.isPending,

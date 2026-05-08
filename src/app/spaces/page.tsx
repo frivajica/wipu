@@ -30,7 +30,6 @@ export default function SpacesPage() {
     isCreating,
     isUpdating,
     isRemovingMember,
-    getSpaceMembers,
   } = useSpaces();
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
   const [selectedSpace, setSelectedSpace] = React.useState<Space | null>(null);
@@ -126,7 +125,7 @@ export default function SpacesPage() {
         <SpaceManageModal
           space={manageSpace}
           currentUserId={user.id}
-          members={getSpaceMembers(manageSpace.id)}
+          members={manageSpace.membersData || []}
           isOpen={!!manageSpace}
           onClose={() => setManageSpace(null)}
           onUpdateName={async (spaceId, name) => {

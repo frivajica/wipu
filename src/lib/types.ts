@@ -16,6 +16,7 @@ export interface Space {
   inviteCode: string;
   createdAt: string;
   isPersonal?: boolean;
+  membersData?: User[]; // Enriched in useSpaces, not in the DB
 }
 
 export interface LedgerItem {
