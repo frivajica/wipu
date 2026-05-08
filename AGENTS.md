@@ -113,6 +113,34 @@ const { data: items } = useQuery({
 const user = mockDb.getUserById(item.updatedBy); // ❌ Never do this
 ```
 
+### 3.4 Self-Documenting Code
+
+**Prefer readable code over comments.** If you need a comment to explain what code does, the code is not clear enough.
+
+**Use comments only for:**
+- **WHY, not WHAT** — Explain non-obvious decisions, business logic constraints, or technical tradeoffs
+- **TODO / FIXME** — Mark intentional tech debt or future work
+- **Workarounds** — Document known issues and why a hack is necessary
+- **API contracts** — Document route handler behavior, hook return shapes
+
+**Remove comments that:**
+- Restate the obvious (`// increment counter`, `// set state`)
+- Label JSX sections (`{/* Controls */}`, `{/* Mobile */}`)
+- Describe CSS classes (`// Primary: Indigo with depth`)
+- Explain React patterns visible in the code (`// useEffect cleanup`)
+
+**Correct:**
+```typescript
+// Debounce to avoid excessive API calls during rapid typing
+const debouncedSearch = useDebounce(query, 300);
+```
+
+**Incorrect:**
+```typescript
+// Set debounced search value
+const debouncedSearch = useDebounce(query, 300);
+```
+
 ---
 
 ## 4. Component Architecture
@@ -408,6 +436,7 @@ import { getSession } from "@/lib/session"; // ❌ Causes Turbopack module graph
 | Duplicated dropdown/menu logic | Reuse `Dropdown` primitive |
 | Components over 80 lines | Decompose into atomic sub-components |
 | Mixing concerns in `lib/utils.ts` | Split into domain-specific files |
+| Obvious inline comments | Refactor to self-documenting code or remove |
 
 ---
 
@@ -431,7 +460,8 @@ When tests are added:
 4. Keep components under 80 lines; decompose early.
 5. Enrich data in hooks or API routes, not components.
 6. Use spring presets from `lib/animations.ts`.
-7. Run `pnpm build` before committing.
+7. Ensure code is self-documenting before adding comments.
+8. Run `pnpm build` before committing.
 
 ### Commit Messages
 
@@ -445,4 +475,4 @@ fix: Resolve Z bug
 
 ---
 
-*Last updated: May 2026*
+*Last updated: May 7, 2026*
