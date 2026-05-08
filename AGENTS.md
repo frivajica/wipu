@@ -45,11 +45,14 @@ src/
 ├── app/                    # Next.js App Router pages
 │   ├── (auth)/             # Route group: login, register
 │   ├── api/                # HTTP API routes (auth, future endpoints)
-│   │   └── auth/
-│   │       ├── login/route.ts
-│   │       ├── register/route.ts
-│   │       └── logout/route.ts
+│   │   ├── auth/
+│   │   │   ├── login/route.ts
+│   │   │   ├── register/route.ts
+│   │   │   └── logout/route.ts
+│   │   ├── balances/       # Balance calculations
+│   │   └── debt-groups/    # Debt group endpoints
 │   ├── ledger/             # Main ledger page
+│   ├── debt/               # Debt tracking page
 │   └── spaces/             # Spaces management page
 ├── components/
 │   ├── ui/                 # Shared UI primitives (Button, Input, Modal, etc.)
@@ -59,25 +62,8 @@ src/
 │   │   ├── row/            # Row sub-components
 │   │   ├── period/         # Period group sub-components
 │   │   └── forms/          # Shared form components
+│   ├── debt/               # Debt domain components
 │   └── spaces/             # Spaces domain components
-├── hooks/
-│   ├── shared/             # Cross-domain reusable hooks
-│   ├── use-auth.ts         # Domain-specific hooks
-│   ├── use-ledger.ts
-│   └── use-spaces.ts
-├── stores/                 # Zustand stores
-├── lib/
-│   ├── utils.ts            # cn() ONLY
-│   ├── animations.ts       # Spring presets
-│   ├── formatting.ts       # Currency, date formatting
-│   ├── grouping.ts         # Period grouping logic
-│   ├── id-utils.ts         # ID generation
-│   ├── api-simulation.ts   # Mock delay utilities
-│   ├── session.ts          # Cookie session helpers (server-only)
-│   ├── types.ts            # Shared TypeScript types
-│   ├── constants.ts        # App constants
-│   └── data.ts             # MOCK DATABASE — DO NOT MODIFY STRUCTURE
-└── ...
 ```
 
 ### 3.2 Single Responsibility
@@ -199,9 +185,13 @@ Feature-specific hooks live at the root of `hooks/`:
 | Hook | Responsibility |
 |---|---|
 | `useAuth` | Login, register, logout, session management |
-| `useLedger` | Fetch, add, update, delete, reorder ledger items |
+| `useLedger` | Fetch, add, update, delete, reorder ledger items + balances |
 | `useSpaces` | Fetch, create, delete, leave spaces |
 | `useGroupedLedger` | Period grouping, pagination, sorting logic |
+| `useDebt` | Fetch debt groups and group balances |
+| `useDebtAutocomplete` | Returns debt description suggestions for autocomplete |
+| `useDebtItemLookup` | Returns a matching debt item by description |
+| `useDebtCategorySync` | Bulk syncs category across all debt items with same description |
 
 ### 5.3 Hook Conventions
 
@@ -251,7 +241,7 @@ Stores manage purely client-side state:
 |---|---|
 | `auth-store.ts` | User session, token, authentication status |
 | `space-store.ts` | Spaces list, active space ID |
-| `ui-store.ts` | Period type, smart date toggle, sort preferences, custom date range |
+| `ui-store.ts` | Period type, smart date toggle, sort preferences, custom date range, includesDebt |
 
 ### 6.2 TanStack Query — Server State
 
@@ -437,6 +427,8 @@ import { getSession } from "@/lib/session"; // ❌ Causes Turbopack module graph
 | Components over 80 lines | Decompose into atomic sub-components |
 | Mixing concerns in `lib/utils.ts` | Split into domain-specific files |
 | Obvious inline comments | Refactor to self-documenting code or remove |
+| Missing `type`/`groupId` on LedgerItem | Always include required fields when creating items |
+| Client hooks in server pages | Add `"use client"` directive or extract to client component |
 
 ---
 
@@ -475,4 +467,61 @@ fix: Resolve Z bug
 
 ---
 
-*Last updated: May 7, 2026*
+*Last updated: May 8, 2026*
+
+## 16. Debt Feature Architecture
+
+### 16.1 Data Model
+
+Debt tracking uses a two-level hierarchy:
+
+| Level | Field | Values |
+|---|---|---|
+| **Type** | `LedgerItem.type` | `"default"` or `"debt"` |
+| **Group** | `LedgerItem.groupId` | References `DebtGroup.id` |
+
+All ledger items have a `type`. Debt items additionally belong to a `DebtGroup`.
+
+### 16.2 Balance Calculations
+
+Balances are computed client-side via `mockDb.getBalances(spaceId, periodType)` to ensure consistency with the same `mockDb` instance that holds the items:
+
+| Balance | Calculation |
+|---|---|
+| `totalBalance` | Sum of all non-debt items + debt items |
+| `totalDebt` | Sum of all debt items (positive = owe more) |
+| `realBalance` | Sum of non-debt items only |
+
+The `includesDebt` toggle in `ui-store.ts` controls whether debt items are visually dimmed and whether debt pills show in period headers. All items remain in the list; only their visual weight changes.
+
+### 16.3 Visual Cues
+
+Debt items are differentiated by a left-edge color bar:
+- **Default items**: `border-l-border` (gray)
+- **Debt items**: `border-l-debt` (blue)
+
+### 16.4 API Routes
+
+| Route | Purpose |
+|---|---|
+| `GET /api/balances?spaceId=&periodType=` | Returns `LedgerBalances` |
+| `GET /api/debt-groups?spaceId=` | Returns list of `DebtGroup` |
+| `POST /api/debt-category-sync` | Bulk update debt item categories by description |
+
+### 16.5 Components
+
+| Component | Responsibility |
+|---|---|
+| `TabNav` | Ledger/Debt tab switching with animated active state |
+| `LedgerBalanceHeader` | Balance overview with includesDebt toggle, 2-pill layout (Total Debt + Total) |
+| `PeriodHeader` | Period label with 2-pill layout (Debt + Total), hover cards for Period/Cumulative breakdown |
+| `DebtBalanceHeader` | Debt-specific balance display (Total Debt + Real Balance) |
+| `DebtGroupCard` | Individual debt group with balance, permanently expanded item list, add form |
+| `DebtGroupList` | 2-column grid of debt group cards with staggered animations |
+| `DebtItemRow` | Compact debt item row with hover-to-delete |
+| `DebtItemList` | Sortable list of debt items with edit/delete handlers |
+| `DebtInlineEditRow` | Compact inline edit form for debt items |
+| `SortableDebtItemRow` | DnD wrapper for `DebtItemRow` |
+| `AddDebtItemRow` | Compact add form pre-configured for debt (groupId fixed) |
+| `GroupSelector` | Default/Debt dropdown for add item form |
+| `LedgerRow` | Ledger row with color cue bar (`border-l-debt` vs `border-l-border`) and dimming support |

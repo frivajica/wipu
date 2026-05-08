@@ -3,10 +3,10 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { LedgerItem } from "@/lib/types";
-import { LedgerRow } from "../row/ledger-row";
-import { InlineEditRow } from "../inline-edit-row";
+import { DebtItemRow } from "./debt-item-row";
+import { DebtInlineEditRow } from "./debt-inline-edit-row";
 
-interface SortableLedgerRowProps {
+interface SortableDebtItemRowProps {
   item: LedgerItem;
   userName: string;
   onEdit: (item: LedgerItem) => void;
@@ -21,21 +21,17 @@ interface SortableLedgerRowProps {
   }) => void;
   onCancelEdit: () => void;
   isOwned: boolean;
-  isDimmed?: boolean;
 }
 
-export function SortableLedgerRow({
+export function SortableDebtItemRow({
   item,
   userName,
-  onEdit,
   onDelete,
   isEditing,
   onStartEdit,
   onSaveEdit,
   onCancelEdit,
-  isOwned,
-  isDimmed,
-}: SortableLedgerRowProps) {
+}: SortableDebtItemRowProps) {
   const {
     attributes,
     listeners,
@@ -53,7 +49,7 @@ export function SortableLedgerRow({
   if (isEditing) {
     return (
       <div ref={setNodeRef} style={style}>
-        <InlineEditRow
+        <DebtInlineEditRow
           amount={item.amount}
           description={item.description}
           category={item.category}
@@ -67,16 +63,13 @@ export function SortableLedgerRow({
 
   return (
     <div ref={setNodeRef} style={style}>
-      <LedgerRow
+      <DebtItemRow
         item={item}
         userName={userName}
-        onEdit={onEdit}
+        onClick={onStartEdit}
         onDelete={onDelete}
         dragHandleProps={{ ...attributes, ...listeners }}
         isDragging={isDragging}
-        onStartEdit={onStartEdit}
-        isOwned={isOwned}
-        isDimmed={isDimmed}
       />
     </div>
   );

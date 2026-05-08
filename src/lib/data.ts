@@ -1,4 +1,5 @@
-import { User, Space, LedgerItem, Category } from "./types";
+import { DateTime } from "luxon";
+import { User, Space, LedgerItem, Category, DebtGroup, LedgerBalances } from "./types";
 import { getInitials, generateId, generateInviteCode } from "./id-utils";
 
 // Demo Users
@@ -50,6 +51,8 @@ export const mockLedgerItems: LedgerItem[] = [
     createdAt: "2026-04-01T10:00:00.000Z",
     updatedAt: "2026-04-01T10:00:00.000Z",
     sortOrder: 0,
+    type: "default",
+    groupId: null,
   },
   {
     id: generateId(),
@@ -63,6 +66,8 @@ export const mockLedgerItems: LedgerItem[] = [
     createdAt: "2026-04-05T14:30:00.000Z",
     updatedAt: "2026-04-05T14:30:00.000Z",
     sortOrder: 1,
+    type: "default",
+    groupId: null,
   },
   {
     id: generateId(),
@@ -76,6 +81,8 @@ export const mockLedgerItems: LedgerItem[] = [
     createdAt: "2026-04-15T09:00:00.000Z",
     updatedAt: "2026-04-15T09:00:00.000Z",
     sortOrder: 2,
+    type: "default",
+    groupId: null,
   },
   // March 2026
   {
@@ -90,6 +97,8 @@ export const mockLedgerItems: LedgerItem[] = [
     createdAt: "2026-03-01T10:00:00.000Z",
     updatedAt: "2026-03-01T10:00:00.000Z",
     sortOrder: 0,
+    type: "default",
+    groupId: null,
   },
   {
     id: generateId(),
@@ -103,6 +112,8 @@ export const mockLedgerItems: LedgerItem[] = [
     createdAt: "2026-03-15T09:00:00.000Z",
     updatedAt: "2026-03-15T09:00:00.000Z",
     sortOrder: 1,
+    type: "default",
+    groupId: null,
   },
   {
     id: generateId(),
@@ -116,6 +127,89 @@ export const mockLedgerItems: LedgerItem[] = [
     createdAt: "2026-03-15T09:00:00.000Z",
     updatedAt: "2026-03-15T09:00:00.000Z",
     sortOrder: 2,
+    type: "default",
+    groupId: null,
+  },
+  // Debt Items
+  {
+    id: generateId(),
+    spaceId: "space-1",
+    amount: 1200,
+    description: "Bicycle for the Play",
+    category: "Debt",
+    date: "2026-04-10",
+    createdBy: "user-1",
+    updatedBy: "user-1",
+    createdAt: "2026-04-10T11:00:00.000Z",
+    updatedAt: "2026-04-10T11:00:00.000Z",
+    sortOrder: 3,
+    type: "debt",
+    groupId: "debt-group-1",
+  },
+  {
+    id: generateId(),
+    spaceId: "space-1",
+    amount: -400,
+    description: "Bicycle for the Play",
+    category: "Debt Payment",
+    date: "2026-04-20",
+    createdBy: "user-1",
+    updatedBy: "user-1",
+    createdAt: "2026-04-20T11:00:00.000Z",
+    updatedAt: "2026-04-20T11:00:00.000Z",
+    sortOrder: 4,
+    type: "debt",
+    groupId: "debt-group-1",
+  },
+  {
+    id: generateId(),
+    spaceId: "space-1",
+    amount: 500,
+    description: "Laptop Repair",
+    category: "Debt",
+    date: "2026-04-12",
+    createdBy: "user-2",
+    updatedBy: "user-2",
+    createdAt: "2026-04-12T14:00:00.000Z",
+    updatedAt: "2026-04-12T14:00:00.000Z",
+    sortOrder: 5,
+    type: "debt",
+    groupId: "debt-group-2",
+  },
+  {
+    id: generateId(),
+    spaceId: "space-1",
+    amount: -150,
+    description: "Laptop Repair",
+    category: "Debt Payment",
+    date: "2026-04-25",
+    createdBy: "user-2",
+    updatedBy: "user-2",
+    createdAt: "2026-04-25T14:00:00.000Z",
+    updatedAt: "2026-04-25T14:00:00.000Z",
+    sortOrder: 6,
+    type: "debt",
+    groupId: "debt-group-2",
+  },
+];
+
+// Demo Debt Groups
+export const mockDebtGroups: DebtGroup[] = [
+  {
+    id: "debt-group-1",
+    spaceId: "space-1",
+    name: "General Debt",
+    color: "#3b82f6",
+    createdBy: "user-1",
+    createdAt: "2026-04-01T00:00:00.000Z",
+  },
+  {
+    id: "debt-group-2",
+    spaceId: "space-1",
+    name: "Laptop Repair",
+    color: "#3b82f6",
+    createdBy: "user-2",
+    createdAt: "2026-04-01T00:00:00.000Z",
   },
 ];
 
@@ -134,6 +228,7 @@ class MockDatabase {
   private users: User[] = [...mockUsers];
   private spaces: Space[] = [...mockSpaces];
   private ledgerItems: LedgerItem[] = [...mockLedgerItems];
+  private debtGroups: DebtGroup[] = [...mockDebtGroups];
   private categories: Category[] = [...mockCategories];
 
   // Users
@@ -249,6 +344,25 @@ class MockDatabase {
     return this.ledgerItems[index];
   }
 
+  updateLedgerItemsByDescription(
+    spaceId: string,
+    description: string,
+    updates: Partial<LedgerItem>
+  ): number {
+    let count = 0;
+    this.ledgerItems.forEach((item) => {
+      if (
+        item.spaceId === spaceId &&
+        item.description === description &&
+        item.type === "debt"
+      ) {
+        Object.assign(item, updates, { updatedAt: new Date().toISOString() });
+        count++;
+      }
+    });
+    return count;
+  }
+
   deleteLedgerItem(id: string): void {
     this.ledgerItems = this.ledgerItems.filter((i) => i.id !== id);
   }
@@ -280,6 +394,115 @@ class MockDatabase {
     };
     this.categories.push(newCategory);
     return newCategory;
+  }
+
+  // Debt Groups
+  getDebtGroups(spaceId?: string): DebtGroup[] {
+    if (spaceId) {
+      return this.debtGroups.filter((g) => g.spaceId === spaceId);
+    }
+    return this.debtGroups;
+  }
+
+  getDebtGroupById(id: string): DebtGroup | undefined {
+    return this.debtGroups.find((g) => g.id === id);
+  }
+
+  createDebtGroup(group: Omit<DebtGroup, "id" | "createdAt">): DebtGroup {
+    const newGroup: DebtGroup = {
+      ...group,
+      id: generateId(),
+      createdAt: new Date().toISOString(),
+    };
+    this.debtGroups.push(newGroup);
+    return newGroup;
+  }
+
+  // Balance Calculations
+  getBalances(spaceId: string, periodType = "monthly"): LedgerBalances {
+    const items = this.getLedgerItems(spaceId);
+
+    const periods = this.groupByPeriod(items, periodType);
+
+    let runningBalance = 0;
+    let runningDebt = 0;
+
+    const periodBalances = periods.map((period) => {
+      const balance = period.items
+        .filter((item) => item.type === "default")
+        .reduce((sum, item) => sum + item.amount, 0);
+
+      const debt = period.items
+        .filter((item) => item.type === "debt")
+        .reduce((sum, item) => sum + item.amount, 0);
+
+      runningBalance += balance;
+      runningDebt += debt;
+
+      return {
+        label: period.label,
+        balance,
+        debt,
+        runningBalance,
+        runningDebt,
+      };
+    });
+
+    const realBalance = periodBalances.reduce((sum, p) => sum + p.balance, 0);
+    const totalDebt = periodBalances.reduce((sum, p) => sum + p.debt, 0);
+
+    return {
+      totalBalance: realBalance + totalDebt,
+      totalDebt,
+      realBalance,
+      periods: periodBalances,
+    };
+  }
+
+  getDebtGroupBalance(spaceId: string, groupId: string): number {
+    return this.getLedgerItems(spaceId)
+      .filter((item) => item.type === "debt" && item.groupId === groupId)
+      .reduce((sum, item) => sum + item.amount, 0);
+  }
+
+  private groupByPeriod(
+    items: LedgerItem[],
+    periodType: string
+  ): Array<{ label: string; items: LedgerItem[] }> {
+    const groups = new Map<string, LedgerItem[]>();
+
+    for (const item of items) {
+      const dt = DateTime.fromISO(item.date);
+      let key: string;
+
+      if (periodType === "monthly") {
+        key = dt.toFormat("MMMM yyyy");
+      } else if (periodType === "weekly") {
+        const weekStart = dt.startOf("week");
+        const weekEnd = dt.endOf("week");
+        key = `${dt.toFormat("MMMM yyyy")} - Week ${dt.weekNumber} (${weekStart.toFormat("dd")} to ${weekEnd.toFormat("dd")})`;
+      } else if (periodType === "bi-weekly") {
+        const weekNumber = dt.weekNumber;
+        const biWeekNumber = Math.ceil(weekNumber / 2);
+        const biWeekStart = dt.startOf("week").minus({ weeks: (weekNumber - 1) % 2 });
+        const biWeekEnd = biWeekStart.plus({ weeks: 1 }).endOf("week");
+        key = `${dt.toFormat("MMMM yyyy")} - Bi-Week ${biWeekNumber} (${biWeekStart.toFormat("dd")} to ${biWeekEnd.toFormat("dd")})`;
+      } else {
+        key = item.date;
+      }
+
+      const existing = groups.get(key) || [];
+      existing.push(item);
+      groups.set(key, existing);
+    }
+
+    return Array.from(groups.entries())
+      .sort((a, b) => {
+        const aMin = Math.min(...a[1].map((i) => DateTime.fromISO(i.date).toMillis()));
+        const bMin = Math.min(...b[1].map((i) => DateTime.fromISO(i.date).toMillis()));
+        return aMin - bMin;
+      })
+      .map(([label, items]) => ({ label, items }));
   }
 }
 

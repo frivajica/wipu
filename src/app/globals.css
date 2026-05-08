@@ -25,6 +25,12 @@
   --color-border-hover: #d4d0cb;
   --color-border-focus: #4f46e5;
 
+  /* Debt */
+  --color-debt: #3b82f6;
+  --color-debt-light: #dbeafe;
+  --color-group-orange: #f97316;
+  --color-group-yellow: #eab308;
+
   /* ─── Radius Hierarchy ─── */
   --radius-2xl: 16px;
   --radius-xl: 12px;

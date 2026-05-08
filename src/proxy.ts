@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const SESSION_COOKIE = "wipu_session";
-const protectedRoutes = ["/ledger", "/spaces"];
+const protectedRoutes = ["/ledger", "/spaces", "/debt"];
 const publicRoutes = ["/login", "/register"];
 
 function matchesRoute(path: string, routes: string[]) {

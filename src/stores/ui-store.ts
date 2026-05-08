@@ -8,6 +8,7 @@ interface UIStore extends UIState {
   setSmartDateInheritance: (enabled: boolean) => void;
   setCustomDateRange: (range: { start: string; end: string } | null) => void;
   setSortByDate: (sort: boolean) => void;
+  setIncludesDebt: (includes: boolean) => void;
 }
 
 export const useUIStore = create<UIStore>()(
@@ -17,6 +18,7 @@ export const useUIStore = create<UIStore>()(
       smartDateInheritance: false,
       customDateRange: null,
       sortByDate: true,
+      includesDebt: true,
 
       setPeriodType: (periodType) => set({ periodType }),
 
@@ -26,6 +28,8 @@ export const useUIStore = create<UIStore>()(
       setCustomDateRange: (customDateRange) => set({ customDateRange }),
 
       setSortByDate: (sortByDate) => set({ sortByDate }),
+
+      setIncludesDebt: (includesDebt) => set({ includesDebt }),
     }),
     {
       name: STORAGE_KEYS.UI_STATE,

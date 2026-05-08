@@ -9,6 +9,10 @@ import { RowContextMenu } from "../row-context-menu";
 import { useMediaQuery } from "@/hooks/shared/use-media-query";
 import { cn } from "@/lib/utils";
 
+function getDebtColorClass(type: string) {
+  return type === "debt" ? "border-l-debt" : "border-l-border";
+}
+
 interface LedgerRowProps {
   item: LedgerItem;
   userName: string;
@@ -19,6 +23,7 @@ interface LedgerRowProps {
   isEditing?: boolean;
   onStartEdit?: () => void;
   isOwned?: boolean;
+  isDimmed?: boolean;
 }
 
 export function LedgerRow({
@@ -30,11 +35,15 @@ export function LedgerRow({
   isEditing,
   onStartEdit,
   isOwned,
+  isDimmed,
 }: LedgerRowProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const handleClick = () => {
     if (!isEditing && onStartEdit) onStartEdit();
   };
+
+  const dimClass = isDimmed ? "opacity-40" : "";
+  const dimBorderClass = isDimmed ? "border-l-border/30" : "";
 
   if (isDesktop === null) {
     return (
@@ -51,8 +60,10 @@ export function LedgerRow({
               className={cn(
                 "group grid md:hidden items-center transition-all duration-200 ease-out",
                 "grid-cols-[32px_1fr] gap-3 px-3 py-3",
-                "rounded-lg bg-surface border border-border/40",
+                "rounded-lg bg-surface border border-border/40 border-l-4",
+                isDimmed ? dimBorderClass : getDebtColorClass(item.type),
                 "shadow-card active:shadow-inner-active",
+                dimClass,
                 isDragging && "opacity-90 bg-surface-elevated shadow-xl rounded-lg z-50 scale-[1.02] border-primary-accent/20",
                 isEditing && "bg-primary-accent/4 border-primary-accent/20 shadow-glow-focus"
               )}
@@ -75,16 +86,18 @@ export function LedgerRow({
           onDelete={() => onDelete(item.id)}
           requiresConfirmation={!isOwned}
         >
-          <div
-            className={cn(
-              "group hidden md:grid items-center transition-all duration-200 ease-out",
-              "grid-cols-[32px_120px_1fr_1fr_100px_80px] gap-4 px-4 py-3",
-              "rounded-lg bg-surface border border-border/40",
-              "shadow-card hover:shadow-card-hover hover:border-border-hover",
-              isDragging && "opacity-90 bg-surface-elevated shadow-xl rounded-lg z-50 scale-[1.02] border-primary-accent/20",
-              isEditing && "bg-primary-accent/4 border-primary-accent/20 shadow-glow-focus"
-            )}
-          >
+            <div
+              className={cn(
+                "group hidden md:grid items-center transition-all duration-200 ease-out",
+                "grid-cols-[32px_120px_1fr_1fr_100px_80px] gap-4 px-4 py-3",
+                "rounded-lg bg-surface border border-border/40 border-l-4",
+                isDimmed ? dimBorderClass : getDebtColorClass(item.type),
+                "shadow-card hover:shadow-card-hover hover:border-border-hover",
+                dimClass,
+                isDragging && "opacity-90 bg-surface-elevated shadow-xl rounded-lg z-50 scale-[1.02] border-primary-accent/20",
+                isEditing && "bg-primary-accent/4 border-primary-accent/20 shadow-glow-focus"
+              )}
+            >
             <DragHandle
               {...dragHandleProps}
               isDragging={isDragging}
@@ -111,8 +124,10 @@ export function LedgerRow({
           className={cn(
             "group grid items-center transition-all duration-200 ease-out",
             "grid-cols-[32px_120px_1fr_1fr_100px_80px] gap-4 px-4 py-3",
-            "rounded-lg bg-surface border border-border/40",
+            "rounded-lg bg-surface border border-border/40 border-l-4",
+            isDimmed ? dimBorderClass : getDebtColorClass(item.type),
             "shadow-card hover:shadow-card-hover hover:border-border-hover",
+            dimClass,
             isDragging && "opacity-90 bg-surface-elevated shadow-xl rounded-lg z-50 scale-[1.02] border-primary-accent/20",
             isEditing && "bg-primary-accent/4 border-primary-accent/20 shadow-glow-focus"
           )}
@@ -145,8 +160,10 @@ export function LedgerRow({
           className={cn(
             "group grid items-center transition-all duration-200 ease-out",
             "grid-cols-[32px_1fr] gap-3 px-3 py-3",
-            "rounded-lg bg-surface border border-border/40",
+            "rounded-lg bg-surface border border-border/40 border-l-4",
+            isDimmed ? dimBorderClass : getDebtColorClass(item.type),
             "shadow-card active:shadow-inner-active",
+            dimClass,
             isDragging && "opacity-90 bg-surface-elevated shadow-xl rounded-lg z-50 scale-[1.02] border-primary-accent/20",
             isEditing && "bg-primary-accent/4 border-primary-accent/20 shadow-glow-focus"
           )}

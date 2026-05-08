@@ -15,12 +15,14 @@ import { SortResetCue } from "@/components/ledger/sort-reset-cue";
 import { InfiniteScrollLoader } from "@/components/ledger/infinite-scroll-loader";
 import { LedgerSkeleton } from "@/components/ledger/ledger-skeleton";
 import { LedgerEmptyState } from "@/components/ledger/ledger-empty-state";
+import { LedgerBalanceHeader } from "@/components/ledger/ledger-balance-header";
 import { DateTime } from "luxon";
 
 export default function LedgerPage() {
   const { user } = useAuth();
   const { activeSpaceId } = useSpaces();
-  const { items, isLoading, addItem, updateItem, deleteItem, reorderItems } = useLedger();
+  const { items, isLoading, balances, addItem, updateItem, deleteItem, reorderItems } = useLedger();
+  const includesDebt = useUIStore((s) => s.includesDebt);
 
   const periodType = useUIStore((s) => s.periodType);
   const smartDateInheritance = useUIStore((s) => s.smartDateInheritance);
@@ -38,6 +40,19 @@ export default function LedgerPage() {
     sortByDate,
   });
 
+  const periodStatsMap = React.useMemo(() => {
+    const map = new Map<string, { balance: number; debt: number; runningBalance: number; runningDebt: number }>();
+    balances.periods.forEach((p) => {
+      map.set(p.label, {
+        balance: p.balance,
+        debt: p.debt,
+        runningBalance: p.runningBalance,
+        runningDebt: p.runningDebt,
+      });
+    });
+    return map;
+  }, [balances.periods]);
+
   const defaultDateRange = React.useMemo(
     () => ({
       start: DateTime.now().minus({ months: 1 }).toISODate() || "",
@@ -52,6 +67,8 @@ export default function LedgerPage() {
       description: string;
       category: string;
       date: string;
+      type?: "default" | "debt";
+      groupId?: string | null;
     }) => {
       await addItem({
         ...data,
@@ -59,6 +76,8 @@ export default function LedgerPage() {
         createdBy: user?.id || "",
         updatedBy: user?.id || "",
         sortOrder: 0,
+        type: data.type || "default",
+        groupId: data.groupId || null,
       });
     },
     [addItem, activeSpaceId, user?.id]
@@ -136,6 +155,8 @@ export default function LedgerPage() {
         onReset={() => setSortByDate(false)}
       />
 
+      <LedgerBalanceHeader />
+
       <div className="space-y-2">
         <AnimatePresence mode="popLayout">
           {visibleKeys.map((key) => (
@@ -149,6 +170,8 @@ export default function LedgerPage() {
               onReorderItems={handleReorderItems}
               currentUserId={user?.id || ""}
               isDragEnabled={!sortByDate || smartDateInheritance}
+              periodStats={periodStatsMap.get(key)}
+              includesDebt={includesDebt}
             />
           ))}
         </AnimatePresence>

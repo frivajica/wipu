@@ -16,7 +16,18 @@ export interface Space {
   inviteCode: string;
   createdAt: string;
   isPersonal?: boolean;
-  membersData?: User[]; // Enriched in useSpaces, not in the DB
+  membersData?: User[];
+}
+
+export type LedgerItemType = "default" | "debt";
+
+export interface DebtGroup {
+  id: string;
+  spaceId: string;
+  name: string;
+  color: string;
+  createdBy: string;
+  createdAt: string;
 }
 
 export interface LedgerItem {
@@ -32,6 +43,8 @@ export interface LedgerItem {
   createdAt: string;
   updatedAt: string;
   sortOrder: number;
+  type: LedgerItemType;
+  groupId: string | null;
 }
 
 export interface Category {
@@ -47,6 +60,19 @@ export interface PeriodGroup {
   label: string;
   items: LedgerItem[];
   balance: number;
+}
+
+export interface LedgerBalances {
+  totalBalance: number;
+  totalDebt: number;
+  realBalance: number;
+  periods: Array<{
+    label: string;
+    balance: number;
+    debt: number;
+    runningBalance: number;
+    runningDebt: number;
+  }>;
 }
 
 export interface AuthState {
@@ -67,4 +93,5 @@ export interface UIState {
     end: string;
   } | null;
   sortByDate: boolean;
+  includesDebt: boolean;
 }

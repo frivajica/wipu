@@ -21,7 +21,7 @@ import { LedgerItem } from "@/lib/types";
 import { PeriodHeader } from "./period-header";
 import { AddItemRow } from "./add-item-row";
 import { LedgerItemList } from "./period/ledger-item-list";
-import { getPeriodBalance } from "@/lib/grouping";
+
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AnimatePresence } from "framer-motion";
@@ -36,6 +36,13 @@ interface PeriodGroupProps {
   onReorderItems: (itemIds: string[]) => void;
   currentUserId: string;
   isDragEnabled: boolean;
+  includesDebt: boolean;
+  periodStats?: {
+    balance: number;
+    debt: number;
+    runningBalance: number;
+    runningDebt: number;
+  };
 }
 
 export function PeriodGroup({
@@ -47,6 +54,8 @@ export function PeriodGroup({
   onReorderItems,
   currentUserId,
   isDragEnabled,
+  includesDebt,
+  periodStats,
 }: PeriodGroupProps) {
   const [isAdding, setIsAdding] = React.useState(false);
   const [editingId, setEditingId] = React.useState<string | null>(null);
@@ -54,7 +63,6 @@ export function PeriodGroup({
     items,
     (_state, newItems: LedgerItem[]) => newItems
   );
-  const balance = getPeriodBalance(items);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -81,6 +89,8 @@ export function PeriodGroup({
     description: string;
     category: string;
     date: string;
+    type?: "default" | "debt";
+    groupId?: string | null;
   }) => {
     onAddItem({
       ...data,
@@ -88,6 +98,8 @@ export function PeriodGroup({
       createdBy: currentUserId,
       updatedBy: currentUserId,
       sortOrder: items.length,
+      type: data.type || "default",
+      groupId: data.groupId || null,
     });
     setIsAdding(false);
   };
@@ -120,6 +132,7 @@ export function PeriodGroup({
       onCancelEdit={() => setEditingId(null)}
       currentUserId={currentUserId}
       isDragEnabled={isDragEnabled}
+      includesDebt={includesDebt}
     />
   );
 
@@ -130,7 +143,14 @@ export function PeriodGroup({
       transition={SPRING_DEFAULT}
       className="mb-10"
     >
-      <PeriodHeader label={label} balance={balance} />
+      <PeriodHeader
+        label={label}
+        balance={periodStats?.balance ?? 0}
+        debt={periodStats?.debt ?? 0}
+        runningBalance={periodStats?.runningBalance ?? 0}
+        runningDebt={periodStats?.runningDebt ?? 0}
+        includesDebt={includesDebt}
+      />
 
       <div className="hidden md:grid grid-cols-[32px_120px_1fr_1fr_100px_80px] gap-4 px-4 pb-2 text-xs font-semibold text-text-tertiary uppercase tracking-wider">
         <div></div>

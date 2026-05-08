@@ -2,11 +2,10 @@
 
 import { AnimatePresence } from "framer-motion";
 import { LedgerItem } from "@/lib/types";
-import { SortableLedgerRow } from "../row/sortable-ledger-row";
-import { InlineEditRow } from "../inline-edit-row";
-import { LedgerRow } from "../row/ledger-row";
+import { SortableDebtItemRow } from "./sortable-debt-item-row";
+import { DebtInlineEditRow } from "./debt-inline-edit-row";
 
-interface LedgerItemListProps {
+interface DebtItemListProps {
   items: LedgerItem[];
   editingId: string | null;
   onEdit: (item: LedgerItem) => void;
@@ -20,11 +19,9 @@ interface LedgerItemListProps {
   }) => void;
   onCancelEdit: () => void;
   currentUserId: string;
-  isDragEnabled: boolean;
-  includesDebt: boolean;
 }
 
-export function LedgerItemList({
+export function DebtItemList({
   items,
   editingId,
   onEdit,
@@ -33,18 +30,16 @@ export function LedgerItemList({
   onSaveEdit,
   onCancelEdit,
   currentUserId,
-  isDragEnabled,
-  includesDebt,
-}: LedgerItemListProps) {
+}: DebtItemListProps) {
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col">
       <AnimatePresence mode="popLayout" initial={false}>
         {items.map((item) => {
           const isEditing = editingId === item.id;
 
-          if (!isDragEnabled && isEditing) {
+          if (isEditing) {
             return (
-              <InlineEditRow
+              <DebtInlineEditRow
                 key={item.id}
                 amount={item.amount}
                 description={item.description}
@@ -56,9 +51,8 @@ export function LedgerItemList({
             );
           }
 
-          if (isDragEnabled) {
           return (
-            <SortableLedgerRow
+            <SortableDebtItemRow
               key={item.id}
               item={item}
               userName={item.updatedByName || "Unknown"}
@@ -69,22 +63,6 @@ export function LedgerItemList({
               onSaveEdit={onSaveEdit}
               onCancelEdit={onCancelEdit}
               isOwned={item.createdBy === currentUserId}
-              isDimmed={item.type === "debt" && !includesDebt}
-            />
-          );
-          }
-
-          return (
-            <LedgerRow
-              key={item.id}
-              item={item}
-              userName={item.updatedByName || "Unknown"}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              isEditing={isEditing}
-              onStartEdit={() => onStartEdit(item.id)}
-              isOwned={item.createdBy === currentUserId}
-              isDimmed={item.type === "debt" && !includesDebt}
             />
           );
         })}
