@@ -5,7 +5,6 @@ import { useSpaceStore } from "@/stores/space-store";
 import { mockDb } from "@/lib/data";
 
 export function useAutocomplete(type: "description" | "category", query: string) {
-  // Granular selector — only subscribes to activeSpaceId
   const activeSpaceId = useSpaceStore((s) => s.activeSpaceId);
 
   const suggestions = useMemo(() => {

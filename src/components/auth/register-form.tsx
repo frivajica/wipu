@@ -20,7 +20,7 @@ export function RegisterForm() {
       await register({ name, email, password });
       router.push("/ledger");
     } catch {
-      // Error handled by mutation
+      // noop — error surfaced by useMutationWithToast
     }
   };
 

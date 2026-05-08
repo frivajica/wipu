@@ -87,7 +87,6 @@ export function SpaceManageModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Manage "${space.name}"`}>
       <div className="space-y-6">
-        {/* Rename Section */}
         <div className="space-y-3">
           <label htmlFor="space-name" className="text-sm font-medium text-text-primary">
             Space Name
@@ -100,7 +99,6 @@ export function SpaceManageModal({
           />
         </div>
 
-        {/* Members Section */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-text-secondary" />
@@ -168,7 +166,6 @@ export function SpaceManageModal({
             })}
           </div>
 
-          {/* Empty state for additional spaces with no other members */}
           <AnimatePresence>
             {!space.isPersonal && otherMembers.length === 0 && (
               <motion.div

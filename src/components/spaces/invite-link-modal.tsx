@@ -19,7 +19,6 @@ export function InviteLinkModal({ isOpen, onClose, inviteCode }: InviteLinkModal
   const inviteLink = `https://wipu.app/join/${inviteCode}`;
   const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Cleanup timer on unmount or modal close
   React.useEffect(() => {
     return () => {
       if (timerRef.current) {

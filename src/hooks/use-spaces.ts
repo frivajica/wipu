@@ -16,14 +16,12 @@ export function useSpaces() {
 
   const { addToast } = useToastStore();
 
-  // Single source of truth: TanStack Query
   const { data: spaces = [], isLoading } = useQuery({
     queryKey: ["spaces", user?.id],
     queryFn: async () => {
       if (!user) return [];
       await simulateDelay(300);
       const rawSpaces = mockDb.getSpacesByUserId(user.id);
-      // Enrich member IDs with user data
       return rawSpaces.map((space) => ({
         ...space,
         membersData: space.members

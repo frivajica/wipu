@@ -22,7 +22,6 @@ export default function LedgerPage() {
   const { activeSpaceId } = useSpaces();
   const { items, isLoading, addItem, updateItem, deleteItem, reorderItems } = useLedger();
 
-  // Granular Zustand selectors — each subscribes to only one property
   const periodType = useUIStore((s) => s.periodType);
   const smartDateInheritance = useUIStore((s) => s.smartDateInheritance);
   const customDateRange = useUIStore((s) => s.customDateRange);
@@ -39,7 +38,6 @@ export default function LedgerPage() {
     sortByDate,
   });
 
-  // Memoize default date range to avoid recomputing on every render
   const defaultDateRange = React.useMemo(
     () => ({
       start: DateTime.now().minus({ months: 1 }).toISODate() || "",
@@ -93,7 +91,6 @@ export default function LedgerPage() {
 
   return (
     <div className="space-y-6 pb-safe">
-      {/* Controls */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold font-display text-text-primary">
@@ -117,7 +114,6 @@ export default function LedgerPage() {
         </div>
       </div>
 
-      {/* Custom Date Range */}
       <AnimatePresence>
         {periodType === "custom" && (
           <motion.div
@@ -135,13 +131,11 @@ export default function LedgerPage() {
         )}
       </AnimatePresence>
 
-      {/* Sort Reset Cue */}
       <SortResetCue
         visible={sortByDate && !smartDateInheritance}
         onReset={() => setSortByDate(false)}
       />
 
-      {/* Period Groups */}
       <div className="space-y-2">
         <AnimatePresence mode="popLayout">
           {visibleKeys.map((key) => (

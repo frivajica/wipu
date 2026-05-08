@@ -19,7 +19,7 @@ export function LoginForm() {
       await login({ email, password });
       router.push("/ledger");
     } catch {
-      // Error handled by mutation
+      // noop — error surfaced by useMutationWithToast
     }
   };
 

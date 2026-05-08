@@ -36,12 +36,9 @@ export function LedgerRow({
     if (!isEditing && onStartEdit) onStartEdit();
   };
 
-  // SSR / initial hydration: render both (CSS hides the wrong one)
-  // After hydration: render only the matching variant
   if (isDesktop === null) {
     return (
       <>
-        {/* Mobile */}
         <RowContextMenu
           onDelete={() => onDelete(item.id)}
           requiresConfirmation={!isOwned}
@@ -74,7 +71,6 @@ export function LedgerRow({
           </SwipeToDelete>
         </RowContextMenu>
 
-        {/* Desktop */}
         <RowContextMenu
           onDelete={() => onDelete(item.id)}
           requiresConfirmation={!isOwned}

@@ -34,12 +34,10 @@ export default async function proxy(req: NextRequest) {
   const session = cookie ? parseSession(cookie) : null;
   const isAuthenticated = !!session;
 
-  // Unauthenticated user hitting a protected route
   if (isProtectedRoute && !isAuthenticated) {
     return NextResponse.redirect(new URL("/login", req.nextUrl));
   }
 
-  // Authenticated user hitting a public route
   if (isPublicRoute && isAuthenticated) {
     return NextResponse.redirect(new URL("/ledger", req.nextUrl));
   }

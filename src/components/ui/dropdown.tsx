@@ -40,7 +40,6 @@ export function Dropdown({
               transition={SPRING_DEFAULT}
               className={cn(
                 "absolute top-full mt-2 bg-surface rounded-2xl z-50 overflow-hidden",
-                // Warm elevated shadow
                 "shadow-elevated border border-border/60",
                 "py-1.5",
                 align === "right" ? "right-0" : "left-0",

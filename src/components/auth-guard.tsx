@@ -14,14 +14,12 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const hasHydrated = useAuthStore((s) => s.hasHydrated);
   const hydrateFromCookie = useAuthStore((s) => s.hydrateFromCookie);
 
-  // Hydrate auth state from cookie on mount
   useEffect(() => {
     if (!hasHydrated) {
       hydrateFromCookie();
     }
   }, [hasHydrated, hydrateFromCookie]);
 
-  // Client-side navigation safety net
   useEffect(() => {
     if (!hasHydrated) return;
 
@@ -32,7 +30,6 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     }
   }, [isAuthenticated, pathname, router, hasHydrated]);
 
-  // Show spinner while hydrating from cookie
   if (!hasHydrated) {
     return (
       <div className="min-h-screen flex items-center justify-center">

@@ -47,7 +47,6 @@ export function SpaceCard({ space, onDelete, onLeave, onInvite, onManage, onClic
         </div>
       </div>
 
-      {/* Action bar */}
       <div className="flex items-center gap-2 flex-wrap min-h-[36px]" onClick={(e) => e.stopPropagation()}>
         {!isPersonal && isOwner && (
           <>

@@ -17,7 +17,6 @@ export function AnimatedNumber({
   className,
   duration = 0.5,
 }: AnimatedNumberProps) {
-  // Memoize spring config to avoid re-initialization on every render
   const springConfig = React.useMemo(
     () => ({
       stiffness: 100,

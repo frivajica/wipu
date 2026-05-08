@@ -36,7 +36,6 @@ export const useToastStore = create<ToastStore>((set) => ({
 export function ToastContainer() {
   const { toasts, removeToast } = useToastStore();
 
-  // Stable callback reference — prevents ToastItem useEffect from re-running
   const handleClose = React.useCallback(
     (id: string) => {
       removeToast(id);

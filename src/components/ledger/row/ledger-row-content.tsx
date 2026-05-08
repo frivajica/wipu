@@ -16,7 +16,6 @@ export function LedgerRowContent({ item, userName, onClick }: LedgerRowContentPr
 
   return (
     <>
-      {/* Mobile Layout */}
       <div
         className="md:hidden flex flex-col gap-1.5 cursor-pointer"
         onClick={onClick}
@@ -49,7 +48,6 @@ export function LedgerRowContent({ item, userName, onClick }: LedgerRowContentPr
         </div>
       </div>
 
-      {/* Desktop Layout */}
       <div
         className={cn(
           "hidden md:block font-semibold tabular-nums cursor-pointer",

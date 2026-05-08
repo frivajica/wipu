@@ -9,7 +9,6 @@ export function useLongPress(
   const timer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const isLongPress = React.useRef(false);
 
-  // Cleanup timer on unmount
   React.useEffect(() => {
     return () => {
       if (timer.current) {

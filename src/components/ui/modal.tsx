@@ -19,7 +19,6 @@ export function Modal({ isOpen, onClose, title, children, className }: ModalProp
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop: warmer, deeper blur */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -29,7 +28,6 @@ export function Modal({ isOpen, onClose, title, children, className }: ModalProp
             onClick={onClose}
           />
 
-          {/* Content: elevated card with warm shadow */}
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -37,9 +35,7 @@ export function Modal({ isOpen, onClose, title, children, className }: ModalProp
             transition={SPRING_DEFAULT}
             className={cn(
               "relative w-full max-w-md mx-auto",
-              // Surface with elevated warm shadow
               "bg-surface rounded-2xl shadow-elevated",
-              // Subtle warm border
               "border border-border/60",
               "p-6",
               className

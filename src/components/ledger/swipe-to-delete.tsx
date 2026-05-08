@@ -46,7 +46,6 @@ export function SwipeToDelete({ children, onDelete, className, requiresConfirmat
   return (
     <>
       <div className={cn("relative overflow-hidden", className)}>
-        {/* Delete background layer */}
         <motion.div
           className="absolute inset-0 flex items-center justify-end pr-4 bg-error rounded-lg"
           style={{ opacity }}
@@ -56,7 +55,6 @@ export function SwipeToDelete({ children, onDelete, className, requiresConfirmat
           </motion.div>
         </motion.div>
 
-        {/* Content layer */}
         <motion.div
           drag="x"
           dragConstraints={{ left: -150, right: 0 }}

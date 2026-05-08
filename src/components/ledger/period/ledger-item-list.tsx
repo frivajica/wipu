@@ -35,7 +35,6 @@ export function LedgerItemList({
   isDragEnabled,
 }: LedgerItemListProps) {
   return (
-    // Individual row cards with gap — no continuous divide-y
     <div className="flex flex-col gap-2">
       <AnimatePresence mode="popLayout" initial={false}>
         {items.map((item) => {

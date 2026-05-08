@@ -42,12 +42,9 @@ export function LedgerRowDesktop({
         className={cn(
           "group hidden md:grid items-center transition-all duration-200 ease-out",
           "grid-cols-[32px_120px_1fr_1fr_100px_80px] gap-4 px-4 py-3",
-          // Card shell: individual rounded row card
           "rounded-xl bg-surface border border-border/40",
           "shadow-card hover:shadow-card-hover hover:border-border-hover",
-          // Dragging state
           isDragging && "opacity-90 bg-surface-elevated shadow-xl rounded-xl z-50 scale-[1.02] border-primary-accent/20",
-          // Editing state: subtle indigo tint
           isEditing && "bg-primary-accent/4 border-primary-accent/20 shadow-glow-focus"
         )}
       >

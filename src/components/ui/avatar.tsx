@@ -21,7 +21,6 @@ const sizePixels = {
   lg: 40,
 };
 
-// Stable color array — defined outside component to avoid recreation
 const bgColors = [
   "bg-blue-500",
   "bg-emerald-500",
