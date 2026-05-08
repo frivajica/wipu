@@ -45,6 +45,7 @@ Wipu is a Progressive Web App (PWA) designed for couples and small teams (up to 
 | [luxon](https://moment.github.io/luxon/) | Date utilities and period grouping |
 | [lucide-react](https://lucide.dev/) | Consistent, clean icon set |
 | [Zod](https://zod.dev/) | Schema validation |
+| [server-only](https://www.npmjs.com/package/server-only) | Server-only module boundary enforcement |
 
 ---
 
@@ -59,7 +60,7 @@ Wipu is a Progressive Web App (PWA) designed for couples and small teams (up to 
 
 ```bash
 # Clone the repository
-git clone <repo-url>
+git clone https://github.com/frivajica/wipu.git
 cd wipu
 
 # Install dependencies
@@ -101,6 +102,11 @@ The codebase follows a **domain-organized** structure (by feature, not by techni
 src/
 ├── app/                    # Next.js App Router pages
 │   ├── (auth)/             # Route group: login, register
+│   ├── api/                # HTTP API routes (auth, future endpoints)
+│   │   └── auth/
+│   │       ├── login/route.ts
+│   │       ├── register/route.ts
+│   │       └── logout/route.ts
 │   ├── ledger/             # Main ledger page
 │   └── spaces/             # Spaces management page
 ├── components/
@@ -126,6 +132,7 @@ src/
 │   ├── grouping.ts         # Period grouping logic
 │   ├── id-utils.ts         # ID & invite code generation
 │   ├── api-simulation.ts   # Mock delay utilities
+│   ├── session.ts          # Cookie session helpers (server-only)
 │   ├── types.ts            # Shared TypeScript types
 │   ├── constants.ts        # App constants
 │   └── data.ts             # Mock database (will be replaced by backend)

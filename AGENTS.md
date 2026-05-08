@@ -30,6 +30,7 @@ This document is the single source of truth for architectural decisions, coding 
 | Date Utils | luxon | 3.6.1 | Period grouping, formatting |
 | Icons | lucide-react | 0.487.0 | MIT license |
 | Forms | Native + Zod | 3.24.3 | Validation |
+| Server Boundaries | server-only | 0.0.1 | Prevents client imports of server-only modules |
 
 ---
 
@@ -43,6 +44,11 @@ The `src/` directory is organized by domain/feature, not by technical role:
 src/
 ├── app/                    # Next.js App Router pages
 │   ├── (auth)/             # Route group: login, register
+│   ├── api/                # HTTP API routes (auth, future endpoints)
+│   │   └── auth/
+│   │       ├── login/route.ts
+│   │       ├── register/route.ts
+│   │       └── logout/route.ts
 │   ├── ledger/             # Main ledger page
 │   └── spaces/             # Spaces management page
 ├── components/
@@ -67,6 +73,7 @@ src/
 │   ├── grouping.ts         # Period grouping logic
 │   ├── id-utils.ts         # ID generation
 │   ├── api-simulation.ts   # Mock delay utilities
+│   ├── session.ts          # Cookie session helpers (server-only)
 │   ├── types.ts            # Shared TypeScript types
 │   ├── constants.ts        # App constants
 │   └── data.ts             # MOCK DATABASE — DO NOT MODIFY STRUCTURE
@@ -174,6 +181,36 @@ Feature-specific hooks live at the root of `hooks/`:
 - **No inline delays:** Use `simulateDelay(ms)` from `lib/api-simulation.ts` instead of `await new Promise((resolve) => setTimeout(resolve, 300))`.
 - **Mutation factory:** Use `useMutationWithToast` for all mutations to ensure consistent invalidation and user feedback.
 
+### 5.4 API Route Conventions
+
+HTTP API routes live under `app/api/` and follow these patterns:
+
+| Convention | Rule |
+|---|---|
+| **Flat structure** | `app/api/auth/login/route.ts` — no route groups for APIs |
+| **Method handlers** | Export `GET`, `POST`, `PUT`, `DELETE` as named async functions |
+| **Error format** | Always return `{ error: string }` JSON with appropriate status codes |
+| **Validation** | Manual validation for now; add Zod schemas when integrating real backend |
+| **Cookie handling** | Use `next/headers` `cookies()` in route handlers; never in proxy.ts |
+| **Data enrichment** | Compute derived values (e.g., `defaultSpaceId`) server-side before responding |
+
+**Correct:** Route handler returns enriched data.
+```typescript
+// app/api/auth/login/route.ts — CORRECT
+export async function POST(request: NextRequest) {
+  const body = await request.json();
+  const user = await authenticate(body.email, body.password);
+  const spaces = await getUserSpaces(user.id);
+  return NextResponse.json({ user, defaultSpaceId: spaces[0]?.id ?? null });
+}
+```
+
+**Incorrect:** Route returns raw user, hook computes spaces.
+```typescript
+// app/api/auth/login/route.ts — INCORRECT
+return NextResponse.json({ user }); // ❌ Hook should not call mockDb after mutation
+```
+
 ---
 
 ## 6. State Management
@@ -211,6 +248,21 @@ const addItem = useMutationWithToast({
   invalidateKeys: [["ledger", activeSpaceId]],
 });
 ```
+
+### 6.4 Auth Architecture
+
+Two-tier defense for route protection:
+
+| Layer | Mechanism | Purpose |
+|---|---|---|
+| **Server** | `proxy.ts` | Redirects unauthenticated users before page renders |
+| **Client** | `AuthGuard` component | Fallback redirect for edge cases |
+
+**Cookie sessions:** 7-day expiry, `httpOnly: false` (client reads for Zustand hydration), `sameSite: lax`.
+
+**No Zustand persist for auth:** The auth store is hydrated from the cookie on mount, not from localStorage. This prevents stale session state and hydration mismatches.
+
+**Pattern:** Hooks call HTTP API routes (`/api/auth/*`) via `fetch()`, not server actions. This aligns with the Supabase migration path and eliminates bundler boundary issues.
 
 ---
 
@@ -315,9 +367,31 @@ An autocomplete input should decompose into:
 
 1. **`lib/data.ts` is the mock DB.** It will be replaced.
 2. **Never import `mockDb` in `.tsx` components.**
-3. **Enrich data in hooks.** If a component needs user names, the hook should attach them.
+3. **Enrich data in hooks or API routes.** If a component needs user names, the hook should attach them. Server-side enrichment happens in API routes.
 4. **Use `simulateDelay()` for mock latency.** Do not write inline `setTimeout` promises.
 5. **Consistent mutation pattern:** `useMutationWithToast` + invalidate queries.
+
+### 12.1 Server-Only Boundaries
+
+Modules that import `next/headers`, `next/cookies`, or other server-only APIs must include `import "server-only"` at the top:
+
+```typescript
+// lib/session.ts
+import "server-only";
+import { cookies } from "next/headers";
+```
+
+This throws a build-time error if any client component accidentally imports the module.
+
+**Critical:** Never import server-only utilities into `proxy.ts`. Proxy files run in a different compilation context and Turbopack cannot resolve the server-only boundary across contexts. Inline cookie parsing directly in proxy.ts instead.
+
+```typescript
+// proxy.ts — CORRECT
+const cookie = req.cookies.get("wipu_session")?.value;
+
+// proxy.ts — INCORRECT
+import { getSession } from "@/lib/session"; // ❌ Causes Turbopack module graph stall
+```
 
 ---
 
@@ -327,7 +401,9 @@ An autocomplete input should decompose into:
 |---|---|
 | Hardcoded spring configs | Import from `lib/animations.ts` |
 | `mockDb` calls in components | Move to hooks, enrich data there |
+| `mockDb` calls in hook `onSuccess` | Move to API routes, return enriched data |
 | Inline `await new Promise(...)` | Use `simulateDelay()` from `lib/api-simulation.ts` |
+| Importing server-only modules in proxy.ts | Inline cookie parsing directly in proxy.ts |
 | Duplicated form structures | Extract `*FormFields` component |
 | Duplicated dropdown/menu logic | Reuse `Dropdown` primitive |
 | Components over 80 lines | Decompose into atomic sub-components |
@@ -353,7 +429,7 @@ When tests are added:
 2. If shared UI is needed, check `components/ui/` first.
 3. If shared logic is needed, check `hooks/shared/` first.
 4. Keep components under 80 lines; decompose early.
-5. Enrich data in hooks, not components.
+5. Enrich data in hooks or API routes, not components.
 6. Use spring presets from `lib/animations.ts`.
 7. Run `pnpm build` before committing.
 
