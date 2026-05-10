@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -14,15 +13,15 @@ export function SortResetCue({ visible, onReset }: SortResetCueProps) {
     <AnimatePresence>
       {visible && (
         <motion.div
-          initial={{ opacity: 0, y: -10, height: 0 }}
-          animate={{ opacity: 1, y: 0, height: "auto" }}
-          exit={{ opacity: 0, y: -10, height: 0 }}
+          initial={{ opacity: 0, y: -10, height: 0, marginBottom: -24 }}
+          animate={{ opacity: 1, y: 0, height: "auto", marginBottom: 0 }}
+          exit={{ opacity: 0, y: -10, height: 0, marginBottom: -24 }}
           transition={{ type: "spring" as const, stiffness: 400, damping: 35 }}
           className="overflow-hidden"
         >
           <div
             className={cn(
-              "mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200",
+              "p-3 rounded-lg bg-amber-50 border border-amber-200",
               "flex items-center justify-between"
             )}
           >

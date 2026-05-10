@@ -114,7 +114,7 @@ export default function LedgerPage() {
   if (isLoading) return <LedgerSkeleton />;
 
   return (
-    <div className="space-y-6 pb-safe">
+    <div className="flex flex-col gap-6 pb-safe">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold font-display text-text-primary">
@@ -141,10 +141,11 @@ export default function LedgerPage() {
       <AnimatePresence>
         {periodType === "custom" && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
+            initial={{ opacity: 0, height: 0, marginBottom: -24 }}
+            animate={{ opacity: 1, height: "auto", marginBottom: 0 }}
+            exit={{ opacity: 0, height: 0, marginBottom: -24 }}
             transition={{ type: "spring" as const, stiffness: 400, damping: 35 }}
+            className="overflow-hidden"
           >
             <CustomDateRange
               start={customDateRange?.start || defaultDateRange.start}
