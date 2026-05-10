@@ -79,8 +79,10 @@ export function PeriodGroup({
       const oldIndex = optimisticItems.findIndex((item) => item.id === active.id);
       const newIndex = optimisticItems.findIndex((item) => item.id === over.id);
       const newItems = arrayMove(optimisticItems, oldIndex, newIndex);
-      addOptimisticItems(newItems);
-      onReorderItems(newItems.map((item) => item.id));
+      React.startTransition(() => {
+        addOptimisticItems(newItems);
+        onReorderItems(newItems.map((item) => item.id));
+      });
     }
   };
 
@@ -141,7 +143,7 @@ export function PeriodGroup({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={SPRING_DEFAULT}
-      className="mb-10"
+      className="mb-8"
     >
       <PeriodHeader
         label={label}
@@ -152,7 +154,7 @@ export function PeriodGroup({
         includesDebt={includesDebt}
       />
 
-      <div className="hidden md:grid grid-cols-[32px_120px_1fr_1fr_100px_80px] gap-4 px-4 pb-2 text-xs font-semibold text-text-tertiary uppercase tracking-wider">
+      <div className="hidden md:grid grid-cols-[28px_100px_1fr_1fr_90px_64px] gap-3 px-3 pb-2 text-xs font-semibold text-text-tertiary uppercase tracking-wider">
         <div></div>
         <div>Amount</div>
         <div>Description</div>
@@ -199,7 +201,7 @@ export function PeriodGroup({
             exit={{ opacity: 0 }}
             onClick={() => setIsAdding(true)}
             className={cn(
-              "w-full mt-2 py-3 px-4 flex items-center justify-center gap-2 text-sm font-medium cursor-pointer",
+              "w-full mt-2 py-2.5 px-3 flex items-center justify-center gap-2 text-sm font-medium cursor-pointer",
               "rounded-xl bg-surface border border-border/40 border-dashed",
               "text-text-tertiary hover:text-primary-accent hover:border-primary-accent/30 hover:bg-primary-accent/2",
               "transition-all duration-200 ease-out"

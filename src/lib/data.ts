@@ -310,10 +310,11 @@ class MockDatabase {
 
   // Ledger Items
   getLedgerItems(spaceId?: string): LedgerItem[] {
+    let items = this.ledgerItems;
     if (spaceId) {
-      return this.ledgerItems.filter((i) => i.spaceId === spaceId);
+      items = items.filter((i) => i.spaceId === spaceId);
     }
-    return this.ledgerItems;
+    return [...items].sort((a, b) => a.sortOrder - b.sortOrder);
   }
 
   getLedgerItemById(id: string): LedgerItem | undefined {

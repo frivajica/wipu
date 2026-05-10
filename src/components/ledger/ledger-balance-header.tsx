@@ -19,9 +19,9 @@ export function LedgerBalanceHeader() {
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={SPRING_GENTLE}
-      className="rounded-2xl bg-surface p-4 shadow-sm border border-border"
+      className="rounded-xl bg-surface p-3 shadow-sm border border-border"
     >
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-2.5">
         <h2 className="text-base font-semibold text-text">Balance Overview</h2>
         <label className="flex items-center gap-2 cursor-pointer">
           <span className="text-sm text-text-secondary">
@@ -42,7 +42,7 @@ export function LedgerBalanceHeader() {
         </label>
       </div>
 
-      <div className="flex justify-between gap-3">
+      <div className="flex justify-between gap-2">
         <AnimatePresence mode="popLayout">
           {hasDebt && includesDebt && (
             <motion.div
@@ -92,11 +92,11 @@ function BalancePill({
   color: string;
 }) {
   return (
-    <div className="rounded-xl bg-surface-strong p-3 text-center">
-      <p className="text-[10px] font-medium text-text-secondary uppercase tracking-wide mb-0.5">
+    <div className="rounded-xl bg-surface-strong p-2.5 text-center">
+      <p className="text-[9px] font-medium text-text-secondary uppercase tracking-wide mb-0.5">
         {label}
       </p>
-      <p className={`text-lg font-bold ${color}`}>{formatCurrency(value)}</p>
+      <p className={`text-base font-bold ${color}`}>{formatCurrency(value)}</p>
     </div>
   );
 }

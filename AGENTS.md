@@ -138,7 +138,7 @@ When a component grows too large, decompose following these patterns:
 | Pattern | Example | Responsibility |
 |---|---|---|
 | **Content** | `LedgerRowContent.tsx` | Shared presentation markup (amount, description, category, date, avatar) |
-| **Platform Variants** | `LedgerRowDesktop.tsx` / `LedgerRowMobile.tsx` | Platform-specific layout and interactions |
+| **Responsive Layout** | `LedgerRow.tsx` | Single component with responsive grid (`md:` breakpoints), `SwipeToDelete` only on mobile via `md:hidden` wrapper |
 | **DnD Wrapper** | `SortableLedgerRow.tsx` | Drag-and-drop logic wrapping the presentational component |
 | **Form Fields** | `LedgerFormFields.tsx` | Shared form input grid used by add and edit rows |
 | **Animated Shell** | `AuthFormLayout.tsx` | Reusable motion wrapper with shake/success animations |
@@ -328,7 +328,7 @@ Component-level motion should still be wrapped where appropriate.
 | `lib/constants.ts` | App-wide constants | Component-specific values |
 | `lib/data.ts` | **MOCK DATABASE** | UI code, hooks, components |
 
-**`lib/data.ts` is sacred.** It will be replaced by a real backend. Do not modify its structure. Do not import it in `.tsx` components.
+**`lib/data.ts` is sacred.** It will be replaced by a real backend. Do not modify its data shape. Do not import it in `.tsx` components. Mock methods can be enhanced to mirror real backend behavior (e.g., sorting by `sortOrder`, filtering), but the types and field names must stay stable.
 
 ---
 
@@ -429,6 +429,8 @@ import { getSession } from "@/lib/session"; // ❌ Causes Turbopack module graph
 | Obvious inline comments | Refactor to self-documenting code or remove |
 | Missing `type`/`groupId` on LedgerItem | Always include required fields when creating items |
 | Client hooks in server pages | Add `"use client"` directive or extract to client component |
+| `useOptimistic` called outside transition | Wrap update and side effects in `React.startTransition()` |
+| `getLedgerItems()` not sorted by `sortOrder` | Add `[...items].sort((a, b) => a.sortOrder - b.sortOrder)` to mirror backend `ORDER BY` |
 
 ---
 
@@ -467,7 +469,7 @@ fix: Resolve Z bug
 
 ---
 
-*Last updated: May 8, 2026*
+*Last updated: May 9, 2026*
 
 ## 16. Debt Feature Architecture
 

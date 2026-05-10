@@ -15,14 +15,14 @@ export function DragHandle({ isDragging, className, ...props }: DragHandleProps)
       className={cn(
         "flex items-center justify-center text-text-tertiary hover:text-text-secondary",
         "transition-colors touch-none select-none",
-        "md:w-8 md:h-8 w-11 h-11",
-        "focus-visible:outline-none focus-visible:shadow-glow-focus rounded-lg",
+        "w-7 h-7",
+        "focus-visible:outline-none focus-visible:shadow-glow-focus rounded-md",
         isDragging ? "cursor-grabbing text-text-primary" : "cursor-grab",
         className
       )}
       aria-label="Drag to reorder"
     >
-      <GripVertical className="h-5 w-5" />
+      <GripVertical className="h-4 w-4" />
     </button>
   );
 }

@@ -67,12 +67,12 @@ export function InlineEditRow({
       onSubmit={handleSubmit}
       onKeyDown={handleKeyDown}
       className={cn(
-        "px-4 py-3.5",
+        "px-3 py-2.5",
         "rounded-xl bg-primary-accent/4 border border-primary-accent/20",
         "shadow-glow-focus"
       )}
     >
-      <div className="grid md:grid-cols-[120px_1fr_1fr_120px_80px] md:gap-4 grid-cols-[32px_1fr] gap-3 items-center">
+      <div className="grid md:grid-cols-[100px_1fr_1fr_100px_64px] md:gap-3 grid-cols-[28px_1fr] gap-2 items-center">
         <LedgerFormFields
           amount={editAmount}
           description={editDescription}
@@ -83,14 +83,14 @@ export function InlineEditRow({
           onCategoryChange={setEditCategory}
           onDateChange={setEditDate}
           amountRef={amountRef}
-          amountClassName="h-9 bg-surface"
+          amountClassName="h-8 bg-surface"
         />
 
         <div className="flex items-center gap-1.5">
-          <Button type="submit" size="sm" className="h-8 px-2.5">
+          <Button type="submit" size="sm" className="h-7 px-2">
             <Check className="h-4 w-4" />
           </Button>
-          <Button type="button" variant="ghost" size="sm" className="h-8 px-2" onClick={onCancel}>
+          <Button type="button" variant="ghost" size="sm" className="h-7 px-2" onClick={onCancel}>
             <X className="h-4 w-4" />
           </Button>
         </div>

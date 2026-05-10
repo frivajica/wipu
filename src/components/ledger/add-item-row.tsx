@@ -114,12 +114,12 @@ export function AddItemRow({ onSubmit, onCancel, defaultDate }: AddItemRowProps)
     <form
       onSubmit={handleSubmit}
       className={cn(
-        "px-4 py-3.5",
+        "px-3 py-2.5",
         "rounded-xl bg-primary-accent/3 border border-primary-accent/15",
         "shadow-card"
       )}
     >
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-2 mb-2.5">
         <GroupSelector value={groupId} onChange={handleGroupChange} />
         {itemType === "debt" && debtSuggestions.length > 0 && (
           <div className="flex gap-1">
@@ -141,7 +141,7 @@ export function AddItemRow({ onSubmit, onCancel, defaultDate }: AddItemRowProps)
         )}
       </div>
 
-      <div className="grid md:grid-cols-[120px_1fr_1fr_120px_80px] md:gap-4 grid-cols-[32px_1fr] gap-3 items-start">
+      <div className="grid md:grid-cols-[100px_1fr_1fr_100px_64px] md:gap-3 grid-cols-[28px_1fr] gap-2 items-start">
         <LedgerFormFields
           amount={amount}
           description={description}
@@ -153,14 +153,14 @@ export function AddItemRow({ onSubmit, onCancel, defaultDate }: AddItemRowProps)
           onDateChange={setDate}
           onKeyDown={handleKeyDown}
           amountRef={amountRef}
-          amountClassName={cn("h-10 bg-surface", amountColor)}
+          amountClassName={cn("h-9 bg-surface", amountColor)}
         />
 
         <div className="flex items-center gap-2">
           <button
             type="submit"
             className={cn(
-              "h-9 w-9 flex items-center justify-center rounded-lg",
+              "h-8 w-8 flex items-center justify-center rounded-lg",
               "bg-primary-accent text-white shadow-card",
               "hover:bg-primary-accent-hover hover:shadow-card-hover hover:-translate-y-px",
               "active:scale-[0.97] active:shadow-inner-active",
@@ -169,9 +169,9 @@ export function AddItemRow({ onSubmit, onCancel, defaultDate }: AddItemRowProps)
             )}
             aria-label="Add transaction"
           >
-            <Plus className="h-5 w-5" />
+            <Plus className="h-4 w-4" />
           </button>
-          <Button type="button" variant="ghost" size="sm" className="h-8 px-2" onClick={onCancel}>
+          <Button type="button" variant="ghost" size="sm" className="h-7 px-2" onClick={onCancel}>
             <X className="h-4 w-4" />
           </Button>
         </div>

@@ -27,8 +27,8 @@ export function PeriodHeader({
   const total = includesDebt ? runningBalance + runningDebt : runningBalance;
 
   return (
-    <div className="mb-4 px-1">
-      <h3 className="text-xl font-bold font-display text-text-primary tracking-tight mb-3">
+    <div className="mb-3 px-1">
+      <h3 className="text-xl font-bold font-display text-text-primary tracking-tight mb-2">
         {label}
       </h3>
       <div className="flex justify-end gap-2">
@@ -90,8 +90,8 @@ function HoverPill({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <div className="rounded-lg bg-surface-strong px-3 py-2 text-center cursor-default">
-        <p className="text-[10px] font-semibold text-text-tertiary uppercase tracking-wider mb-0.5">
+      <div className="rounded-lg bg-surface-strong px-2.5 py-1.5 text-center cursor-default">
+        <p className="text-[9px] font-semibold text-text-tertiary uppercase tracking-wider mb-0.5">
           {label}
         </p>
         <p className={cn("text-sm font-bold tabular-nums", color)}>
@@ -110,7 +110,7 @@ function HoverPill({
               "absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50",
               "min-w-[180px] rounded-xl bg-surface-elevated",
               "border border-border/60 shadow-elevated",
-              "px-4 py-3 space-y-2"
+              "px-3 py-2.5 space-y-2"
             )}
           >
             <div className="flex items-center justify-between text-sm">
