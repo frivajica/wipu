@@ -5,10 +5,11 @@ import { cn } from "@/lib/utils";
 
 interface SortResetCueProps {
   visible: boolean;
+  sortField: string | null;
   onReset: () => void;
 }
 
-export function SortResetCue({ visible, onReset }: SortResetCueProps) {
+export function SortResetCue({ visible, sortField, onReset }: SortResetCueProps) {
   return (
     <AnimatePresence>
       {visible && (
@@ -27,7 +28,7 @@ export function SortResetCue({ visible, onReset }: SortResetCueProps) {
               )}
             >
               <p className="text-sm text-amber-800">
-                Sorting by date. Drag & drop is disabled.
+                Sorting by {sortField}. Drag & drop is disabled.
               </p>
               <button
                 onClick={onReset}

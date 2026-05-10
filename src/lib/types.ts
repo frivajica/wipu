@@ -92,6 +92,7 @@ export interface UIState {
     start: string;
     end: string;
   } | null;
-  sortByDate: boolean;
+  sortField: "date" | "amount" | "description" | "category" | "profile" | null;
+  sortDirection: "asc" | "desc";
   includesDebt: boolean;
 }

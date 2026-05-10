@@ -27,17 +27,19 @@ export default function LedgerPage() {
   const periodType = useUIStore((s) => s.periodType);
   const reorderByDate = useUIStore((s) => s.reorderByDate);
   const customDateRange = useUIStore((s) => s.customDateRange);
-  const sortByDate = useUIStore((s) => s.sortByDate);
+  const sortField = useUIStore((s) => s.sortField);
+  const sortDirection = useUIStore((s) => s.sortDirection);
   const setPeriodType = useUIStore((s) => s.setPeriodType);
   const setReorderByDate = useUIStore((s) => s.setReorderByDate);
   const setCustomDateRange = useUIStore((s) => s.setCustomDateRange);
-  const setSortByDate = useUIStore((s) => s.setSortByDate);
+  const setSort = useUIStore((s) => s.setSort);
 
   const { groupedItems, visibleKeys, hasMore, loadMore } = useGroupedLedger({
     items,
     periodType,
     customDateRange,
-    sortByDate,
+    sortField,
+    sortDirection,
   });
 
   const periodStatsMap = React.useMemo(() => {
@@ -160,8 +162,9 @@ export default function LedgerPage() {
         </AnimatePresence>
 
         <SortResetCue
-          visible={sortByDate && !reorderByDate}
-          onReset={() => setSortByDate(false)}
+          visible={sortField !== null && !reorderByDate}
+          sortField={sortField}
+          onReset={() => setSort(null)}
         />
       </div>
 

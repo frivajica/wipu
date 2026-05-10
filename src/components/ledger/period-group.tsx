@@ -23,7 +23,8 @@ import { PeriodHeader } from "./period-header";
 import { AddItemRow } from "./add-item-row";
 import { LedgerItemList } from "./period/ledger-item-list";
 
-import { Plus } from "lucide-react";
+import { Plus, ArrowUp, ArrowDown } from "lucide-react";
+import { useUIStore } from "@/stores/ui-store";
 import { cn } from "@/lib/utils";
 import { AnimatePresence } from "framer-motion";
 import { SPRING_DEFAULT } from "@/lib/animations";
@@ -65,6 +66,29 @@ export function PeriodGroup({
   includesDebt,
   periodStats,
 }: PeriodGroupProps) {
+  const sortField = useUIStore((s) => s.sortField);
+  const sortDirection = useUIStore((s) => s.sortDirection);
+  const setSort = useUIStore((s) => s.setSort);
+
+  const handleSort = (field: "date" | "amount" | "description" | "category" | "profile") => {
+    if (sortField === field) {
+      setSort(field, sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      // Default to descending for date/amount, ascending for text
+      const isText = field === "description" || field === "category" || field === "profile";
+      setSort(field, isText ? "asc" : "desc");
+    }
+  };
+
+  const renderSortIcon = (field: string) => {
+    if (sortField !== field) return null;
+    return sortDirection === "asc" ? (
+      <ArrowUp className="h-3 w-3 ml-1 inline-block" />
+    ) : (
+      <ArrowDown className="h-3 w-3 ml-1 inline-block" />
+    );
+  };
+
   const [isAdding, setIsAdding] = React.useState(false);
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [optimisticItems, addOptimisticItems] = React.useOptimistic(
@@ -183,14 +207,27 @@ export function PeriodGroup({
       />
 
       <div className={cn(
-        "hidden md:grid grid-cols-[100px_1fr_1fr_90px_64px] gap-3 pb-2 pr-3 text-xs font-semibold text-text-tertiary uppercase tracking-wider transition-all duration-200 ease-out",
-        reorderByDate ? "pl-13" : "pl-3"
+        "hidden md:grid gap-3 px-3 pb-2 text-xs font-semibold text-text-tertiary uppercase tracking-wider transition-all duration-200 ease-out",
+        reorderByDate 
+          ? "grid-cols-[28px_100px_1fr_1fr_90px_64px]" 
+          : "grid-cols-[0_100px_1fr_1fr_90px_64px]"
       )}>
-        <div>Amount</div>
-        <div>Description</div>
-        <div>Category</div>
-        <div>Date</div>
-        <div className="text-center">Profile</div>
+        <div className="overflow-hidden"></div>
+        <div className="cursor-pointer hover:text-text-secondary flex items-center" onClick={() => handleSort("amount")}>
+          Amount {renderSortIcon("amount")}
+        </div>
+        <div className="cursor-pointer hover:text-text-secondary flex items-center" onClick={() => handleSort("description")}>
+          Description {renderSortIcon("description")}
+        </div>
+        <div className="cursor-pointer hover:text-text-secondary flex items-center" onClick={() => handleSort("category")}>
+          Category {renderSortIcon("category")}
+        </div>
+        <div className="cursor-pointer hover:text-text-secondary flex items-center" onClick={() => handleSort("date")}>
+          Date {renderSortIcon("date")}
+        </div>
+        <div className="text-center cursor-pointer hover:text-text-secondary flex items-center justify-center" onClick={() => handleSort("profile")}>
+          Profile {renderSortIcon("profile")}
+        </div>
       </div>
 
       <DndContext

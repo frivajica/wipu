@@ -9,7 +9,8 @@ interface UseGroupedLedgerOptions {
   items: LedgerItem[];
   periodType: PeriodType;
   customDateRange: { start: string; end: string } | null;
-  sortByDate: boolean;
+  sortField: "date" | "amount" | "description" | "category" | "profile" | null;
+  sortDirection: "asc" | "desc";
   pageSize?: number;
 }
 
@@ -17,7 +18,8 @@ export function useGroupedLedger({
   items,
   periodType,
   customDateRange,
-  sortByDate: _sortByDate,
+  sortField,
+  sortDirection,
   pageSize = 5,
 }: UseGroupedLedgerOptions) {
   const groupedItems = React.useMemo(() => {
@@ -31,17 +33,42 @@ export function useGroupedLedger({
     );
 
     for (const [key, groupItems] of groups) {
-      groups.set(
-        key,
-        [...groupItems].sort(
-          (a, b) =>
-            DateTime.fromISO(b.date).toMillis() - DateTime.fromISO(a.date).toMillis()
-        )
-      );
+      if (sortField) {
+        groups.set(
+          key,
+          [...groupItems].sort((a, b) => {
+            let result = 0;
+            switch (sortField) {
+              case "date":
+                result = DateTime.fromISO(b.date).toMillis() - DateTime.fromISO(a.date).toMillis();
+                break;
+              case "amount":
+                result = a.amount - b.amount;
+                break;
+              case "description":
+                result = a.description.localeCompare(b.description);
+                break;
+              case "category":
+                result = a.category.localeCompare(b.category);
+                break;
+              case "profile":
+                result = (a.updatedByName || "").localeCompare(b.updatedByName || "");
+                break;
+            }
+            return sortDirection === "desc" ? result : -result;
+          })
+        );
+      } else {
+        // Default manual order
+        groups.set(
+          key,
+          [...groupItems].sort((a, b) => a.sortOrder - b.sortOrder)
+        );
+      }
     }
 
     return groups;
-  }, [items, periodType, customDateRange]);
+  }, [items, periodType, customDateRange, sortField, sortDirection]);
 
   const periodKeys = React.useMemo(
     () => Array.from(groupedItems.keys()).reverse(),

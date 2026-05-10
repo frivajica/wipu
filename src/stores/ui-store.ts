@@ -7,7 +7,7 @@ interface UIStore extends UIState {
   setPeriodType: (periodType: PeriodType) => void;
   setReorderByDate: (enabled: boolean) => void;
   setCustomDateRange: (range: { start: string; end: string } | null) => void;
-  setSortByDate: (sort: boolean) => void;
+  setSort: (field: "date" | "amount" | "description" | "category" | "profile" | null, direction?: "asc" | "desc") => void;
   setIncludesDebt: (includes: boolean) => void;
 }
 
@@ -17,7 +17,8 @@ export const useUIStore = create<UIStore>()(
       periodType: DEFAULT_PERIOD_TYPE,
       reorderByDate: false,
       customDateRange: null,
-      sortByDate: true,
+      sortField: null,
+      sortDirection: "desc",
       includesDebt: true,
 
       setPeriodType: (periodType) => set({ periodType }),
@@ -25,21 +26,29 @@ export const useUIStore = create<UIStore>()(
       setReorderByDate: (reorderByDate) =>
         set((state) => ({
           reorderByDate,
-          sortByDate: reorderByDate ? true : state.sortByDate,
+          sortField: reorderByDate ? "date" : state.sortField,
+          sortDirection: reorderByDate ? "desc" : state.sortDirection,
         })),
 
       setCustomDateRange: (customDateRange) => set({ customDateRange }),
 
-      setSortByDate: (sortByDate) =>
+      setSort: (field, direction) =>
         set((state) => ({
-          sortByDate,
-          reorderByDate: sortByDate ? state.reorderByDate : false,
+          sortField: field,
+          sortDirection: direction ?? state.sortDirection,
+          reorderByDate: field !== null ? false : state.reorderByDate,
         })),
 
       setIncludesDebt: (includesDebt) => set({ includesDebt }),
     }),
     {
       name: STORAGE_KEYS.UI_STATE,
+      partialize: (state) =>
+        Object.fromEntries(
+          Object.entries(state).filter(
+            ([key]) => !["sortField", "sortDirection"].includes(key)
+          )
+        ),
     }
   )
 );
