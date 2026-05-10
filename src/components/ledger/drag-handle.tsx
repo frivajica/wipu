@@ -15,7 +15,6 @@ export function DragHandle({ isDragging, className, ...props }: DragHandleProps)
       className={cn(
         "flex items-center justify-center text-text-tertiary hover:text-text-secondary",
         "transition-colors touch-none select-none",
-        "w-7 h-7",
         "focus-visible:outline-none focus-visible:shadow-glow-focus rounded-md",
         isDragging ? "cursor-grabbing text-text-primary" : "cursor-grab",
         className
