@@ -17,6 +17,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import { DateTime } from "luxon";
 import { LedgerItem } from "@/lib/types";
 import { PeriodHeader } from "./period-header";
 import { AddItemRow } from "./add-item-row";
@@ -33,9 +34,9 @@ interface PeriodGroupProps {
   onAddItem: (item: Omit<LedgerItem, "id" | "createdAt" | "updatedAt">) => void;
   onEditItem: (item: LedgerItem) => void;
   onDeleteItem: (id: string) => void;
-  onReorderItems: (itemIds: string[]) => void;
+  onReorderItems: (itemIds: string[], dateUpdates?: Record<string, string>) => void;
   currentUserId: string;
-  isDragEnabled: boolean;
+  reorderByDate: boolean;
   includesDebt: boolean;
   periodStats?: {
     balance: number;
@@ -43,6 +44,13 @@ interface PeriodGroupProps {
     runningBalance: number;
     runningDebt: number;
   };
+}
+
+function getMidpointDate(dateA: string, dateB: string): string {
+  const start = DateTime.fromISO(dateA).toMillis();
+  const end = DateTime.fromISO(dateB).toMillis();
+  const midpoint = DateTime.fromMillis(start + (end - start) / 2);
+  return midpoint.toISODate() || dateA;
 }
 
 export function PeriodGroup({
@@ -53,7 +61,7 @@ export function PeriodGroup({
   onDeleteItem,
   onReorderItems,
   currentUserId,
-  isDragEnabled,
+  reorderByDate,
   includesDebt,
   periodStats,
 }: PeriodGroupProps) {
@@ -79,9 +87,29 @@ export function PeriodGroup({
       const oldIndex = optimisticItems.findIndex((item) => item.id === active.id);
       const newIndex = optimisticItems.findIndex((item) => item.id === over.id);
       const newItems = arrayMove(optimisticItems, oldIndex, newIndex);
+      let dateUpdates: Record<string, string> | undefined;
+
+      if (reorderByDate) {
+        const movedItem = newItems[newIndex];
+        const before = newItems[newIndex - 1];
+        const after = newItems[newIndex + 1];
+
+        let newDate: string;
+        if (before && after) {
+          newDate = getMidpointDate(before.date, after.date);
+        } else {
+          newDate = (before || after).date;
+        }
+        movedItem.date = newDate;
+        dateUpdates = { [movedItem.id]: newDate };
+      }
+
       React.startTransition(() => {
         addOptimisticItems(newItems);
-        onReorderItems(newItems.map((item) => item.id));
+        onReorderItems(
+          newItems.map((item) => item.id),
+          dateUpdates
+        );
       });
     }
   };
@@ -133,7 +161,7 @@ export function PeriodGroup({
       onSaveEdit={handleEditSave}
       onCancelEdit={() => setEditingId(null)}
       currentUserId={currentUserId}
-      isDragEnabled={isDragEnabled}
+      isDragEnabled={reorderByDate}
       includesDebt={includesDebt}
     />
   );
@@ -163,7 +191,7 @@ export function PeriodGroup({
         <div className="text-center">Profile</div>
       </div>
 
-      {isDragEnabled ? (
+      {reorderByDate ? (
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}

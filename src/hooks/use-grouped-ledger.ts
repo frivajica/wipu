@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { DateTime } from "luxon";
 import { groupItemsByPeriod, sortItemsByDate } from "@/lib/grouping";
 import { LedgerItem, PeriodType } from "@/lib/types";
 
@@ -16,23 +17,31 @@ export function useGroupedLedger({
   items,
   periodType,
   customDateRange,
-  sortByDate,
+  sortByDate: _sortByDate,
   pageSize = 5,
 }: UseGroupedLedgerOptions) {
   const groupedItems = React.useMemo(() => {
     if (!items.length) return new Map<string, LedgerItem[]>();
 
-    let sortedItems = [...items];
-    if (sortByDate) {
-      sortedItems = sortItemsByDate(sortedItems);
-    }
-
-    return groupItemsByPeriod(
-      sortedItems,
+    const dateSorted = sortItemsByDate([...items]);
+    const groups = groupItemsByPeriod(
+      dateSorted,
       periodType,
       customDateRange || undefined
     );
-  }, [items, periodType, customDateRange, sortByDate]);
+
+    for (const [key, groupItems] of groups) {
+      groups.set(
+        key,
+        [...groupItems].sort(
+          (a, b) =>
+            DateTime.fromISO(b.date).toMillis() - DateTime.fromISO(a.date).toMillis()
+        )
+      );
+    }
+
+    return groups;
+  }, [items, periodType, customDateRange]);
 
   const periodKeys = React.useMemo(
     () => Array.from(groupedItems.keys()).reverse(),

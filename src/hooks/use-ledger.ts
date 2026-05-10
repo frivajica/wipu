@@ -73,7 +73,22 @@ export function useLedger() {
   });
 
   const reorderItems = useMutationWithToast({
-    mutationFn: ({ spaceId, itemIds }: { spaceId: string; itemIds: string[] }) => {
+    mutationFn: ({
+      spaceId,
+      itemIds,
+      dateUpdates,
+      updatedBy,
+    }: {
+      spaceId: string;
+      itemIds: string[];
+      dateUpdates?: Record<string, string>;
+      updatedBy?: string;
+    }) => {
+      if (dateUpdates) {
+        Object.entries(dateUpdates).forEach(([id, date]) => {
+          mockDb.updateLedgerItem(id, { date, updatedBy: updatedBy || "" });
+        });
+      }
       mockDb.reorderLedgerItems(spaceId, itemIds);
       return Promise.resolve();
     },

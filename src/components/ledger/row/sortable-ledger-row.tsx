@@ -77,6 +77,7 @@ export function SortableLedgerRow({
         onStartEdit={onStartEdit}
         isOwned={isOwned}
         isDimmed={isDimmed}
+        isDragEnabled
       />
     </div>
   );

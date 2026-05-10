@@ -7,12 +7,12 @@ import { HelpCircle } from "lucide-react";
 import { SPRING_DEFAULT } from "@/lib/animations";
 import { cn } from "@/lib/utils";
 
-interface SmartDateToggleProps {
+interface ReorderToggleProps {
   checked: boolean;
   onChange: (checked: boolean) => void;
 }
 
-export function SmartDateToggle({ checked, onChange }: SmartDateToggleProps) {
+export function ReorderToggle({ checked, onChange }: ReorderToggleProps) {
   const [showTooltip, setShowTooltip] = React.useState(false);
 
   return (
@@ -20,7 +20,7 @@ export function SmartDateToggle({ checked, onChange }: SmartDateToggleProps) {
       <Toggle
         checked={checked}
         onChange={onChange}
-        label="Smart Date Inheritance"
+        label="Reorder by Date"
       />
       <div className="relative">
         <button
@@ -34,7 +34,7 @@ export function SmartDateToggle({ checked, onChange }: SmartDateToggleProps) {
           onFocus={() => setShowTooltip(true)}
           onBlur={() => setShowTooltip(false)}
           onClick={() => setShowTooltip((s) => !s)}
-          aria-label="What is Smart Date Inheritance?"
+          aria-label="What is Reorder by Date?"
         >
           <HelpCircle className="h-4 w-4" />
         </button>
@@ -47,7 +47,7 @@ export function SmartDateToggle({ checked, onChange }: SmartDateToggleProps) {
               transition={SPRING_DEFAULT}
               className="absolute right-0 bottom-full mb-2 w-64 p-3 bg-surface rounded-xl border border-border/60 shadow-elevated text-xs text-text-secondary z-50"
             >
-              When enabled, dragging items to reorder will automatically update their dates to match nearby items.
+              When enabled, dragging items reorders them and updates their dates to match adjacent items.
             </motion.div>
           )}
         </AnimatePresence>

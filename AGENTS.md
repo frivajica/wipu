@@ -241,7 +241,7 @@ Stores manage purely client-side state:
 |---|---|
 | `auth-store.ts` | User session, token, authentication status |
 | `space-store.ts` | Spaces list, active space ID |
-| `ui-store.ts` | Period type, smart date toggle, sort preferences, custom date range, includesDebt |
+| `ui-store.ts` | Period type, reorder by date, sort preferences, custom date range, includesDebt |
 
 ### 6.2 TanStack Query — Server State
 

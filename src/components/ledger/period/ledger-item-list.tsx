@@ -85,6 +85,7 @@ export function LedgerItemList({
               onStartEdit={() => onStartEdit(item.id)}
               isOwned={item.createdBy === currentUserId}
               isDimmed={item.type === "debt" && !includesDebt}
+              isDragEnabled={isDragEnabled}
             />
           );
         })}

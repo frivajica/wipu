@@ -5,7 +5,7 @@ import { STORAGE_KEYS, DEFAULT_PERIOD_TYPE } from "@/lib/constants";
 
 interface UIStore extends UIState {
   setPeriodType: (periodType: PeriodType) => void;
-  setSmartDateInheritance: (enabled: boolean) => void;
+  setReorderByDate: (enabled: boolean) => void;
   setCustomDateRange: (range: { start: string; end: string } | null) => void;
   setSortByDate: (sort: boolean) => void;
   setIncludesDebt: (includes: boolean) => void;
@@ -15,19 +15,26 @@ export const useUIStore = create<UIStore>()(
   persist(
     (set) => ({
       periodType: DEFAULT_PERIOD_TYPE,
-      smartDateInheritance: false,
+      reorderByDate: false,
       customDateRange: null,
       sortByDate: true,
       includesDebt: true,
 
       setPeriodType: (periodType) => set({ periodType }),
 
-      setSmartDateInheritance: (smartDateInheritance) =>
-        set({ smartDateInheritance }),
+      setReorderByDate: (reorderByDate) =>
+        set((state) => ({
+          reorderByDate,
+          sortByDate: reorderByDate ? true : state.sortByDate,
+        })),
 
       setCustomDateRange: (customDateRange) => set({ customDateRange }),
 
-      setSortByDate: (sortByDate) => set({ sortByDate }),
+      setSortByDate: (sortByDate) =>
+        set((state) => ({
+          sortByDate,
+          reorderByDate: sortByDate ? state.reorderByDate : false,
+        })),
 
       setIncludesDebt: (includesDebt) => set({ includesDebt }),
     }),

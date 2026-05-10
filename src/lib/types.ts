@@ -87,7 +87,7 @@ export interface SpaceState {
 
 export interface UIState {
   periodType: PeriodType;
-  smartDateInheritance: boolean;
+  reorderByDate: boolean;
   customDateRange: {
     start: string;
     end: string;

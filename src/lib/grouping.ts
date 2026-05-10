@@ -1,17 +1,10 @@
 import { DateTime } from "luxon";
 import { LedgerItem, PeriodType } from "./types";
 
-function sortByDate<T extends { date: string }>(items: T[]): T[] {
-  return [...items].sort(
-    (a, b) =>
-      DateTime.fromISO(a.date).toMillis() - DateTime.fromISO(b.date).toMillis()
-  );
-}
-
 export function groupByMonth(items: LedgerItem[]): Map<string, LedgerItem[]> {
   const groups = new Map<string, LedgerItem[]>();
 
-  sortByDate(items).forEach((item) => {
+  items.forEach((item) => {
     const dt = DateTime.fromISO(item.date);
     const key = dt.toFormat("MMMM yyyy");
     if (!groups.has(key)) groups.set(key, []);
@@ -24,7 +17,7 @@ export function groupByMonth(items: LedgerItem[]): Map<string, LedgerItem[]> {
 export function groupByWeek(items: LedgerItem[]): Map<string, LedgerItem[]> {
   const groups = new Map<string, LedgerItem[]>();
 
-  sortByDate(items).forEach((item) => {
+  items.forEach((item) => {
     const dt = DateTime.fromISO(item.date);
     const weekStart = dt.startOf("week");
     const weekEnd = dt.endOf("week");
@@ -40,7 +33,7 @@ export function groupByWeek(items: LedgerItem[]): Map<string, LedgerItem[]> {
 export function groupByBiWeek(items: LedgerItem[]): Map<string, LedgerItem[]> {
   const groups = new Map<string, LedgerItem[]>();
 
-  sortByDate(items).forEach((item) => {
+  items.forEach((item) => {
     const dt = DateTime.fromISO(item.date);
     const weekNumber = dt.weekNumber;
     const biWeekNumber = Math.ceil(weekNumber / 2);

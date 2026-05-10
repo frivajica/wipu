@@ -8,7 +8,7 @@ import { useSpaces } from "@/hooks/use-spaces";
 import { useUIStore } from "@/stores/ui-store";
 import { useGroupedLedger } from "@/hooks/use-grouped-ledger";
 import { PeriodSelector } from "@/components/ledger/period-selector";
-import { SmartDateToggle } from "@/components/ledger/smart-date-toggle";
+import { ReorderToggle } from "@/components/ledger/reorder-toggle";
 import { CustomDateRange } from "@/components/ledger/custom-date-range";
 import { PeriodGroup } from "@/components/ledger/period-group";
 import { SortResetCue } from "@/components/ledger/sort-reset-cue";
@@ -25,11 +25,11 @@ export default function LedgerPage() {
   const includesDebt = useUIStore((s) => s.includesDebt);
 
   const periodType = useUIStore((s) => s.periodType);
-  const smartDateInheritance = useUIStore((s) => s.smartDateInheritance);
+  const reorderByDate = useUIStore((s) => s.reorderByDate);
   const customDateRange = useUIStore((s) => s.customDateRange);
   const sortByDate = useUIStore((s) => s.sortByDate);
   const setPeriodType = useUIStore((s) => s.setPeriodType);
-  const setSmartDateInheritance = useUIStore((s) => s.setSmartDateInheritance);
+  const setReorderByDate = useUIStore((s) => s.setReorderByDate);
   const setCustomDateRange = useUIStore((s) => s.setCustomDateRange);
   const setSortByDate = useUIStore((s) => s.setSortByDate);
 
@@ -100,10 +100,15 @@ export default function LedgerPage() {
   );
 
   const handleReorderItems = React.useCallback(
-    (itemIds: string[]) => {
-      return reorderItems({ spaceId: activeSpaceId || "", itemIds });
+    (itemIds: string[], dateUpdates?: Record<string, string>) => {
+      return reorderItems({
+        spaceId: activeSpaceId || "",
+        itemIds,
+        dateUpdates,
+        updatedBy: user?.id,
+      });
     },
-    [reorderItems, activeSpaceId]
+    [reorderItems, activeSpaceId, user?.id]
   );
 
   if (isLoading) return <LedgerSkeleton />;
@@ -126,9 +131,9 @@ export default function LedgerPage() {
           <div className="w-full sm:w-auto">
             <PeriodSelector value={periodType} onChange={setPeriodType} />
           </div>
-          <SmartDateToggle
-            checked={smartDateInheritance}
-            onChange={setSmartDateInheritance}
+          <ReorderToggle
+            checked={reorderByDate}
+            onChange={setReorderByDate}
           />
         </div>
       </div>
@@ -151,7 +156,7 @@ export default function LedgerPage() {
       </AnimatePresence>
 
       <SortResetCue
-        visible={sortByDate && !smartDateInheritance}
+        visible={sortByDate && !reorderByDate}
         onReset={() => setSortByDate(false)}
       />
 
@@ -169,7 +174,7 @@ export default function LedgerPage() {
               onDeleteItem={deleteItem}
               onReorderItems={handleReorderItems}
               currentUserId={user?.id || ""}
-              isDragEnabled={!sortByDate || smartDateInheritance}
+              reorderByDate={reorderByDate}
               periodStats={periodStatsMap.get(key)}
               includesDebt={includesDebt}
             />
