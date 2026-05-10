@@ -4,7 +4,6 @@ import { AnimatePresence } from "framer-motion";
 import { LedgerItem } from "@/lib/types";
 import { SortableLedgerRow } from "../row/sortable-ledger-row";
 import { InlineEditRow } from "../inline-edit-row";
-import { LedgerRow } from "../row/ledger-row";
 
 interface LedgerItemListProps {
   items: LedgerItem[];

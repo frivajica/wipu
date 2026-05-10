@@ -184,7 +184,7 @@ export function PeriodGroup({
 
       <div className={cn(
         "hidden md:grid grid-cols-[100px_1fr_1fr_90px_64px] gap-3 pb-2 pr-3 text-xs font-semibold text-text-tertiary uppercase tracking-wider transition-all duration-200 ease-out",
-        reorderByDate ? "pl-[52px]" : "pl-3"
+        reorderByDate ? "pl-13" : "pl-3"
       )}>
         <div>Amount</div>
         <div>Description</div>

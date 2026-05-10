@@ -13,27 +13,29 @@ export function SortResetCue({ visible, onReset }: SortResetCueProps) {
     <AnimatePresence>
       {visible && (
         <motion.div
-          initial={{ opacity: 0, y: -10, height: 0, marginBottom: -24 }}
-          animate={{ opacity: 1, y: 0, height: "auto", marginBottom: 0 }}
-          exit={{ opacity: 0, y: -10, height: 0, marginBottom: -24 }}
+          initial={{ opacity: 0, y: -10, height: 0 }}
+          animate={{ opacity: 1, y: 0, height: "auto" }}
+          exit={{ opacity: 0, y: -10, height: 0 }}
           transition={{ type: "spring" as const, stiffness: 400, damping: 35 }}
           className="overflow-hidden"
         >
-          <div
-            className={cn(
-              "p-3 rounded-lg bg-amber-50 border border-amber-200",
-              "flex items-center justify-between"
-            )}
-          >
-            <p className="text-sm text-amber-800">
-              Sorting by date. Drag & drop is disabled.
-            </p>
-            <button
-              onClick={onReset}
-              className="text-sm font-medium text-amber-900 hover:text-amber-700 underline cursor-pointer"
+          <div className="pt-6">
+            <div
+              className={cn(
+                "p-3 rounded-lg bg-amber-50 border border-amber-200",
+                "flex items-center justify-between"
+              )}
             >
-              Reset sort
-            </button>
+              <p className="text-sm text-amber-800">
+                Sorting by date. Drag & drop is disabled.
+              </p>
+              <button
+                onClick={onReset}
+                className="text-sm font-medium text-amber-900 hover:text-amber-700 underline cursor-pointer"
+              >
+                Reset sort
+              </button>
+            </div>
           </div>
         </motion.div>
       )}

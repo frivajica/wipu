@@ -115,50 +115,55 @@ export default function LedgerPage() {
 
   return (
     <div className="space-y-6 pb-safe">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold font-display text-text-primary">
-            Shared Ledger
-          </h1>
-          {periodType === "custom" && customDateRange && (
-            <p className="text-text-secondary mt-1">
-              Custom range: {DateTime.fromISO(customDateRange.start).toFormat("MMM d")} - {DateTime.fromISO(customDateRange.end).toFormat("MMM d")}
-            </p>
-          )}
-        </div>
-
-        <div className="flex items-center gap-4 w-full sm:w-auto">
-          <div className="w-full sm:w-auto">
-            <PeriodSelector value={periodType} onChange={setPeriodType} />
+      <div className="flex flex-col">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold font-display text-text-primary">
+              Shared Ledger
+            </h1>
+            {periodType === "custom" && customDateRange && (
+              <p className="text-text-secondary mt-1">
+                Custom range: {DateTime.fromISO(customDateRange.start).toFormat("MMM d")} - {DateTime.fromISO(customDateRange.end).toFormat("MMM d")}
+              </p>
+            )}
           </div>
-          <ReorderToggle
-            checked={reorderByDate}
-            onChange={setReorderByDate}
-          />
-        </div>
-      </div>
 
-      <AnimatePresence>
-        {periodType === "custom" && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ type: "spring" as const, stiffness: 400, damping: 35 }}
-          >
-            <CustomDateRange
-              start={customDateRange?.start || defaultDateRange.start}
-              end={customDateRange?.end || defaultDateRange.end}
-              onChange={setCustomDateRange}
+          <div className="flex items-center gap-4 w-full sm:w-auto">
+            <div className="w-full sm:w-auto">
+              <PeriodSelector value={periodType} onChange={setPeriodType} />
+            </div>
+            <ReorderToggle
+              checked={reorderByDate}
+              onChange={setReorderByDate}
             />
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </div>
 
-      <SortResetCue
-        visible={sortByDate && !reorderByDate}
-        onReset={() => setSortByDate(false)}
-      />
+        <AnimatePresence>
+          {periodType === "custom" && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ type: "spring" as const, stiffness: 400, damping: 35 }}
+              className="overflow-hidden"
+            >
+              <div className="pt-6">
+                <CustomDateRange
+                  start={customDateRange?.start || defaultDateRange.start}
+                  end={customDateRange?.end || defaultDateRange.end}
+                  onChange={setCustomDateRange}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <SortResetCue
+          visible={sortByDate && !reorderByDate}
+          onReset={() => setSortByDate(false)}
+        />
+      </div>
 
       <LedgerBalanceHeader />
 
