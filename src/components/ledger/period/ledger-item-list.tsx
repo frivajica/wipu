@@ -56,7 +56,6 @@ export function LedgerItemList({
             );
           }
 
-          if (isDragEnabled) {
           return (
             <SortableLedgerRow
               key={item.id}
@@ -68,21 +67,6 @@ export function LedgerItemList({
               onStartEdit={() => onStartEdit(item.id)}
               onSaveEdit={onSaveEdit}
               onCancelEdit={onCancelEdit}
-              isOwned={item.createdBy === currentUserId}
-              isDimmed={item.type === "debt" && !includesDebt}
-            />
-          );
-          }
-
-          return (
-            <LedgerRow
-              key={item.id}
-              item={item}
-              userName={item.updatedByName || "Unknown"}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              isEditing={isEditing}
-              onStartEdit={() => onStartEdit(item.id)}
               isOwned={item.createdBy === currentUserId}
               isDimmed={item.type === "debt" && !includesDebt}
               isDragEnabled={isDragEnabled}

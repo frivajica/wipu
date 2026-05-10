@@ -22,6 +22,7 @@ interface SortableLedgerRowProps {
   onCancelEdit: () => void;
   isOwned: boolean;
   isDimmed?: boolean;
+  isDragEnabled?: boolean;
 }
 
 export function SortableLedgerRow({
@@ -35,6 +36,7 @@ export function SortableLedgerRow({
   onCancelEdit,
   isOwned,
   isDimmed,
+  isDragEnabled = true,
 }: SortableLedgerRowProps) {
   const {
     attributes,
@@ -72,12 +74,12 @@ export function SortableLedgerRow({
         userName={userName}
         onEdit={onEdit}
         onDelete={onDelete}
-        dragHandleProps={{ ...attributes, ...listeners }}
+        dragHandleProps={isDragEnabled ? { ...attributes, ...listeners } : undefined}
         isDragging={isDragging}
         onStartEdit={onStartEdit}
         isOwned={isOwned}
         isDimmed={isDimmed}
-        isDragEnabled
+        isDragEnabled={isDragEnabled}
       />
     </div>
   );

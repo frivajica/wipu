@@ -182,8 +182,10 @@ export function PeriodGroup({
         includesDebt={includesDebt}
       />
 
-      <div className="hidden md:grid grid-cols-[28px_100px_1fr_1fr_90px_64px] gap-3 px-3 pb-2 text-xs font-semibold text-text-tertiary uppercase tracking-wider">
-        <div></div>
+      <div className={cn(
+        "hidden md:grid grid-cols-[100px_1fr_1fr_90px_64px] gap-3 pb-2 pr-3 text-xs font-semibold text-text-tertiary uppercase tracking-wider transition-all duration-200 ease-out",
+        reorderByDate ? "pl-[52px]" : "pl-3"
+      )}>
         <div>Amount</div>
         <div>Description</div>
         <div>Category</div>
@@ -191,22 +193,18 @@ export function PeriodGroup({
         <div className="text-center">Profile</div>
       </div>
 
-      {reorderByDate ? (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={displayItems.map((item) => item.id)}
+          strategy={verticalListSortingStrategy}
         >
-          <SortableContext
-            items={displayItems.map((item) => item.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            {list}
-          </SortableContext>
-        </DndContext>
-      ) : (
-        list
-      )}
+          {list}
+        </SortableContext>
+      </DndContext>
 
       <AnimatePresence>
         {isAdding ? (
