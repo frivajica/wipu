@@ -25,7 +25,14 @@ export default function DebtPage() {
 function DebtContent() {
   const { user } = useAuth();
   const { activeSpaceId } = useSpaces();
-  const { groups, isLoading, createGroup, isCreating } = useDebt();
+  const {
+    groups,
+    isLoading,
+    createGroup,
+    updateGroup,
+    deleteGroup,
+    isCreating,
+  } = useDebt();
   const { updateItem, deleteItem, reorderItems } = useLedger();
   const [isModalOpen, setIsModalOpen] = React.useState(false);
 
@@ -68,6 +75,10 @@ function DebtContent() {
             if (!activeSpaceId) return;
             reorderItems({ spaceId: activeSpaceId, itemIds });
           }}
+          onUpdateGroup={async (id, name) => {
+            await updateGroup({ id, name });
+          }}
+          onDeleteGroup={deleteGroup}
         />
       )}
 

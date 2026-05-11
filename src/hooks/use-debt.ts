@@ -36,10 +36,37 @@ export function useDebt() {
     invalidateKeys: [["debt-groups", activeSpaceId]],
   });
 
+  const updateGroup = useMutationWithToast({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      const res = await fetch(`/api/debt-groups/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      if (!res.ok) throw new Error("Failed to update debt group");
+      return res.json();
+    },
+    successMessage: "Debt group updated",
+    invalidateKeys: [["debt-groups", activeSpaceId]],
+  });
+
+  const deleteGroup = useMutationWithToast({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/debt-groups/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete debt group");
+    },
+    successMessage: "Debt group deleted",
+    invalidateKeys: [["debt-groups", activeSpaceId]],
+  });
+
   return {
     groups: groups || [],
     isLoading,
     createGroup: createGroup.mutateAsync,
+    updateGroup: updateGroup.mutateAsync,
+    deleteGroup: deleteGroup.mutateAsync,
     isCreating: createGroup.isPending,
+    isUpdating: updateGroup.isPending,
+    isDeleting: deleteGroup.isPending,
   };
 }

@@ -11,6 +11,8 @@ interface DebtGroupListProps {
   onEditItem: (item: LedgerItem) => void;
   onDeleteItem: (id: string) => void;
   onReorderItems: (itemIds: string[]) => void;
+  onUpdateGroup: (id: string, name: string) => Promise<void>;
+  onDeleteGroup: (id: string) => Promise<void>;
 }
 
 export function DebtGroupList({
@@ -19,6 +21,8 @@ export function DebtGroupList({
   onEditItem,
   onDeleteItem,
   onReorderItems,
+  onUpdateGroup,
+  onDeleteGroup,
 }: DebtGroupListProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -38,6 +42,8 @@ export function DebtGroupList({
             onEditItem={onEditItem}
             onDeleteItem={onDeleteItem}
             onReorderItems={onReorderItems}
+            onUpdateGroup={onUpdateGroup}
+            onDeleteGroup={onDeleteGroup}
           />
         </motion.div>
       ))}
