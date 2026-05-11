@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/auth-store";
 import { useSpaceStore } from "@/stores/space-store";
@@ -25,6 +26,16 @@ export function useSpaces() {
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
   });
+
+  // Auto-correct stale activeSpaceId (e.g., from mock data migration)
+  React.useEffect(() => {
+    if (spaces.length > 0 && activeSpaceId) {
+      const valid = spaces.some((s) => s.id === activeSpaceId);
+      if (!valid) {
+        setActiveSpace(spaces[0].id);
+      }
+    }
+  }, [spaces, activeSpaceId, setActiveSpace]);
 
   const createSpace = useMutationWithToast({
     mutationFn: async (name: string) => {
