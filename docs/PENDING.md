@@ -1,6 +1,6 @@
 # Pending Work — Backend ↔ Frontend Gap Analysis
 
-**Last updated:** May 11, 2026 (Second Revision — All Active Bugs Fixed)
+**Last updated:** May 11, 2026 (Third Revision — All Ready Features Implemented)
 
 This document tracks the current gap between what the backend supports and what the frontend actually uses. It serves as a roadmap for the next development iterations.
 
@@ -13,13 +13,13 @@ These API endpoints are fully implemented and tested, but no UI component or hoo
 | Route | Method | Status | Notes |
 |-------|--------|--------|-------|
 | `/api/debt-groups` | POST | ✅ Wired | Create modal + hook mutation added |
-| `/api/debt-groups/[id]` | PUT | 🔴 Unused | Edit debt group name/description |
-| `/api/debt-groups/[id]` | DELETE | 🔴 Unused | Delete debt group with confirmation |
+| `/api/debt-groups/[id]` | PUT | ✅ Wired | Inline edit name in DebtGroupCard |
+| `/api/debt-groups/[id]` | DELETE | ✅ Wired | Delete button with confirm dialog |
 | `/api/export` | GET | ✅ Wired | Export button added to ledger toolbar |
-| `/api/recurring` | GET, POST | 🔴 Unused | Recurring rules list + create UI |
-| `/api/recurring/[id]/instances` | GET, POST | 🔴 Unused | Skip/unskip instance toggles |
-| `/api/spaces/join` | POST | 🔴 Unused | `/join/[inviteCode]` page |
-| `/api/spaces/[id]/members` | GET | 🔴 Unused | Members list enrichment (see Gaps below) |
+| `/api/recurring` | GET, POST | ✅ Wired | RecurringPanel + create modal on ledger page |
+| `/api/recurring/[id]/instances` | GET, POST | 🔴 Unused | Skip/unskip instance toggles (API exists, no UI yet) |
+| `/api/spaces/join` | POST | ✅ Wired | `/join/[inviteCode]` page with auth + join flow |
+| `/api/spaces/[id]/members` | GET | 🔴 Unused | Members list enrichment (now done via GET /api/spaces) |
 
 ### Notes
 
@@ -68,10 +68,10 @@ These features require **only frontend work** — the API is ready.
 |---------|---------------|--------------|--------|
 | **Member list display** | Tables exist, JOIN needed in API | Update `GET /api/spaces` response + verify modal | ✅ Done `603651a` |
 | **Debt group creation** | `POST /api/debt-groups` exists | Add "New Group" button + form modal in debt page | ✅ Done `4860958` |
-| **Debt group edit/delete** | `PUT/DELETE` handlers exist | Add edit/delete buttons in `DebtGroupCard` | 🔴 Not started |
+| **Debt group edit/delete** | `PUT/DELETE` handlers exist | Add edit/delete buttons in `DebtGroupCard` | ✅ Done `fa9201b` |
 | **CSV export** | `GET /api/export` exists | Add export button to ledger toolbar | ✅ Done `7849722` |
-| **Join via invite link** | `POST /api/spaces/join` exists | Build `/join/[inviteCode]` page + hook | 🔴 Not started |
-| **Recurring items UI** | Full CRUD API exists | Build recurring rules list, create form, skip toggles | 🔴 Not started |
+| **Join via invite link** | `POST /api/spaces/join` exists | Build `/join/[inviteCode]` page + hook | ✅ Done `9f3bb0b` |
+| **Recurring items UI** | Full CRUD API exists | Build recurring rules list, create form, skip toggles | ✅ Done `d121f48` |
 
 ---
 
