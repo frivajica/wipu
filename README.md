@@ -1,7 +1,7 @@
 # Wipu
 
 <p align="center">
-  <strong>Shared expense & income tracking for couples and small groups</strong>
+  <strong>Shared expense, income, and debt tracking for couples and small groups</strong>
 </p>
 
 <p align="center">
@@ -16,17 +16,20 @@
 
 ## What is Wipu?
 
-Wipu is a Progressive Web App (PWA) designed for couples and small teams (up to 8 members per space) who want to track shared expenses and income together. It features period-based grouping, smart date inheritance during drag-and-drop reordering, and a high-density, mobile-first interface built for rapid data entry.
+Wipu is a Progressive Web App (PWA) for couples and small teams (up to 15 members per space) to track shared expenses, income, and debts in one place. It prioritizes logical date inheritance, high-density visibility, and rapid data entry — built for people who want clarity over their shared finances without the overhead of traditional budgeting tools.
 
 **Key features:**
-- **Period-based grouping** — Organize items by Monthly, Weekly, Bi-Weekly, or Custom date ranges
-- **Smart Date Inheritance** — Toggle smart date updating when reordering items via drag & drop
-- **Multi-user transparency** — See who added or last modified each item via avatars and timestamps
+- **Shared ledger** — Track expenses and income in collaborative spaces with full transparency
+- **Debt tracking** — Organize debts into groups with running balances and category syncing
+- **Period-based grouping** — View items by Monthly, Weekly, Bi-Weekly, or Custom date ranges with running balance totals
+- **Smart date inheritance** — Items inherit dates from their period group when reordered via drag & drop
+- **Multi-user transparency** — See who added or last modified each item via avatars
 - **Rapid data entry** — Inline add/edit rows with tab-navigable fields and autocomplete suggestions
-- **Responsive design** — Optimized for mobile with stacked layout, desktop with table layout
-- **Drag & drop sorting** — Reorder items within period groups with keyboard and touch support
+- **Column sorting** — Click table headers to sort by amount, description, category, date, or profile
+- **Drag & drop reordering** — Manual item ordering within period groups with keyboard and touch support
+- **Responsive design** — Mobile-first stacked layout with desktop table layout
 - **Swipe & context menus** — Swipe-to-delete on mobile, right-click or long-press on desktop
-- **Infinite scroll** — Load older periods as you scroll through the ledger
+- **Infinite scroll** — Load older periods progressively
 
 ---
 
@@ -99,31 +102,36 @@ pnpm lint
 The codebase follows a **domain-organized** structure (by feature, not by technical role):
 
 ```
+docs/                       # Architecture documentation
+├── backend-architecture.md # Backend plan, schema, migration strategy
 src/
 ├── app/                    # Next.js App Router pages
 │   ├── (auth)/             # Route group: login, register
-│   ├── api/                # HTTP API routes (auth, future endpoints)
-│   │   └── auth/
-│   │       ├── login/route.ts
-│   │       ├── register/route.ts
-│   │       └── logout/route.ts
+│   ├── api/                # HTTP API routes
+│   │   ├── auth/           # Login, register, logout
+│   │   ├── balances/       # Balance calculations
+│   │   ├── debt-groups/    # Debt group queries
+│   │   └── debt-category-sync/  # Bulk debt category updates
 │   ├── ledger/             # Main ledger page
+│   ├── debt/               # Debt tracking page
 │   └── spaces/             # Spaces management page
 ├── components/
 │   ├── ui/                 # Shared UI primitives (Button, Input, Modal, Dropdown, etc.)
-│   ├── layout/             # Header, space selector, user menu
+│   ├── layout/             # Header, space selector, tab navigation, user menu
 │   ├── auth/               # Login/register forms
 │   ├── ledger/             # Ledger domain: rows, period groups, controls
 │   │   ├── row/            # Ledger row sub-components
 │   │   ├── period/         # Period group sub-components
 │   │   └── forms/          # Shared form field layouts
+│   ├── debt/               # Debt domain: group cards, item rows, balance header
 │   └── spaces/             # Space cards, modals, invite flows
 ├── hooks/
 │   ├── shared/             # Reusable hooks (click-outside, long-press, mutation factory)
 │   ├── use-auth.ts         # Auth logic
 │   ├── use-ledger.ts       # Ledger CRUD + data enrichment
+│   ├── use-debt.ts         # Debt group fetching
 │   ├── use-spaces.ts       # Space management
-│   └── use-grouped-ledger.ts # Period grouping + pagination
+│   └── use-grouped-ledger.ts # Period grouping, sorting, pagination
 ├── stores/                 # Zustand stores (auth, spaces, UI state)
 ├── lib/
 │   ├── utils.ts            # `cn()` utility only
@@ -135,7 +143,7 @@ src/
 │   ├── session.ts          # Cookie session helpers (server-only)
 │   ├── types.ts            # Shared TypeScript types
 │   ├── constants.ts        # App constants
-│   └── data.ts             # Mock database (will be replaced by backend)
+│   └── data.ts             # Mock database (replaced by real backend in Phase 2)
 ```
 
 ---
@@ -156,9 +164,11 @@ Key rules at a glance:
 
 ## Current Phase: Frontend-Only
 
-All data is currently stored in `src/lib/data.ts` (mock database) and persisted to `localStorage`. TanStack Query treats this as the "backend" via async mock functions.
+All data currently lives in `src/lib/data.ts` (a mock database class) accessed via TanStack Query hooks with simulated async delay. Client state (auth, active space, UI preferences) is managed by Zustand stores.
 
-The architecture is designed for a smooth migration to a real backend (planned: **Supabase** with PostgreSQL, Auth, Realtime, and Row Level Security). The migration path involves replacing mock query functions with Supabase client calls, while Zustand stores and UI components remain largely unchanged.
+The hook/store architecture is designed so that **migrating to a real backend requires swapping only the `queryFn` internals** in hooks and API routes — Zustand stores, React components, and the animation layer remain unchanged.
+
+For the full backend plan, database schema, and migration strategy, see [**docs/backend-architecture.md**](./docs/backend-architecture.md).
 
 ---
 
@@ -176,10 +186,11 @@ The architecture is designed for a smooth migration to a real backend (planned: 
 ## Roadmap
 
 - **Phase 1** ✅ Frontend-only PWA with mock data (current)
-- **Phase 2** Supabase backend, real authentication, real-time sync
-- **Phase 3** Budgets screen
-- **Phase 4** Analytics screen
-- **Phase 5** AI category suggestions, profile pictures, push notifications, dark mode
+- **Phase 2** PostgreSQL backend, real authentication, real-time sync
+- **Phase 3** Recurring items, CSV export
+- **Phase 4** Budgets screen
+- **Phase 5** Analytics screen
+- **Phase 6** AI category suggestions, profile pictures, push notifications, dark mode
 
 ---
 
