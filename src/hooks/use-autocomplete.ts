@@ -1,33 +1,25 @@
 "use client";
 
-import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useSpaceStore } from "@/stores/space-store";
-import { mockDb } from "@/lib/data";
 
 export function useAutocomplete(type: "description" | "category", query: string) {
   const activeSpaceId = useSpaceStore((s) => s.activeSpaceId);
 
-  const suggestions = useMemo(() => {
-    if (!activeSpaceId || query.length < 1) return [];
-
-    if (type === "description") {
-      const items = mockDb.getLedgerItems(activeSpaceId);
-      const descriptions = [...new Set(items.map((item) => item.description))];
-      return descriptions
-        .filter((desc) => desc.toLowerCase().includes(query.toLowerCase()))
-        .slice(0, 5);
-    }
-
-    if (type === "category") {
-      const categories = mockDb.getCategories(activeSpaceId);
-      return categories
-        .filter((cat) => cat.name.toLowerCase().includes(query.toLowerCase()))
-        .map((cat) => cat.name)
-        .slice(0, 5);
-    }
-
-    return [];
-  }, [activeSpaceId, type, query]);
+  const { data: suggestions = [] } = useQuery({
+    queryKey: ["autocomplete", type, query, activeSpaceId],
+    queryFn: async () => {
+      if (!activeSpaceId || query.length < 1) return [];
+      const res = await fetch(
+        `/api/autocomplete?field=${type}&q=${encodeURIComponent(query)}&spaceId=${activeSpaceId}`
+      );
+      if (!res.ok) throw new Error("Failed to fetch suggestions");
+      const data = await res.json();
+      return data.suggestions as string[];
+    },
+    enabled: !!activeSpaceId && query.length >= 1,
+    staleTime: 30 * 1000,
+  });
 
   return { suggestions };
 }

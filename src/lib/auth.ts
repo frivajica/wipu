@@ -6,9 +6,11 @@ export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
   }),
+  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
   emailAndPassword: {
     enabled: true,
     autoSignIn: true,
+    minPasswordLength: 6,
   },
   socialProviders: {},
   session: {
@@ -18,7 +20,7 @@ export const auth = betterAuth({
     additionalFields: {
       name: {
         type: "string",
-        required: true,
+        required: false,
       },
     },
   },

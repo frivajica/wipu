@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const SESSION_COOKIE = "wipu_session";
+const BETTER_AUTH_COOKIE = "better-auth.session_token";
 const protectedRoutes = ["/ledger", "/spaces", "/debt"];
 const publicRoutes = ["/login", "/register"];
 
@@ -10,29 +10,15 @@ function matchesRoute(path: string, routes: string[]) {
   );
 }
 
-function parseSession(cookieValue: string): { userId: string } | null {
-  try {
-    const payload = JSON.parse(cookieValue) as {
-      userId: string;
-      expiresAt: string;
-    };
-    const expiresAt = new Date(payload.expiresAt);
-    if (expiresAt < new Date()) return null;
-    return { userId: payload.userId };
-  } catch {
-    return null;
-  }
-}
-
 export default async function proxy(req: NextRequest) {
   const path = req.nextUrl.pathname;
 
   const isProtectedRoute = matchesRoute(path, protectedRoutes);
   const isPublicRoute = matchesRoute(path, publicRoutes);
 
-  const cookie = req.cookies.get(SESSION_COOKIE)?.value;
-  const session = cookie ? parseSession(cookie) : null;
-  const isAuthenticated = !!session;
+  // Check for Better Auth session cookie (presence only — validation happens server-side)
+  const sessionCookie = req.cookies.get(BETTER_AUTH_COOKIE)?.value;
+  const isAuthenticated = !!sessionCookie;
 
   if (isProtectedRoute && !isAuthenticated) {
     return NextResponse.redirect(new URL("/login", req.nextUrl));

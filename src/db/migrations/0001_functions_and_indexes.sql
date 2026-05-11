@@ -137,11 +137,34 @@ RETURNS TRIGGER AS $$
 DECLARE
   v_significance TEXT := 'normal';
   v_user_id TEXT;
+  v_record_id UUID;
 BEGIN
-  v_user_id := COALESCE(
-    CASE WHEN TG_OP != 'DELETE' THEN NEW.updated_by END,
-    CASE WHEN TG_OP != 'INSERT' THEN OLD.updated_by END
-  );
+  -- Safely extract user_id: check if updated_by/created_by exists on this table
+  BEGIN
+    v_user_id := COALESCE(
+      CASE WHEN TG_OP != 'DELETE' THEN NEW.updated_by END,
+      CASE WHEN TG_OP != 'INSERT' THEN OLD.updated_by END
+    );
+  EXCEPTION WHEN undefined_column THEN
+    BEGIN
+      v_user_id := COALESCE(
+        CASE WHEN TG_OP != 'DELETE' THEN NEW.created_by END,
+        CASE WHEN TG_OP != 'INSERT' THEN OLD.created_by END
+      );
+    EXCEPTION WHEN undefined_column THEN
+      v_user_id := NULL;
+    END;
+  END;
+
+  -- Safely extract record id
+  BEGIN
+    v_record_id := COALESCE(
+      CASE WHEN TG_OP != 'DELETE' THEN NEW.id END,
+      CASE WHEN TG_OP != 'INSERT' THEN OLD.id END
+    );
+  EXCEPTION WHEN undefined_column THEN
+    v_record_id := NULL;
+  END;
 
   IF TG_OP = 'UPDATE' AND TG_TABLE_NAME = 'ledger_items' THEN
     IF OLD.amount = NEW.amount
@@ -160,8 +183,7 @@ BEGIN
     performed_by, significance
   ) VALUES (
     TG_TABLE_NAME,
-    COALESCE(CASE WHEN TG_OP != 'DELETE' THEN NEW.id END,
-             CASE WHEN TG_OP != 'INSERT' THEN OLD.id END),
+    v_record_id,
     TG_OP,
     CASE WHEN TG_OP IN ('UPDATE','DELETE') THEN to_jsonb(OLD) END,
     CASE WHEN TG_OP IN ('INSERT','UPDATE') THEN to_jsonb(NEW) END,

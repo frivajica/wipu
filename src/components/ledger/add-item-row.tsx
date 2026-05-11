@@ -44,11 +44,11 @@ export function AddItemRow({ onSubmit, onCancel, defaultDate }: AddItemRowProps)
     amountRef.current?.focus();
   }, []);
 
-  const handleDescriptionChange = (value: string) => {
+  const handleDescriptionChange = async (value: string) => {
     setDescription(value);
 
     if (itemType === "debt") {
-      const existing = findDebtItem(value);
+      const existing = await findDebtItem(value);
       if (existing) {
         setOriginalDebtItem(existing);
         setCategory(existing.category);

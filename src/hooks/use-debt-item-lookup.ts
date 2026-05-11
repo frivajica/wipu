@@ -1,16 +1,19 @@
 "use client";
 
 import { useSpaceStore } from "@/stores/space-store";
-import { mockDb } from "@/lib/data";
 import { LedgerItem } from "@/lib/types";
 
 export function useDebtItemLookup() {
   const activeSpaceId = useSpaceStore((s) => s.activeSpaceId);
 
-  const findDebtItem = (description: string): LedgerItem | undefined => {
+  const findDebtItem = async (description: string): Promise<LedgerItem | undefined> => {
     if (!activeSpaceId) return undefined;
-    const items = mockDb.getLedgerItems(activeSpaceId);
-    return items.find(
+    const res = await fetch(
+      `/api/ledger-items?spaceId=${activeSpaceId}&limit=500`
+    );
+    if (!res.ok) return undefined;
+    const data = await res.json();
+    return (data.items as LedgerItem[]).find(
       (i) => i.description === description && i.type === "debt"
     );
   };
