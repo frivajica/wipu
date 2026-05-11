@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { spaces, spaceMembers } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { spaces, spaceMembers, user } from "@/db/schema";
+import { eq, inArray } from "drizzle-orm";
 import { generateInviteCode } from "@/lib/id-utils";
+import { getInitials } from "@/lib/id-utils";
 
-// GET /api/spaces - List all spaces for authenticated user
+// GET /api/spaces - List all spaces for authenticated user with member data
 export async function GET(request: NextRequest) {
   try {
     const session = await auth.api.getSession({ headers: request.headers });
@@ -13,6 +14,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // 1. Get all spaces where the current user is a member
     const userSpaces = await db
       .select({
         space: spaces,
@@ -22,12 +24,48 @@ export async function GET(request: NextRequest) {
       .innerJoin(spaceMembers, eq(spaces.id, spaceMembers.spaceId))
       .where(eq(spaceMembers.userId, session.user.id));
 
+    const spaceIds = userSpaces.map(({ space }) => space.id);
+
+    // 2. Batch-fetch all members + user info for those spaces (single query)
+    const membersRows =
+      spaceIds.length > 0
+        ? await db
+            .select({
+              spaceId: spaceMembers.spaceId,
+              userId: user.id,
+              name: user.name,
+              email: user.email,
+              image: user.image,
+            })
+            .from(spaceMembers)
+            .innerJoin(user, eq(spaceMembers.userId, user.id))
+            .where(inArray(spaceMembers.spaceId, spaceIds))
+        : [];
+
+    // Group members by spaceId in JS
+    const membersBySpace = new Map<string, typeof membersRows>();
+    for (const row of membersRows) {
+      const list = membersBySpace.get(row.spaceId) ?? [];
+      list.push(row);
+      membersBySpace.set(row.spaceId, list);
+    }
+
     return NextResponse.json({
-      spaces: userSpaces.map(({ space, role }) => ({
-        ...space,
-        members: [], // Populated separately if needed
-        role,
-      })),
+      spaces: userSpaces.map(({ space, role }) => {
+        const members = membersBySpace.get(space.id) ?? [];
+        return {
+          ...space,
+          role,
+          members: members.map((m) => m.userId),
+          membersData: members.map((m) => ({
+            id: m.userId,
+            name: m.name ?? m.email.split("@")[0],
+            email: m.email,
+            initials: getInitials(m.name ?? m.email),
+            avatarUrl: m.image ?? null,
+          })),
+        };
+      }),
     });
   } catch (error) {
     console.error("GET /api/spaces failed:", error);

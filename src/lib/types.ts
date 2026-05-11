@@ -4,7 +4,6 @@ export interface User {
   name: string;
   initials: string;
   avatarUrl: string | null;
-  password: string;
 }
 
 export interface Space {
