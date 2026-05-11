@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { categories, spaceMembers, ledgerItems } from "@/db/schema";
+import { ledgerItems, spaceMembers } from "@/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 
-// POST /api/debt-category-sync - Bulk sync category for debt items
+// POST /api/ledger-items - Create item
 export async function POST(request: NextRequest) {
   try {
     const session = await auth.api.getSession({ headers: request.headers });
@@ -13,9 +13,17 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { spaceId, description, category } = body;
+    const {
+      spaceId,
+      amount,
+      description,
+      category,
+      date,
+      type = "default",
+      groupId = null,
+    } = body;
 
-    if (!spaceId || !description || !category) {
+    if (!spaceId || !amount || !description || !category || !date) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -38,21 +46,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Update all matching debt items
-    await db
-      .update(ledgerItems)
-      .set({ category, updatedBy: session.user.id })
-      .where(
-        and(
-          eq(ledgerItems.spaceId, spaceId),
-          eq(ledgerItems.type, "debt"),
-          eq(ledgerItems.description, description)
-        )
-      );
+    // Get max sort_order for this space
+    const [maxSort] = await db
+      .select({ max: sql<number>`COALESCE(MAX(${ledgerItems.sortOrder}), -1)` })
+      .from(ledgerItems)
+      .where(eq(ledgerItems.spaceId, spaceId));
 
-    return NextResponse.json({ success: true });
+    const [item] = await db
+      .insert(ledgerItems)
+      .values({
+        spaceId,
+        amount: amount.toString(),
+        description,
+        category,
+        date,
+        type,
+        groupId,
+        sortOrder: (maxSort?.max ?? -1) + 1,
+        createdBy: session.user.id,
+        updatedBy: session.user.id,
+      })
+      .returning();
+
+    return NextResponse.json({ item });
   } catch (error) {
-    console.error("POST /api/debt-category-sync failed:", error);
+    console.error("POST /api/ledger-items failed:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
