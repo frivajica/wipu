@@ -1,6 +1,6 @@
 # Pending Work — Backend ↔ Frontend Gap Analysis
 
-**Last updated:** May 11, 2026 (First Revision — Quick Fixes Complete)
+**Last updated:** May 11, 2026 (Second Revision — All Active Bugs Fixed)
 
 This document tracks the current gap between what the backend supports and what the frontend actually uses. It serves as a roadmap for the next development iterations.
 
@@ -39,7 +39,7 @@ These are **live bugs** — the frontend renders broken or empty because the API
 | `GET /api/spaces` returns `members: []` | Space cards show "0 members" always | JOIN `space_members` + `"user"` in spaces query | ✅ Fixed in `603651a` |
 | `GET /api/spaces` missing `membersData` | Manage modal shows empty member list | Add `membersData: User[]` to response shape | ✅ Fixed in `603651a` |
 | `useDebtAutocomplete` client-side filters | Fetches all descriptions, filters on client | Add `type=debt` param to `/api/autocomplete` | ✅ Fixed in `d843ddb` |
-| `useDebtItemLookup` fetches 500 items | Queries all ledger items, filters client-side | Add `type=debt&description=xxx` filter to API | 🔴 Still active |
+| `useDebtItemLookup` fetches 500 items | Queries all ledger items, filters client-side | Add `type=debt&description=xxx` filter to API | ✅ Fixed in `8151914` |
 | `space-card.tsx` uses `space.members.length` | Should use `membersData?.length` after API fix | Update component to read from correct field | ✅ Fixed in `603651a` |
 
 ### Detailed: Member List Bug
@@ -79,9 +79,13 @@ These features require **only frontend work** — the API is ready.
 
 ### Active Bugs
 
-| Bug | Location | Reproduction | Status |
-|-----|----------|--------------|--------|
-| Debt item lookup scans 500 rows | `use-debt-item-lookup.ts` | Type a debt description — fetches entire ledger | Needs API enhancement |
+_No active bugs remaining._
+
+### Fixed in Bug Fixes (Second Revision)
+
+| Bug | Location | Fix | Commit |
+|-----|----------|-----|--------|
+| Debt item lookup scans 500 rows | `use-debt-item-lookup.ts` | Added `description` + `type` params to `GET /api/ledger-items`; hook fetches 1 row | `8151914` |
 
 ### Fixed in Quick Fixes (First Revision)
 
