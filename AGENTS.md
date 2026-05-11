@@ -8,9 +8,9 @@ This document is the single source of truth for architectural decisions, coding 
 
 **Wipu** is a Progressive Web App (PWA) for shared expense/income tracking among couples and small groups (max 8 per space). It prioritizes logical date inheritance, high-density visibility, and rapid data entry.
 
-**Current Phase:** Frontend-only with mock data (`lib/data.ts` acting as a local database persisted to `localStorage`).
+**Current Phase:** PostgreSQL backend with Better Auth (Neon PostgreSQL, Drizzle ORM, self-hosted auth). The mock database (`legacy/lib/data.ts`) has been fully replaced. All data flows through HTTP API routes backed by Drizzle queries and PostgreSQL functions.
 
-**Future Phase:** Supabase backend (PostgreSQL, Auth, Realtime, Row Level Security). The migration path is designed to be straightforward: replace mock query functions with Supabase client calls. Zustand stores and UI components should remain largely unchanged.
+**Future Phase:** Supabase migration (PostgreSQL, Auth, Realtime, Row Level Security). The architecture is designed so that swapping Drizzle/Neon for Supabase client calls is a drop-in replacement at the API route layer. Zustand stores and UI components remain unchanged.
 
 ---
 
@@ -23,8 +23,11 @@ This document is the single source of truth for architectural decisions, coding 
 | UI Library | React / React DOM | 19.1.0 | Required by Next.js 16 |
 | Language | TypeScript | 5.9.3 | Strict mode |
 | Styling | Tailwind CSS | 4.1.4 | Custom design tokens via `@theme` |
+| Database | Neon PostgreSQL | — | Serverless Postgres (free tier) |
+| ORM | Drizzle ORM | 0.45.2 | Schema-as-code, type-safe queries |
+| Auth | Better Auth | 1.6.10 | Self-hosted, Drizzle adapter |
 | Client State | Zustand | 5.0.3 | Auth, spaces, UI state |
-| Server State | TanStack Query (React) | 5.71.10 | Mock data fetching, caching, mutations |
+| Server State | TanStack Query (React) | 5.71.10 | API fetching, caching, mutations |
 | Drag & Drop | @dnd-kit/core + sortable | 6.3.1 / 10.0.0 | Touch-friendly, accessible |
 | Animations | Framer Motion | 12.6.3 | Layout animations, transitions |
 | Date Utils | luxon | 3.6.1 | Period grouping, formatting |
@@ -74,29 +77,28 @@ src/
 
 ### 3.3 Presentation / Data Decoupling
 
-**NEVER** import `mockDb` (or future API clients) directly into `.tsx` presentation components.
+**NEVER** import database clients or mock data directly into `.tsx` presentation components.
 
-**Correct:** Enrich data in the hook layer.
+**Correct:** Enrich data in the hook layer via API calls.
 
 ```typescript
 // hooks/use-ledger.ts — CORRECT
 const { data: items } = useQuery({
   queryKey: ["ledger", activeSpaceId],
   queryFn: async () => {
-    const rawItems = mockDb.getLedgerItems(activeSpaceId);
-    return rawItems.map((item) => ({
-      ...item,
-      updatedByName: mockDb.getUserById(item.updatedBy)?.name || "Unknown",
-    }));
+    const res = await fetch(`/api/ledger-items?spaceId=${activeSpaceId}&limit=500`);
+    if (!res.ok) throw new Error("Failed to fetch ledger items");
+    const data = await res.json();
+    return data.items;
   },
 });
 ```
 
-**Incorrect:** Calling `mockDb` inside a component render.
+**Incorrect:** Calling database methods inside a component render.
 
 ```typescript
 // components/ledger/some-component.tsx — INCORRECT
-const user = mockDb.getUserById(item.updatedBy); // ❌ Never do this
+const user = db.query.user.findFirst({ where: eq(user.id, item.updatedBy) }); // ❌ Never do this
 ```
 
 ### 3.4 Self-Documenting Code
@@ -196,7 +198,7 @@ Feature-specific hooks live at the root of `hooks/`:
 ### 5.3 Hook Conventions
 
 - **Explicit return types** on custom hooks.
-- **No inline delays:** Use `simulateDelay(ms)` from `lib/api-simulation.ts` instead of `await new Promise((resolve) => setTimeout(resolve, 300))`.
+- **No inline delays:** Do not add artificial latency in production hooks.
 - **Mutation factory:** Use `useMutationWithToast` for all mutations to ensure consistent invalidation and user feedback.
 
 ### 5.4 API Route Conventions
@@ -208,8 +210,8 @@ HTTP API routes live under `app/api/` and follow these patterns:
 | **Flat structure** | `app/api/auth/login/route.ts` — no route groups for APIs |
 | **Method handlers** | Export `GET`, `POST`, `PUT`, `DELETE` as named async functions |
 | **Error format** | Always return `{ error: string }` JSON with appropriate status codes |
-| **Validation** | Manual validation for now; add Zod schemas when integrating real backend |
-| **Cookie handling** | Use `next/headers` `cookies()` in route handlers; never in proxy.ts |
+| **Validation** | Zod schemas for complex payloads; manual validation acceptable for simple cases |
+| **Cookie handling** | Better Auth session via `auth.api.getSession({ headers: request.headers })` |
 | **Data enrichment** | Compute derived values (e.g., `defaultSpaceId`) server-side before responding |
 
 **Correct:** Route handler returns enriched data.
@@ -217,7 +219,7 @@ HTTP API routes live under `app/api/` and follow these patterns:
 // app/api/auth/login/route.ts — CORRECT
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const user = await authenticate(body.email, body.password);
+  const user = await auth.api.signInEmail({ body });
   const spaces = await getUserSpaces(user.id);
   return NextResponse.json({ user, defaultSpaceId: spaces[0]?.id ?? null });
 }
@@ -226,7 +228,7 @@ export async function POST(request: NextRequest) {
 **Incorrect:** Route returns raw user, hook computes spaces.
 ```typescript
 // app/api/auth/login/route.ts — INCORRECT
-return NextResponse.json({ user }); // ❌ Hook should not call mockDb after mutation
+return NextResponse.json({ user }); // ❌ Hook should not query DB after mutation
 ```
 
 ---
@@ -261,7 +263,15 @@ Use the `useMutationWithToast` factory for consistent behavior:
 
 ```typescript
 const addItem = useMutationWithToast({
-  mutationFn: mockDb.createLedgerItem,
+  mutationFn: async (item) => {
+    const res = await fetch("/api/ledger-items", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(item),
+    });
+    if (!res.ok) throw new Error("Failed to add item");
+    return res.json();
+  },
   successMessage: "Item added",
   invalidateKeys: [["ledger", activeSpaceId]],
 });
@@ -276,11 +286,11 @@ Two-tier defense for route protection:
 | **Server** | `proxy.ts` | Redirects unauthenticated users before page renders |
 | **Client** | `AuthGuard` component | Fallback redirect for edge cases |
 
-**Cookie sessions:** 7-day expiry, `httpOnly: false` (client reads for Zustand hydration), `sameSite: lax`.
+**Cookie sessions:** Better Auth manages sessions automatically via `better-auth.session_token` cookie.
 
 **No Zustand persist for auth:** The auth store is hydrated from the cookie on mount, not from localStorage. This prevents stale session state and hydration mismatches.
 
-**Pattern:** Hooks call HTTP API routes (`/api/auth/*`) via `fetch()`, not server actions. This aligns with the Supabase migration path and eliminates bundler boundary issues.
+**Pattern:** Hooks call Better Auth client (`authClient.signIn.email`, `authClient.signUp.email`) for auth operations, and use `auth.api.getSession({ headers })` in API routes. This aligns with the Supabase migration path and eliminates bundler boundary issues.
 
 ---
 
@@ -323,12 +333,9 @@ Component-level motion should still be wrapped where appropriate.
 | `lib/formatting.ts` | `formatCurrency()`, `formatDate()` | Anything else |
 | `lib/grouping.ts` | Period grouping, sorting | UI logic |
 | `lib/id-utils.ts` | `generateId()`, `generateInviteCode()` | Business logic |
-| `lib/api-simulation.ts` | `simulateDelay()` | Real API calls |
+| `lib/config.ts` | `USE_REAL_BACKEND` feature flag, env validation | Business logic |
 | `lib/types.ts` | Shared TypeScript interfaces | Runtime code |
 | `lib/constants.ts` | App-wide constants | Component-specific values |
-| `lib/data.ts` | **MOCK DATABASE** | UI code, hooks, components |
-
-**`lib/data.ts` is sacred.** It will be replaced by a real backend. Do not modify its data shape. Do not import it in `.tsx` components. Mock methods can be enhanced to mirror real backend behavior (e.g., sorting by `sortOrder`, filtering), but the types and field names must stay stable.
 
 ---
 
@@ -383,11 +390,10 @@ An autocomplete input should decompose into:
 
 ## 12. Data Layer Rules
 
-1. **`lib/data.ts` is the mock DB.** It will be replaced.
+1. **`legacy/lib/data.ts` is the legacy mock DB.** Kept for reference during migration.
 2. **Never import `mockDb` in `.tsx` components.**
 3. **Enrich data in hooks or API routes.** If a component needs user names, the hook should attach them. Server-side enrichment happens in API routes.
-4. **Use `simulateDelay()` for mock latency.** Do not write inline `setTimeout` promises.
-5. **Consistent mutation pattern:** `useMutationWithToast` + invalidate queries.
+4. **Consistent mutation pattern:** `useMutationWithToast` + invalidate queries.
 
 ### 12.1 Server-Only Boundaries
 
@@ -418,9 +424,9 @@ import { getSession } from "@/lib/session"; // ❌ Causes Turbopack module graph
 | Pitfall | Solution |
 |---|---|
 | Hardcoded spring configs | Import from `lib/animations.ts` |
-| `mockDb` calls in components | Move to hooks, enrich data there |
+| `mockDb` calls in components | Move to hooks, use API calls |
 | `mockDb` calls in hook `onSuccess` | Move to API routes, return enriched data |
-| Inline `await new Promise(...)` | Use `simulateDelay()` from `lib/api-simulation.ts` |
+| Inline `await new Promise(...)` | Remove artificial delays in production |
 | Importing server-only modules in proxy.ts | Inline cookie parsing directly in proxy.ts |
 | Duplicated form structures | Extract `*FormFields` component |
 | Duplicated dropdown/menu logic | Reuse `Dropdown` primitive |
@@ -430,7 +436,7 @@ import { getSession } from "@/lib/session"; // ❌ Causes Turbopack module graph
 | Missing `type`/`groupId` on LedgerItem | Always include required fields when creating items |
 | Client hooks in server pages | Add `"use client"` directive or extract to client component |
 | `useOptimistic` called outside transition | Wrap update and side effects in `React.startTransition()` |
-| `getLedgerItems()` not sorted by `sortOrder` | Add `[...items].sort((a, b) => a.sortOrder - b.sortOrder)` to mirror backend `ORDER BY` |
+| `getLedgerItems()` not sorted by `sortOrder` | API returns `ORDER BY sort_order ASC` |
 
 ---
 
@@ -469,7 +475,7 @@ fix: Resolve Z bug
 
 ---
 
-*Last updated: May 9, 2026*
+*Last updated: May 11, 2026*
 
 ## 16. Debt Feature Architecture
 
@@ -486,7 +492,7 @@ All ledger items have a `type`. Debt items additionally belong to a `DebtGroup`.
 
 ### 16.2 Balance Calculations
 
-Balances are computed client-side via `mockDb.getBalances(spaceId, periodType)` to ensure consistency with the same `mockDb` instance that holds the items:
+Balances are computed server-side via `get_space_balances()` and `get_period_stats()` PostgreSQL functions to ensure consistency with the same database that holds the items:
 
 | Balance | Calculation |
 |---|---|

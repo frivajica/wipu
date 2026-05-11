@@ -43,6 +43,10 @@ Wipu is a Progressive Web App (PWA) for couples and small teams (up to 15 member
 | [Tailwind CSS 4](https://tailwindcss.com/) | Utility-first styling with custom design tokens |
 | [Zustand](https://zustand-demo.pmnd.rs/) | Lightweight client state management |
 | [TanStack Query](https://tanstack.com/query/latest) | Server state, caching, and mutations |
+| [Better Auth](https://www.better-auth.com/) | Self-hosted authentication with session management |
+| [Neon PostgreSQL](https://neon.tech/) | Serverless Postgres (free tier) |
+| [Drizzle ORM](https://orm.drizzle.team/) | Type-safe SQL ORM with schema-as-code |
+| [@neondatabase/serverless](https://github.com/neondatabase/serverless) | Neon HTTP driver for serverless environments |
 | [@dnd-kit](https://dndkit.com/) | Accessible drag & drop for reordering |
 | [Framer Motion](https://www.framer.com/motion/) | Layout animations and micro-interactions |
 | [luxon](https://moment.github.io/luxon/) | Date utilities and period grouping |
@@ -69,6 +73,43 @@ cd wipu
 # Install dependencies
 pnpm install
 ```
+
+### Database Setup
+
+1. **Create a Neon project** → [console.neon.tech](https://console.neon.tech)
+2. **Copy your connection string** from the Neon dashboard
+3. **Create `.env.local`** in the project root:
+
+```env
+# Database
+DATABASE_URL=postgresql://neondb_owner:password@ep-xxx.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+
+# Auth (Better Auth)
+BETTER_AUTH_SECRET=your-32-char-secret-here
+BETTER_AUTH_URL=http://localhost:3000
+```
+
+Generate a secure auth secret:
+```bash
+openssl rand -base64 32
+```
+
+4. **Push the schema** and apply custom SQL:
+
+```bash
+pnpm db:push
+npx tsx scripts/fix-audit-trigger.ts
+```
+
+5. **Seed with demo data**:
+
+```bash
+pnpm db:seed
+```
+
+**Demo login credentials after seed:**
+- `sarah@example.com` / `demo12345678`
+- `john@example.com` / `demo12345678`
 
 ### Development
 
@@ -102,48 +143,65 @@ pnpm lint
 The codebase follows a **domain-organized** structure (by feature, not by technical role):
 
 ```
-docs/                       # Architecture documentation
-├── backend-architecture.md # Backend plan, schema, migration strategy
+docs/                       # Architecture documentation & pending work
+├── backend-architecture.md # Schema design, migration strategy, API shapes
+├── BACKEND_PLAN.md         # Phase-by-phase implementation checklist
+├── DEBT_FEATURES.md        # Debt tracking UI/UX specification
+├── PENDING.md              # Current gaps between backend and frontend
+├── PROJECT_DEFINITION.md   # High-level project definition
+├── RECURRING_FRONTEND_FEATURE.md # Recurring items specification
+└── REORDER_BY_DATE.md      # Smart date inheritance specification
 src/
 ├── app/                    # Next.js App Router pages
 │   ├── (auth)/             # Route group: login, register
-│   ├── api/                # HTTP API routes
-│   │   ├── auth/           # Login, register, logout
-│   │   ├── balances/       # Balance calculations
-│   │   ├── debt-groups/    # Debt group queries
-│   │   └── debt-category-sync/  # Bulk debt category updates
+│   ├── api/                # HTTP API routes (20+ endpoints)
+│   │   ├── auth/           # Better Auth catch-all handler
+│   │   ├── autocomplete/   # Description/category suggestions
+│   │   ├── balances/       # Balance calculations (SQL functions)
+│   │   ├── debt-groups/    # Debt group CRUD
+│   │   ├── debt-category-sync/  # Bulk category updates
+│   │   ├── export/         # CSV generation
+│   │   ├── ledger-items/   # Ledger CRUD + pagination
+│   │   ├── recurring/      # Recurring rules & instances
+│   │   └── spaces/         # Space management + membership
 │   ├── ledger/             # Main ledger page
 │   ├── debt/               # Debt tracking page
 │   └── spaces/             # Spaces management page
 ├── components/
-│   ├── ui/                 # Shared UI primitives (Button, Input, Modal, Dropdown, etc.)
-│   ├── layout/             # Header, space selector, tab navigation, user menu
+│   ├── ui/                 # Shared UI primitives (Button, Input, Modal, etc.)
+│   ├── layout/             # Header, space selector, tab navigation
 │   ├── auth/               # Login/register forms
 │   ├── ledger/             # Ledger domain: rows, period groups, controls
-│   │   ├── row/            # Ledger row sub-components
-│   │   ├── period/         # Period group sub-components
-│   │   └── forms/          # Shared form field layouts
-│   ├── debt/               # Debt domain: group cards, item rows, balance header
+│   ├── debt/               # Debt domain: group cards, item rows
 │   └── spaces/             # Space cards, modals, invite flows
+├── db/
+│   ├── index.ts            # Neon client singleton
+│   ├── schema.ts           # Drizzle schema (all tables + auth tables)
+│   ├── migrations/         # SQL functions, triggers, indexes
+│   └── seed.ts             # Currency reference data seed
 ├── hooks/
-│   ├── shared/             # Reusable hooks (click-outside, long-press, mutation factory)
-│   ├── use-auth.ts         # Auth logic
-│   ├── use-ledger.ts       # Ledger CRUD + data enrichment
+│   ├── shared/             # Reusable hooks
+│   ├── use-auth.ts         # Auth logic (Better Auth client)
+│   ├── use-ledger.ts       # Ledger CRUD via API
 │   ├── use-debt.ts         # Debt group fetching
 │   ├── use-spaces.ts       # Space management
-│   └── use-grouped-ledger.ts # Period grouping, sorting, pagination
+│   └── use-grouped-ledger.ts # Period grouping, sorting
 ├── stores/                 # Zustand stores (auth, spaces, UI state)
 ├── lib/
+│   ├── auth.ts             # Better Auth configuration (Drizzle adapter)
+│   ├── auth-client.ts      # Frontend auth client
+│   ├── config.ts           # Feature flags (USE_REAL_BACKEND)
 │   ├── utils.ts            # `cn()` utility only
 │   ├── animations.ts       # Shared spring presets
 │   ├── formatting.ts       # Currency & date formatting
 │   ├── grouping.ts         # Period grouping logic
 │   ├── id-utils.ts         # ID & invite code generation
-│   ├── api-simulation.ts   # Mock delay utilities
-│   ├── session.ts          # Cookie session helpers (server-only)
 │   ├── types.ts            # Shared TypeScript types
-│   ├── constants.ts        # App constants
-│   └── data.ts             # Mock database (replaced by real backend in Phase 2)
+│   └── constants.ts        # App constants
+scripts/
+├── seed-mock-data.ts       # Full database seed (users → ledger items)
+├── fix-audit-trigger.ts    # Apply custom SQL triggers/functions
+└── drop-all-tables.ts      # Clean reset helper
 ```
 
 ---
@@ -162,11 +220,11 @@ Key rules at a glance:
 
 ---
 
-## Current Phase: Frontend-Only
+## Current Phase: PostgreSQL Backend + Better Auth
 
-All data currently lives in `src/lib/data.ts` (a mock database class) accessed via TanStack Query hooks with simulated async delay. Client state (auth, active space, UI preferences) is managed by Zustand stores.
+The app is fully migrated from mock data to a real PostgreSQL backend via Neon. Better Auth handles session management. All ledger CRUD, space management, debt tracking, and balance calculations are backed by Drizzle ORM queries and PostgreSQL functions.
 
-The hook/store architecture is designed so that **migrating to a real backend requires swapping only the `queryFn` internals** in hooks and API routes — Zustand stores, React components, and the animation layer remain unchanged.
+The frontend architecture remains unchanged — only `queryFn` internals in hooks were swapped for `fetch()` calls to the API layer.
 
 For the full backend plan, database schema, and migration strategy, see [**docs/backend-architecture.md**](./docs/backend-architecture.md).
 
@@ -180,13 +238,16 @@ For the full backend plan, database schema, and migration strategy, see [**docs/
 | build | `pnpm build` | Production build |
 | start | `pnpm start` | Start production server |
 | lint | `pnpm lint` | Run ESLint |
+| db:push | `pnpm db:push` | Push Drizzle schema to database |
+| db:studio | `pnpm db:studio` | Open Drizzle Studio |
+| db:seed | `pnpm db:seed` | Seed database with demo data |
 
 ---
 
 ## Roadmap
 
-- **Phase 1** ✅ Frontend-only PWA with mock data (current)
-- **Phase 2** PostgreSQL backend, real authentication, real-time sync
+- **Phase 1** ✅ Frontend-only PWA with mock data
+- **Phase 2** ✅ PostgreSQL backend, Better Auth, real-time data
 - **Phase 3** Recurring items, CSV export
 - **Phase 4** Budgets screen
 - **Phase 5** Analytics screen
