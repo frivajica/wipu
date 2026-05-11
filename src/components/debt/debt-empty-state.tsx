@@ -1,8 +1,13 @@
 import { motion } from "framer-motion";
-import { Wallet } from "lucide-react";
+import { Wallet, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { SPRING_GENTLE } from "@/lib/animations";
 
-export function DebtEmptyState() {
+interface DebtEmptyStateProps {
+  onCreate?: () => void;
+}
+
+export function DebtEmptyState({ onCreate }: DebtEmptyStateProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -15,8 +20,14 @@ export function DebtEmptyState() {
       </div>
       <h3 className="text-lg font-semibold text-text">No debt groups yet</h3>
       <p className="mt-1 max-w-sm text-sm text-text-secondary">
-        Debt groups will appear here when you add debt items to your ledger.
+        Create a group to start tracking shared debts.
       </p>
+      {onCreate && (
+        <Button variant="secondary" size="sm" className="mt-4" onClick={onCreate}>
+          <Plus className="h-4 w-4 mr-1.5" />
+          New Group
+        </Button>
+      )}
     </motion.div>
   );
 }
