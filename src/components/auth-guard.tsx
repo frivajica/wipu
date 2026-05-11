@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/auth-store";
+import { authClient } from "@/lib/auth-client";
 import { Loader2 } from "lucide-react";
 
 const publicRoutes = ["/login", "/register"];
@@ -12,13 +13,32 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const hasHydrated = useAuthStore((s) => s.hasHydrated);
-  const hydrateFromCookie = useAuthStore((s) => s.hydrateFromCookie);
+  const setUser = useAuthStore((s) => s.setUser);
+  const clearUser = useAuthStore((s) => s.clearUser);
+  const setHydrated = useAuthStore((s) => s.setHydrated);
 
   useEffect(() => {
-    if (!hasHydrated) {
-      hydrateFromCookie();
-    }
-  }, [hasHydrated, hydrateFromCookie]);
+    // Check session with Better Auth
+    authClient.getSession().then((session) => {
+      if (session.data?.user) {
+        setUser({
+          id: session.data.user.id,
+          email: session.data.user.email,
+          name: session.data.user.name || session.data.user.email,
+          initials: (session.data.user.name || session.data.user.email)
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+            .toUpperCase()
+            .slice(0, 2),
+          avatarUrl: session.data.user.image || null,
+        });
+      } else {
+        clearUser();
+      }
+      setHydrated(true);
+    });
+  }, [setUser, clearUser, setHydrated]);
 
   useEffect(() => {
     if (!hasHydrated) return;

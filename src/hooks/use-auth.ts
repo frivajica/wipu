@@ -3,7 +3,7 @@
 import { useAuthStore } from "@/stores/auth-store";
 import { useSpaceStore } from "@/stores/space-store";
 import { useMutationWithToast } from "@/hooks/shared/use-mutation-with-toast";
-import { User } from "@/lib/types";
+import { authClient } from "@/lib/auth-client";
 
 interface LoginPayload {
   email: string;
@@ -24,54 +24,75 @@ export function useAuth() {
 
   const loginMutation = useMutationWithToast({
     mutationFn: async ({ email, password }: LoginPayload) => {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+      const result = await authClient.signIn.email({
+        email,
+        password,
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Login failed");
+      if (result.error) {
+        throw new Error(result.error.message || "Login failed");
       }
 
-      return data as { user: Omit<User, "password">; defaultSpaceId: string | null };
+      // Fetch user data after login
+      const session = await authClient.getSession();
+      if (session.data?.user) {
+        setUser({
+          id: session.data.user.id,
+          email: session.data.user.email,
+          name: session.data.user.name || session.data.user.email,
+          initials: (session.data.user.name || session.data.user.email)
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+            .toUpperCase()
+            .slice(0, 2),
+          avatarUrl: session.data.user.image || null,
+        });
+      }
+
+      return result;
     },
     successMessage: "Signed in successfully",
     invalidateKeys: [["spaces"]],
-    onSuccess: ({ user: loggedInUser, defaultSpaceId }) => {
-      setUser(loggedInUser);
-      if (defaultSpaceId) setActiveSpace(defaultSpaceId);
-    },
   });
 
   const registerMutation = useMutationWithToast({
     mutationFn: async ({ name, email, password }: RegisterPayload) => {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+      const result = await authClient.signUp.email({
+        name,
+        email,
+        password,
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Registration failed");
+      if (result.error) {
+        throw new Error(result.error.message || "Registration failed");
       }
 
-      return data as { user: Omit<User, "password">; space: { id: string } };
+      // After registration, user is auto-signed in
+      const session = await authClient.getSession();
+      if (session.data?.user) {
+        setUser({
+          id: session.data.user.id,
+          email: session.data.user.email,
+          name: session.data.user.name || session.data.user.email,
+          initials: (session.data.user.name || session.data.user.email)
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+            .toUpperCase()
+            .slice(0, 2),
+          avatarUrl: session.data.user.image || null,
+        });
+      }
+
+      return result;
     },
     successMessage: "Account created successfully",
     invalidateKeys: [["spaces"]],
-    onSuccess: ({ user: newUser, space }) => {
-      setUser(newUser);
-      setActiveSpace(space.id);
-    },
   });
 
   const logout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await authClient.signOut();
     clearUser();
     setActiveSpace(null);
   };
