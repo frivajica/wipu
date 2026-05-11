@@ -97,3 +97,79 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+
+// POST /api/ledger-items
+export async function POST(request: NextRequest) {
+  try {
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const {
+      spaceId,
+      amount,
+      description,
+      category,
+      date,
+      type = "default",
+      groupId,
+      currency = "MXN",
+    } = body;
+
+    if (!spaceId || amount === undefined || !description || !category || !date) {
+      return NextResponse.json(
+        { error: "spaceId, amount, description, category, and date are required" },
+        { status: 400 }
+      );
+    }
+
+    // Check membership
+    const membership = await db
+      .select()
+      .from(spaceMembers)
+      .where(
+        and(
+          eq(spaceMembers.spaceId, spaceId),
+          eq(spaceMembers.userId, session.user.id)
+        )
+      )
+      .limit(1);
+
+    if (!membership.length) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // Auto-increment sort_order
+    const [maxSort] = await db
+      .select({ max: sql<number>`COALESCE(MAX(sort_order), -1)` })
+      .from(ledgerItems)
+      .where(eq(ledgerItems.spaceId, spaceId));
+
+    const sortOrder = (maxSort?.max ?? -1) + 1;
+
+    const [inserted] = await db
+      .insert(ledgerItems)
+      .values({
+        spaceId,
+        amount: String(amount),
+        currency,
+        description,
+        category,
+        date,
+        type,
+        groupId: groupId || null,
+        sortOrder,
+        version: 1,
+        createdBy: session.user.id,
+        updatedBy: session.user.id,
+      })
+      .returning();
+
+    return NextResponse.json({ item: inserted }, { status: 201 });
+  } catch (error) {
+    console.error("POST /api/ledger-items failed:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
