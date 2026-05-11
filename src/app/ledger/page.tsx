@@ -16,6 +16,7 @@ import { InfiniteScrollLoader } from "@/components/ledger/infinite-scroll-loader
 import { LedgerSkeleton } from "@/components/ledger/ledger-skeleton";
 import { LedgerEmptyState } from "@/components/ledger/ledger-empty-state";
 import { LedgerBalanceHeader } from "@/components/ledger/ledger-balance-header";
+import { ExportButton } from "@/components/ledger/export-button";
 import { DateTime } from "luxon";
 
 export default function LedgerPage() {
@@ -137,6 +138,7 @@ export default function LedgerPage() {
               checked={reorderByDate}
               onChange={setReorderByDate}
             />
+            <ExportButton spaceId={activeSpaceId} />
           </div>
         </div>
 
