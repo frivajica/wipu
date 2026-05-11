@@ -11,12 +11,10 @@ export function useDebtAutocomplete(query: string) {
     queryFn: async () => {
       if (!activeSpaceId || query.length < 1) return [];
       const res = await fetch(
-        `/api/autocomplete?field=description&q=${encodeURIComponent(query)}&spaceId=${activeSpaceId}`
+        `/api/autocomplete?field=description&q=${encodeURIComponent(query)}&spaceId=${activeSpaceId}&type=debt`
       );
       if (!res.ok) throw new Error("Failed to fetch suggestions");
       const data = await res.json();
-      // Filter to debt items only on client for now
-      // In future, add type=debt filter to API
       return (data.suggestions as string[]).slice(0, 5);
     },
     enabled: !!activeSpaceId && query.length >= 1,

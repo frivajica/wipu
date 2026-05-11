@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
     const field = searchParams.get("field");
     const q = searchParams.get("q");
     const spaceId = searchParams.get("spaceId");
+    const itemType = searchParams.get("type");
 
     if (!field || !q) {
       return NextResponse.json(
@@ -45,18 +46,16 @@ export async function GET(request: NextRequest) {
     let suggestions: string[] = [];
 
     if (field === "description") {
-      // Use trigram index for fast ILIKE search
+      const conditions: (ReturnType<typeof eq> | ReturnType<typeof sql>)[] = [
+        sql`${ledgerItems.description} ILIKE ${`%${q}%`}`,
+      ];
+      if (spaceId) conditions.push(eq(ledgerItems.spaceId, spaceId));
+      if (itemType) conditions.push(eq(ledgerItems.type, itemType));
+
       const items = await db
         .selectDistinct({ description: ledgerItems.description })
         .from(ledgerItems)
-        .where(
-          spaceId
-            ? and(
-                eq(ledgerItems.spaceId, spaceId),
-                sql`${ledgerItems.description} ILIKE ${`%${q}%`}`
-              )
-            : sql`${ledgerItems.description} ILIKE ${`%${q}%`}`
-        )
+        .where(and(...conditions))
         .limit(10);
 
       suggestions = items.map((item) => item.description);
