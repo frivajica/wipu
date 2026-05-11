@@ -15,10 +15,9 @@ This document captures the backend technology evaluation, database schema design
 - [7. Recurring Items](#7-recurring-items)
 - [8. CSV Export](#8-csv-export)
 - [9. Multi-Currency](#9-multi-currency)
-- [10. Recurring Items](#10-recurring-items)
-- [11. CSV Export](#11-csv-export)
-- [12. Migration Phases](#12-migration-phases)
-- [13. Scale Parameters](#13-scale-parameters)
+- [10. Migration Phases](#10-migration-phases)
+- [11. Scale Parameters](#11-scale-parameters)
+- [12. API Response Shape](#12-api-response-shape)
 
 ---
 
@@ -265,12 +264,19 @@ RETURNS TABLE(
   total_debt NUMERIC,
   real_balance NUMERIC
 ) AS $$
+  WITH all_items AS (
+    SELECT amount, type FROM ledger_items WHERE space_id = p_space_id
+    UNION ALL
+    SELECT r.amount, r.type
+    FROM recurring_instances ri
+    JOIN recurring_items r ON ri.recurring_item_id = r.id
+    WHERE r.space_id = p_space_id AND NOT ri.skipped
+  )
   SELECT
     COALESCE(SUM(amount), 0) AS total_balance,
     COALESCE(SUM(CASE WHEN type = 'debt' THEN amount ELSE 0 END), 0) AS total_debt,
     COALESCE(SUM(CASE WHEN type = 'default' THEN amount ELSE 0 END), 0) AS real_balance
-  FROM ledger_items
-  WHERE space_id = p_space_id;
+  FROM all_items;
 $$ LANGUAGE sql STABLE;
 
 CREATE OR REPLACE FUNCTION get_debt_group_balance(p_space_id UUID, p_group_id UUID)
@@ -280,6 +286,78 @@ RETURNS NUMERIC AS $$
   WHERE space_id = p_space_id
     AND type = 'debt'
     AND group_id = p_group_id;
+$$ LANGUAGE sql STABLE;
+
+CREATE OR REPLACE FUNCTION get_period_stats(
+  p_space_id UUID,
+  p_from DATE,
+  p_to DATE,
+  p_period_type TEXT  -- 'monthly' | 'weekly' | 'biweekly'
+)
+RETURNS TABLE(
+  period_key TEXT,
+  period_start DATE,
+  period_end DATE,
+  period_balance NUMERIC,
+  period_debt NUMERIC,
+  running_balance NUMERIC,
+  item_count INT
+) AS $$
+  WITH
+  -- Union normal ledger items with non-skipped recurring instances
+  all_items AS (
+    SELECT date, amount, type FROM ledger_items
+    WHERE space_id = p_space_id AND date >= p_from AND date <= p_to
+    UNION ALL
+    SELECT ri.occurrence_date, r.amount, r.type
+    FROM recurring_instances ri
+    JOIN recurring_items r ON ri.recurring_item_id = r.id
+    WHERE r.space_id = p_space_id AND NOT ri.skipped
+      AND ri.occurrence_date >= p_from AND ri.occurrence_date <= p_to
+  ),
+  -- Assign period key based on period type
+  with_period AS (
+    SELECT
+      date, amount, type,
+      CASE p_period_type
+        WHEN 'weekly'    THEN to_char(date, 'IYYY-"W"IW')
+        WHEN 'biweekly'  THEN to_char(date, 'IYYY-"W"IW')  -- grouped pairs in app layer
+        ELSE to_char(date, 'YYYY-MM')
+      END AS period_key,
+      CASE p_period_type
+        WHEN 'weekly'    THEN date_trunc('week', date)::DATE
+        WHEN 'biweekly'  THEN date_trunc('week', date)::DATE
+        ELSE date_trunc('month', date)::DATE
+      END AS period_start,
+      CASE p_period_type
+        WHEN 'weekly'    THEN (date_trunc('week', date) + INTERVAL '6 days')::DATE
+        WHEN 'biweekly'  THEN (date_trunc('week', date) + INTERVAL '13 days')::DATE
+        ELSE (date_trunc('month', date) + INTERVAL '1 month - 1 day')::DATE
+      END AS period_end
+    FROM all_items
+  ),
+  -- Aggregate per period
+  period_sums AS (
+    SELECT
+      period_key, period_start, period_end,
+      COALESCE(SUM(CASE WHEN type = 'default' THEN amount ELSE 0 END), 0)
+        + COALESCE(SUM(CASE WHEN type = 'debt' THEN amount ELSE 0 END), 0) AS period_balance,
+      COALESCE(SUM(CASE WHEN type = 'debt' THEN amount ELSE 0 END), 0) AS period_debt,
+      COUNT(*) AS item_count
+    FROM with_period
+    GROUP BY period_key, period_start, period_end
+  ),
+  -- Running balance via window function
+  with_running AS (
+    SELECT
+      period_key, period_start, period_end,
+      period_balance, period_debt, item_count,
+      SUM(period_balance) OVER (ORDER BY period_start ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS running_balance
+    FROM period_sums
+  )
+  SELECT period_key, period_start, period_end, period_balance, period_debt, running_balance, item_count
+  FROM with_running
+  ORDER BY period_start DESC;
 $$ LANGUAGE sql STABLE;
 ```
 
@@ -308,8 +386,8 @@ $$ LANGUAGE sql STABLE;
 | Space membership enforcement | `maxMembers` check must be server-side to prevent races |
 | Invite code generation/validation | Cryptographically secure, server-validated |
 | Debt category sync | Atomic bulk update (transaction) |
-| `sortOrder` persistence | Backend stores integer positions after DnD reorder |
-| Default sort on fetch | `ORDER BY sort_order` in query |
+| `sortOrder` storage | `sort_order` INT column on `ledger_items` persisted by the backend; default sort on fetch is `ORDER BY sort_order` |
+| `sortOrder` reassignment after drag | On `POST /api/ledger-items/reorder`, backend assigns `sort_order = 0, 1, 2...` sequentially from received `itemIds[]` in a single transaction; marked `significance = 'internal'` in audit log |
 | Recurring instance precomputation | Cron job generates + stores all occurrences; skip/re-add via mutations |
 | Period visibility | Query determines which periods contain normal items; only those are returned |
 | CSV export | Server-generated to avoid loading all data client-side |
@@ -321,9 +399,9 @@ $$ LANGUAGE sql STABLE;
 |---|---|
 | Column-header sorting (date, amount, etc.) | Ephemeral view preference — doesn't change data |
 | Period type selection (monthly, weekly, etc.) | UI preference persisted in Zustand |
-| Period grouping logic | Client-side grouping of date-range-filtered items — flexible for instant period switching |
+| Period grouping | The API returns `periodKeys[]` (ordered list of period identifiers) and items pre-filtered to the date range. Frontend iterates the bounded slice and groups by period name — still client-side because data is pre-filtered (~9,000 items max per query window, completes in <5ms) |
 | Active space selection | Pure client state (which space is currently viewed) |
-| `includesDebt` toggle | Visual preference — whether debt items are dimmed |
+| `includesDebt` toggle | Purely visual — does NOT affect API calls. API always returns all items. Frontend dims `type='debt'` rows and switches "Total" pill between `realBalance` and `totalBalance` |
 | Currency formatting | `Intl.NumberFormat` with locale — belongs in UI layer |
 | Optimistic updates | TanStack Query optimistically adjusts totals on add/edit |
 | Drag & drop interaction | DnD Kit handles the gesture; sends final order to backend |
@@ -337,7 +415,7 @@ $$ LANGUAGE sql STABLE;
 |---|---|
 | Date-range filtering | At 4,500 items/month, the API must accept `from`/`to` params and return only the relevant slice. The frontend fetches the current visible period range + 1 period ahead/behind for smooth scrolling. |
 | Autocomplete | At 54K+ items, client-side `.filter()` is too slow. Server-side `ILIKE` with a GIN trigram index handles this in <1ms. |
-| Period balance rollups | Running balances across ALL periods must be computed server-side via SQL window functions. |
+| Period balance rollups | SQL window functions compute running_balance per period; returned in API response for PeriodHeader hover cards — frontend never sums client-side |
 | Recurring instance generation | Precompute all historical + future instances; store in `recurring_instances` for fast SUM queries |
 | Period visibility detection | Query `MAX(date) FROM ledger_items WHERE type = 'default'` per space to know last visible period |
 
@@ -345,9 +423,9 @@ $$ LANGUAGE sql STABLE;
 
 | Feature | Frontend | Backend |
 |---|---|---|
-| Period grouping | Groups date-filtered items for display | Returns items filtered by `from`/`to` date range |
-| Sorting within groups | Sorts items by selected column | Returns items in `sortOrder` by default |
-| Recurring instance in totals | Displays recurring amounts in period groups | SUM of normal items + non-skipped recurring instances per period |
+| Period grouping | Groups pre-filtered items by period name | Returns `periodKeys[]` + date-range-filtered slice |
+| Sorting within groups | Sorts loaded items by selected column (ephemeral, not persisted) | Returns items ordered by `sort_order` (manual order) |
+| Recurring in period response | Renders merged item list; `instanceSource: 'recurring'` flag available for optional visual treatment | Returns single merged array per period (normal ledger_items + non-skipped recurring instances) with `instanceSource` field |
 | Period visibility | Renders only periods returned by API | Determines visible periods from normal item dates; recurring alone doesn't create periods |
 
 ---
@@ -650,3 +728,122 @@ GET /api/autocomplete?field=category&q=food
 ```
 
 Server-side `ILIKE` with a GIN trigram index handles this in <1ms. If space-limited autocomplete becomes necessary, the API accepts an optional `spaceId` filter, with a future migration path to full multi-space search.
+
+---
+
+## 12. API Response Shape
+
+### Ledger Items API
+
+**`GET /api/ledger-items?spaceId=X&from=YYYY-MM-DD&to=YYYY-MM-DD&periodType=monthly&limit=500&offset=0`**
+
+The response is structured around **period groups**, not a flat item list. The backend uses `get_period_stats()` to compute per-period balances and running totals, and returns the full payload needed to render the ledger UI without additional computation.
+
+```typescript
+interface LedgerItemsResponse {
+  // Period group metadata — ordered newest-first
+  periodKeys: string[];  // e.g. ["April 2026", "March 2026"]
+
+  // Per-period data map keyed by periodKey
+  periods: Record<string, PeriodGroupData>;
+
+  // Pagination
+  pagination: {
+    totalCount: number;      // total items in date range (for scroll UI)
+    hasMore: boolean;        // more items exist in this period beyond 500 limit
+    nextOffset: number;      // offset for next slice within current period
+    nextPeriodKey: string | null;  // if current period exhausted, next group to fetch
+    nextPeriodOffset: number;      // offset to start at for next group
+  };
+}
+
+interface PeriodGroupData {
+  periodStart: string;      // ISO date — first day of period
+  periodEnd: string;        // ISO date — last day of period
+  periodBalance: number;    // SUM(normal items + non-skipped recurring) for this period
+  periodDebt: number;       // SUM of debt-type items within period
+  runningBalance: number;   // cumulative balance from period start through this period
+  itemCount: number;        // total items in this period
+
+  // Merged, sorted item list for this period
+  // Normal ledger_items have instanceSource = null
+  // Recurring instances have instanceSource = "recurring" and recurringInstanceId
+  items: LedgerItemResponse[];
+}
+
+interface LedgerItemResponse {
+  id: string;
+  amount: number;
+  currency: string;
+  description: string;
+  category: string;
+  date: string;             // ISO date
+  type: "default" | "debt";
+  groupId: string | null;
+  sortOrder: number;
+  version: number;
+  createdBy: string;
+  updatedBy: string;
+  updatedByName: string;    // JOINed from users table — no client-side enrichment needed
+  createdAt: string;
+  updatedAt: string;
+
+  // Only present for recurring-generated instances
+  instanceSource: "recurring" | null;
+  recurringInstanceId: string | null;
+}
+```
+
+**Key design decisions:**
+- `updatedByName` is JOINed server-side — the frontend never calls `mockDb.getUserById()` for enrichment
+- `runningBalance` is pre-computed by `SUM() OVER (ORDER BY period_start)` in `get_period_stats` — frontend never sums client-side
+- Recurring instances are **merged into the period's items array** — frontend renders them as normal rows; the optional `instanceSource` flag enables subtle visual treatment (e.g., a faint "⟳" icon) without changing display logic
+- Items within a period are returned in `sortOrder` (manual order) — the frontend's column-header sort applies on top of this client-side
+- `periodBalance` includes recurring instances already — the frontend sums are always zero-cost display reads
+
+### Autocomplete API
+
+**`GET /api/autocomplete?field=description&q=rent&limit=10`**
+
+```typescript
+interface AutocompleteResponse {
+  suggestions: string[];  // e.g. ["Rent - Apartment", "Rent - Car"]
+  // Scoped to all spaces the authenticated user belongs to
+}
+```
+
+No spaceId required — the API reads user session and queries across all accessible spaces.
+
+### Balances API
+
+**`GET /api/balances?spaceId=X&periodType=monthly`**
+
+```typescript
+interface BalancesResponse {
+  totalBalance: number;   // normal items + non-skipped recurring
+  totalDebt: number;      // debt-type items only
+  realBalance: number;    // non-debt items only
+  // All computed by get_space_balances() SQL function with UNION ALL
+}
+```
+
+### Reorder API
+
+**`POST /api/ledger-items/reorder`**
+
+```typescript
+// Request
+interface ReorderRequest {
+  spaceId: string;
+  itemIds: string[];  // ordered list — backend assigns sort_order = 0, 1, 2...
+  dateUpdates?: Record<string, string>;  // { itemId: "YYYY-MM-DD" } for date inheritance on drag
+}
+
+// Response
+interface ReorderResponse {
+  success: true;
+  items: LedgerItemResponse[];  // updated items with new sort_order
+}
+```
+
+The backend applies all `dateUpdates` in the same transaction before reassigning `sort_order`. Both are internal updates (significance = `'internal'` in audit_log).
