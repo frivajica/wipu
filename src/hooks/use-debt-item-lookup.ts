@@ -9,13 +9,11 @@ export function useDebtItemLookup() {
   const findDebtItem = async (description: string): Promise<LedgerItem | undefined> => {
     if (!activeSpaceId) return undefined;
     const res = await fetch(
-      `/api/ledger-items?spaceId=${activeSpaceId}&limit=500`
+      `/api/ledger-items?spaceId=${activeSpaceId}&description=${encodeURIComponent(description)}&type=debt&limit=1`
     );
     if (!res.ok) return undefined;
     const data = await res.json();
-    return (data.items as LedgerItem[]).find(
-      (i) => i.description === description && i.type === "debt"
-    );
+    return (data.items as LedgerItem[])[0];
   };
 
   return { findDebtItem };

@@ -16,6 +16,8 @@ export async function GET(request: NextRequest) {
     const spaceId = searchParams.get("spaceId");
     const from = searchParams.get("from");
     const to = searchParams.get("to");
+    const description = searchParams.get("description");
+    const itemType = searchParams.get("type");
     const limit = parseInt(searchParams.get("limit") || "500", 10);
     const offset = parseInt(searchParams.get("offset") || "0", 10);
 
@@ -62,6 +64,8 @@ export async function GET(request: NextRequest) {
       WHERE li.space_id = ${spaceId}
       ${from ? sql`AND li.date >= ${from}` : sql``}
       ${to ? sql`AND li.date <= ${to}` : sql``}
+      ${description ? sql`AND li.description = ${description}` : sql``}
+      ${itemType ? sql`AND li.type = ${itemType}` : sql``}
       ORDER BY li.sort_order ASC
       LIMIT ${limit}
       OFFSET ${offset}
