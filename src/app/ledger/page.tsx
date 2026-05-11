@@ -77,7 +77,6 @@ export default function LedgerPage() {
         spaceId: activeSpaceId || "",
         createdBy: user?.id || "",
         updatedBy: user?.id || "",
-        sortOrder: 0,
         type: data.type || "default",
         groupId: data.groupId || null,
       });

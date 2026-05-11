@@ -3,31 +3,24 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/auth-store";
 import { useSpaceStore } from "@/stores/space-store";
-import { mockDb } from "@/lib/data";
-import { User } from "@/lib/types";
-import { simulateDelay } from "@/lib/api-simulation";
 import { useMutationWithToast } from "@/hooks/shared/use-mutation-with-toast";
 import { useToastStore } from "@/components/ui/toast";
+import { Space } from "@/lib/types";
 
 export function useSpaces() {
   const user = useAuthStore((s) => s.user);
   const activeSpaceId = useSpaceStore((s) => s.activeSpaceId);
   const setActiveSpace = useSpaceStore((s) => s.setActiveSpace);
-
   const { addToast } = useToastStore();
 
   const { data: spaces = [], isLoading } = useQuery({
     queryKey: ["spaces", user?.id],
-    queryFn: async () => {
+    queryFn: async (): Promise<Space[]> => {
       if (!user) return [];
-      await simulateDelay(300);
-      const rawSpaces = mockDb.getSpacesByUserId(user.id);
-      return rawSpaces.map((space) => ({
-        ...space,
-        membersData: space.members
-          .map((memberId) => mockDb.getUserById(memberId))
-          .filter((u): u is User => u !== undefined),
-      }));
+      const res = await fetch("/api/spaces");
+      if (!res.ok) throw new Error("Failed to fetch spaces");
+      const data = await res.json();
+      return data.spaces;
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
@@ -35,15 +28,13 @@ export function useSpaces() {
 
   const createSpace = useMutationWithToast({
     mutationFn: async (name: string) => {
-      if (!user) throw new Error("Not authenticated");
-      const space = mockDb.createSpace({
-        name,
-        ownerId: user.id,
-        members: [user.id],
-        maxMembers: 8,
-        isPersonal: false,
+      const res = await fetch("/api/spaces", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
       });
-      return space;
+      if (!res.ok) throw new Error("Failed to create space");
+      return res.json();
     },
     successMessage: "Space created",
     invalidateKeys: [["spaces"]],
@@ -51,9 +42,13 @@ export function useSpaces() {
 
   const updateSpaceName = useMutationWithToast({
     mutationFn: async ({ spaceId, name }: { spaceId: string; name: string }) => {
-      const space = mockDb.updateSpaceName(spaceId, name);
-      if (!space) throw new Error("Space not found");
-      return space;
+      const res = await fetch(`/api/spaces/${spaceId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      if (!res.ok) throw new Error("Failed to update space");
+      return res.json();
     },
     successMessage: "Space name updated",
     invalidateKeys: [["spaces"]],
@@ -61,8 +56,12 @@ export function useSpaces() {
 
   const removeMember = useMutationWithToast({
     mutationFn: async ({ spaceId, userId }: { spaceId: string; userId: string }) => {
-      mockDb.removeMember(spaceId, userId);
-      return Promise.resolve();
+      const res = await fetch(`/api/spaces/${spaceId}/members`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+      if (!res.ok) throw new Error("Failed to remove member");
     },
     successMessage: "Member removed",
     invalidateKeys: [["spaces"]],
@@ -70,8 +69,8 @@ export function useSpaces() {
 
   const deleteSpace = useMutationWithToast({
     mutationFn: async (spaceId: string) => {
-      mockDb.deleteSpace(spaceId);
-      return Promise.resolve();
+      const res = await fetch(`/api/spaces/${spaceId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete space");
     },
     successMessage: "Space deleted",
     invalidateKeys: [["spaces"]],
@@ -79,9 +78,8 @@ export function useSpaces() {
 
   const leaveSpace = useMutationWithToast({
     mutationFn: async (spaceId: string) => {
-      if (!user) throw new Error("Not authenticated");
-      mockDb.leaveSpace(spaceId, user.id);
-      return Promise.resolve();
+      const res = await fetch(`/api/spaces/${spaceId}/leave`, { method: "POST" });
+      if (!res.ok) throw new Error("Failed to leave space");
     },
     successMessage: "You left the space",
     invalidateKeys: [["spaces"]],

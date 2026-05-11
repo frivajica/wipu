@@ -3,9 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useSpaceStore } from "@/stores/space-store";
 import { useUIStore } from "@/stores/ui-store";
-import { mockDb } from "@/lib/data";
 import { LedgerItem, LedgerBalances } from "@/lib/types";
-import { simulateDelay } from "@/lib/api-simulation";
 import { useMutationWithToast } from "@/hooks/shared/use-mutation-with-toast";
 
 export function useLedger() {
@@ -16,12 +14,10 @@ export function useLedger() {
     queryKey: ["ledger", activeSpaceId],
     queryFn: async (): Promise<LedgerItem[]> => {
       if (!activeSpaceId) return [];
-      await simulateDelay(300);
-      const rawItems = mockDb.getLedgerItems(activeSpaceId);
-      return rawItems.map((item) => {
-        const user = mockDb.getUserById(item.updatedBy);
-        return { ...item, updatedByName: user?.name || "Unknown" };
-      });
+      const res = await fetch(`/api/ledger-items?spaceId=${activeSpaceId}&limit=500`);
+      if (!res.ok) throw new Error("Failed to fetch ledger items");
+      const data = await res.json();
+      return data.items;
     },
     enabled: !!activeSpaceId,
     staleTime: 5 * 60 * 1000,
@@ -33,16 +29,24 @@ export function useLedger() {
       if (!activeSpaceId) {
         return { totalBalance: 0, totalDebt: 0, realBalance: 0, periods: [] };
       }
-      await simulateDelay(300);
-      return mockDb.getBalances(activeSpaceId, periodType);
+      const res = await fetch(`/api/balances?spaceId=${activeSpaceId}&periodType=${periodType}`);
+      if (!res.ok) throw new Error("Failed to fetch balances");
+      return res.json();
     },
     enabled: !!activeSpaceId,
     staleTime: 5 * 60 * 1000,
   });
 
   const addItem = useMutationWithToast({
-    mutationFn: (item: Parameters<typeof mockDb.createLedgerItem>[0]) =>
-      mockDb.createLedgerItem(item),
+    mutationFn: async (item: Omit<LedgerItem, "id" | "createdAt" | "updatedAt" | "sortOrder" | "version">) => {
+      const res = await fetch("/api/ledger-items", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(item),
+      });
+      if (!res.ok) throw new Error("Failed to add item");
+      return res.json();
+    },
     successMessage: "Item added",
     invalidateKeys: [
       ["ledger", activeSpaceId],
@@ -51,8 +55,15 @@ export function useLedger() {
   });
 
   const updateItem = useMutationWithToast({
-    mutationFn: ({ id, updates }: { id: string; updates: Parameters<typeof mockDb.updateLedgerItem>[1] }) =>
-      mockDb.updateLedgerItem(id, updates),
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<LedgerItem> }) => {
+      const res = await fetch(`/api/ledger-items/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ updates }),
+      });
+      if (!res.ok) throw new Error("Failed to update item");
+      return res.json();
+    },
     successMessage: "Item updated",
     invalidateKeys: [
       ["ledger", activeSpaceId],
@@ -61,9 +72,9 @@ export function useLedger() {
   });
 
   const deleteItem = useMutationWithToast({
-    mutationFn: (id: string) => {
-      mockDb.deleteLedgerItem(id);
-      return Promise.resolve();
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/ledger-items/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete item");
     },
     successMessage: "Item deleted",
     invalidateKeys: [
@@ -73,7 +84,7 @@ export function useLedger() {
   });
 
   const reorderItems = useMutationWithToast({
-    mutationFn: ({
+    mutationFn: async ({
       spaceId,
       itemIds,
       dateUpdates,
@@ -84,13 +95,13 @@ export function useLedger() {
       dateUpdates?: Record<string, string>;
       updatedBy?: string;
     }) => {
-      if (dateUpdates) {
-        Object.entries(dateUpdates).forEach(([id, date]) => {
-          mockDb.updateLedgerItem(id, { date, updatedBy: updatedBy || "" });
-        });
-      }
-      mockDb.reorderLedgerItems(spaceId, itemIds);
-      return Promise.resolve();
+      const res = await fetch("/api/ledger-items/reorder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ spaceId, itemIds, dateUpdates, updatedBy }),
+      });
+      if (!res.ok) throw new Error("Failed to reorder items");
+      return res.json();
     },
     successMessage: "Order updated",
     invalidateKeys: [

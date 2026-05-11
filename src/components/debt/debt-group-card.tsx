@@ -86,7 +86,6 @@ export function DebtGroupCard({
       spaceId: group.spaceId,
       createdBy: currentUserId,
       updatedBy: currentUserId,
-      sortOrder: groupItems.length,
       type: "debt",
       groupId: group.id,
     });
