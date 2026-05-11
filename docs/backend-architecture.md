@@ -15,8 +15,10 @@ This document captures the backend technology evaluation, database schema design
 - [7. Recurring Items](#7-recurring-items)
 - [8. CSV Export](#8-csv-export)
 - [9. Multi-Currency](#9-multi-currency)
-- [10. Migration Phases](#10-migration-phases)
-- [11. Scale Parameters](#11-scale-parameters)
+- [10. Recurring Items](#10-recurring-items)
+- [11. CSV Export](#11-csv-export)
+- [12. Migration Phases](#12-migration-phases)
+- [13. Scale Parameters](#13-scale-parameters)
 
 ---
 
@@ -182,17 +184,28 @@ CREATE TABLE recurring_items (
   category TEXT NOT NULL,
   type TEXT NOT NULL DEFAULT 'default',
   group_id UUID REFERENCES debt_groups(id) ON DELETE SET NULL,
-  frequency TEXT NOT NULL,              -- 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'yearly'
-  interval INT NOT NULL DEFAULT 1,      -- every N frequency units
-  day_of_month INT,                     -- 1-31 for monthly
-  day_of_week INT,                      -- 0-6 for weekly (Mon-Sun)
+  frequency_unit TEXT NOT NULL,               -- 'days' | 'weekly' | 'monthly' | 'yearly'
+  interval_count INT NOT NULL DEFAULT 1,      -- every N units (e.g., 2 + weekly = biweekly)
+  by_day TEXT,                                -- comma-separated days for weekly: 'MO,WE,FR'
+  by_month_day INT,                           -- day of month for monthly (1-31, -1 for last)
   start_date DATE NOT NULL,
-  end_date DATE,                        -- null = indefinite
-  next_occurrence DATE NOT NULL,        -- pre-computed for cron queries
+  end_date DATE,                              -- null = indefinite
+  count INT,                                  -- null = no limit
+  next_occurrence DATE NOT NULL,              -- pre-computed cache for cron queries
+  last_computed_at TIMESTAMPTZ DEFAULT now(), -- track instance backfill progress
   created_by UUID REFERENCES users(id),
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE recurring_instances (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  recurring_item_id UUID REFERENCES recurring_items(id) ON DELETE CASCADE,
+  occurrence_date DATE NOT NULL,
+  skipped BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(recurring_item_id, occurrence_date)
 );
 
 -- ═══════════════════════════════════════
@@ -226,8 +239,12 @@ CREATE INDEX idx_ledger_space_date ON ledger_items(space_id, date DESC);
 CREATE INDEX idx_ledger_space_type ON ledger_items(space_id, type);
 CREATE INDEX idx_ledger_space_group ON ledger_items(space_id, group_id);
 CREATE INDEX idx_ledger_space_sort ON ledger_items(space_id, sort_order);
+CREATE INDEX idx_ledger_space_normal ON ledger_items(space_id, date DESC) WHERE type = 'default';
 CREATE INDEX idx_recurring_next ON recurring_items(next_occurrence, is_active);
 CREATE INDEX idx_recurring_space ON recurring_items(space_id);
+CREATE INDEX idx_recurring_instances_item_date ON recurring_instances(recurring_item_id, occurrence_date);
+CREATE INDEX idx_recurring_instances_date ON recurring_instances(occurrence_date);
+CREATE INDEX idx_recurring_instances_skipped ON recurring_instances(recurring_item_id, skipped) WHERE skipped = false;
 CREATE INDEX idx_audit_record ON audit_log(table_name, record_id);
 CREATE INDEX idx_audit_user ON audit_log(performed_by);
 CREATE INDEX idx_audit_time ON audit_log(created_at DESC);
@@ -269,10 +286,13 @@ $$ LANGUAGE sql STABLE;
 ### Schema Notes
 
 - `members` array on Space is normalized into a `space_members` join table for proper FK constraints and role management
-- `version` field on `ledger_items` enables optimistic locking for conflict resolution
+- `version` field on `ledger_items` enables optimistic locking for conflict resolution — frontend sends it on every update
 - `currency` on both `spaces` (default) and `ledger_items` (per-item override) prepares for multi-currency
-- `next_occurrence` on `recurring_items` is pre-computed for efficient cron queries
+- `recurring_items` uses RRULE-like fields (`frequency_unit`, `interval_count`, `by_day`, `by_month_day`) to generate occurrences; `next_occurrence` + `last_computed_at` track precomputed cache
+- `recurring_instances` stores one row per generated occurrence — enables per-instance skip/re-add and fast balance computation
+- Skipped instances stay skipped permanently — `skipped = true` excludes them from all totals forever; re-add is done by creating a manual ledger item (no special restore needed)
 - `significance` on `audit_log` separates user-visible changes from internal noise (sort_order updates)
+- `idx_ledger_space_normal` partial index filters to `type = 'default'` only — used for period visibility and last-normal-item queries
 
 ---
 
@@ -290,7 +310,8 @@ $$ LANGUAGE sql STABLE;
 | Debt category sync | Atomic bulk update (transaction) |
 | `sortOrder` persistence | Backend stores integer positions after DnD reorder |
 | Default sort on fetch | `ORDER BY sort_order` in query |
-| Recurring item generation | Daily cron job creates new ledger items |
+| Recurring instance precomputation | Cron job generates + stores all occurrences; skip/re-add via mutations |
+| Period visibility | Query determines which periods contain normal items; only those are returned |
 | CSV export | Server-generated to avoid loading all data client-side |
 | Audit trail | Postgres triggers — bypass-proof |
 
@@ -307,6 +328,8 @@ $$ LANGUAGE sql STABLE;
 | Optimistic updates | TanStack Query optimistically adjusts totals on add/edit |
 | Drag & drop interaction | DnD Kit handles the gesture; sends final order to backend |
 | Custom date range picker | UI control; sends `from`/`to` params to backend queries |
+| Recurring item skip/re-add | Toggle `skipped` flag on `recurring_instances` rows |
+| Recurring item CRUD UI | Create/edit/delete recurring rule templates |
 
 ### Backend-Driven (Required at Scale)
 
@@ -315,6 +338,8 @@ $$ LANGUAGE sql STABLE;
 | Date-range filtering | At 4,500 items/month, the API must accept `from`/`to` params and return only the relevant slice. The frontend fetches the current visible period range + 1 period ahead/behind for smooth scrolling. |
 | Autocomplete | At 54K+ items, client-side `.filter()` is too slow. Server-side `ILIKE` with a GIN trigram index handles this in <1ms. |
 | Period balance rollups | Running balances across ALL periods must be computed server-side via SQL window functions. |
+| Recurring instance generation | Precompute all historical + future instances; store in `recurring_instances` for fast SUM queries |
+| Period visibility detection | Query `MAX(date) FROM ledger_items WHERE type = 'default'` per space to know last visible period |
 
 ### Shared Responsibilities
 
@@ -322,6 +347,8 @@ $$ LANGUAGE sql STABLE;
 |---|---|---|
 | Period grouping | Groups date-filtered items for display | Returns items filtered by `from`/`to` date range |
 | Sorting within groups | Sorts items by selected column | Returns items in `sortOrder` by default |
+| Recurring instance in totals | Displays recurring amounts in period groups | SUM of normal items + non-skipped recurring instances per period |
+| Period visibility | Renders only periods returned by API | Determines visible periods from normal item dates; recurring alone doesn't create periods |
 
 ---
 
@@ -415,17 +442,19 @@ The hybrid approach uses triggers for completeness + significance filtering for 
 
 ## 6. Conflict Resolution
 
-**Approach: Optimistic locking via `version` field.**
+**Approach: Optimistic locking via `version` field, simple 409 handling.**
 
 ### How It Works
 
-1. Every `ledger_item` has a `version` (starts at 1)
+1. Every `ledger_item` has a `version` (starts at 1). The frontend sends `version` on every update even before the backend enforces it — future-proofing.
 2. On update, the API sends `WHERE id = X AND version = expectedVersion`
 3. If the version matches, the update succeeds and increments version
 4. If it doesn't match (someone else edited the item), the API returns 409 Conflict
-5. The frontend surfaces a conflict resolution UI
+5. On 409: show toast "This item was modified by someone else" + auto-refresh the item
 
-### Why Not CRDTs
+### Future Extension
+
+The architecture does not close the door on proper conflict resolution UI (show diff, allow "Keep mine" / "Keep theirs" / "Merge"). The `version` field and 409 response are the foundation. When ready, the frontend can expand from simple toast to a resolution dialog without backend changes.
 
 CRDTs (Yjs, Automerge) are designed for:
 - Hundreds editing the same document
@@ -445,22 +474,81 @@ Optimistic locking is the right tool for this scale and data shape.
 
 ### Data Model
 
-A `recurring_items` table stores templates with recurrence configuration. A `next_occurrence` column is pre-computed for efficient cron queries.
+The recurring system follows a **rule-based model with precomputed instances** (Option A + S2).
 
-### Processing Flow
+**`recurring_items`** stores the RRULE-like rule template:
+- `frequency_unit`: `days` | `weekly` | `monthly` | `yearly`
+- `interval_count`: every N units (e.g., 2 + `weekly` = biweekly)
+- `by_day`: comma-separated days for weekly (e.g., `MO,WE,FR`)
+- `by_month_day`: day of month for monthly (1-31, -1 = last day)
+- `start_date`: when recurrence begins
+- `end_date`: optional hard stop (null = indefinite)
+- `count`: optional max occurrences (null = no limit)
+- `next_occurrence`: pre-computed date for efficient cron queries
+- `last_computed_at`: timestamp for incremental recompute
 
-1. Daily cron job (Vercel Cron, GitHub Actions, or pg_cron) triggers the processor
-2. Query: `SELECT * FROM recurring_items WHERE next_occurrence <= CURRENT_DATE AND is_active = true`
-3. For each due item: INSERT into `ledger_items`, UPDATE `next_occurrence`
-4. Realtime subscription notifies connected clients
+**`recurring_instances`** stores one row per generated occurrence:
+- `occurrence_date`: the calculated date of this instance
+- `skipped`: boolean — if true, excluded from all totals permanently
 
-### Frequencies Supported
+### Instance Generation
 
-- Daily
-- Weekly (configurable day)
-- Bi-weekly
-- Monthly (configurable day of month)
-- Yearly
+**Initial backfill:** When a recurring item is created (or on first migration), a backfill job generates all historical instances from `start_date` up to the current date.
+
+**Forward precomputation:** A cron job runs daily (or on each page load with staleness check) to extend `next_occurrence` forward up to `end_date` or `count` limit. New instances are inserted into `recurring_instances`.
+
+**Incremental updates:** If `last_computed_at` is stale (e.g., cron missed a day), the job catches up from the last computed date rather than recomputing everything.
+
+### Skip / Re-add Flow
+
+- **Skip:** User marks an instance as skipped → `UPDATE recurring_instances SET skipped = true WHERE id = X`. The instance stays skipped permanently. It no longer appears in totals and is never auto-unskipped.
+- **Re-add:** User creates a normal ledger item manually with the same details (existing workflow — no special restore needed).
+
+### Totals & Period Visibility
+
+**Period visibility** is driven by normal (non-recurring) items only. A period (month/week/biweek) is visible if it contains at least one `ledger_item` with `type = 'default'`. Recurring instances alone never create or reveal a period.
+
+**Totals per period** = SUM of normal items in that period + SUM of non-skipped recurring instances where `occurrence_date` falls within the period's date range.
+
+**Custom date ranges:** The last normal item's date acts as the boundary. If the last normal item is Feb 28, only periods up to and including February are visible. March and April are hidden even if they have recurring instances — unless those periods also contain at least one normal item.
+
+### Balance Function (updated)
+
+```sql
+CREATE OR REPLACE FUNCTION get_space_balances(p_space_id UUID)
+RETURNS TABLE(
+  total_balance NUMERIC,
+  total_debt NUMERIC,
+  real_balance NUMERIC
+) AS $$
+  WITH all_items AS (
+    SELECT amount, type FROM ledger_items WHERE space_id = p_space_id
+    UNION ALL
+    SELECT ri.amount, ri.type
+    FROM recurring_instances ri
+    JOIN recurring_items r ON ri.recurring_item_id = r.id
+    WHERE r.space_id = p_space_id AND NOT ri.skipped
+  )
+  SELECT
+    COALESCE(SUM(amount), 0) AS total_balance,
+    COALESCE(SUM(CASE WHEN type = 'debt' THEN amount ELSE 0 END), 0) AS total_debt,
+    COALESCE(SUM(CASE WHEN type = 'default' THEN amount ELSE 0 END), 0) AS real_balance
+  FROM all_items;
+$$ LANGUAGE sql STABLE;
+```
+
+`ri.amount` is inherited from the parent `recurring_items` row — not stored in `recurring_instances` itself, so the UNION must JOIN to get it. The `WHERE NOT ri.skipped` ensures skipped instances never contribute.
+
+### Recurring Items Tab (UI Scope)
+
+The `/recurring` route is a top-level tab (alongside `/ledger`, `/debt`) for managing recurring items. Configuration is per-space — the active space selector applies.
+
+UI responsibilities:
+- List all recurring rules in the active space
+- Show next occurrence and instance count per rule
+- Create/edit/delete recurring rules with the full RRULE-like field set
+- List instances per rule with skip toggle
+- Future: show which periods an instance affects
 
 ---
 
@@ -493,13 +581,14 @@ Default currency is MXN. The `currency` column exists on both `spaces` (default)
 
 | Phase | Scope | Estimated Effort |
 |---|---|---|
-| **1. Foundation** | Database tables, indexes, triggers. Auth setup (Better Auth or Supabase Auth). Remove cookie-based sessions. | ~3 days |
-| **2. Core CRUD** | Replace `mockDb.*` calls with real DB queries in hooks/API routes. Keep TanStack Query layer. | ~5 days |
+| **0. Pre-work** | Add `version` to all frontend update mutations (sent even if backend ignores it). Add `frequency_unit`, `interval_count`, `by_day`, `by_month_day` fields to `recurring_items` (empty initially). Add `recurring_instances` table stub. | ~1 day |
+| **1. Foundation** | Database tables, indexes, triggers. Auth setup (Better Auth free). Remove cookie-based sessions. | ~3 days |
+| **2. Core CRUD** | Replace `mockDb.*` calls with real DB queries in hooks/API routes. Keep TanStack Query layer. Pagination + date-range filtering for `/api/ledger-items`. | ~5 days |
 | **3. Balances + Audit** | Deploy SQL balance functions. Activate audit triggers. Update `formatCurrency` to MXN. | ~3 days |
-| **4. Realtime + Conflicts** | Add realtime subscriptions for live multi-user sync. Implement version-based conflict detection + UI. | ~3 days |
-| **5. Recurring + Export** | Recurring item cron processor. CSV export endpoint. | ~3 days |
+| **4. Realtime + Conflicts** | Add realtime subscriptions for live multi-user sync. Implement version-based conflict detection (409 toast + refresh). | ~3 days |
+| **5. Recurring + Export** | `recurring_instances` table, instance precomputation, skip/re-add mutations, period totals with recurring join, `/recurring` tab. CSV export endpoint. | ~5 days |
 
-**Total: ~17 days**
+**Total: ~20 days**
 
 The frontend stays ~90% unchanged. The hook/store architecture was designed for this swap.
 
@@ -533,17 +622,31 @@ The frontend stays ~90% unchanged. The hook/store architecture was designed for 
 
 ### API Pagination Strategy
 
-The ledger API must support date-range filtering:
+The ledger API returns items in **manual sort order** (default `ORDER BY sort_order`). The frontend applies column-header sort client-side on loaded items.
+
+**Pagination model:**
 
 ```
-GET /api/ledger-items?spaceId=X&from=2026-04-01&to=2026-04-30
+GET /api/ledger-items?spaceId=X&from=2026-04-01&to=2026-04-30&limit=50&offset=0
+GET /api/ledger-items?spaceId=X&from=2026-04-01&to=2026-04-30&limit=500&offset=50
 ```
 
-The frontend fetches the current visible period range plus one period ahead and behind for smooth infinite scrolling. This keeps the in-memory working set to ~4,500-9,000 items — well within browser memory and grouping performance limits.
+**Load rules:**
+1. Always load at least the last registered period group (the one with the most recent normal item)
+2. If the group's items > 50: load first 50 immediately, lazy-load rest up to 500 max (subsequent requests)
+3. If the group's items < 10: automatically load the next group following the same load-first-50/lazy-rest-up-to-500 rule
+4. If all items in a group are already loaded, infinite scroll triggers fetch of the next group
+5. API response includes `totalCount` for scroll UI display
 
-Autocomplete uses a dedicated server-side endpoint:
+**Period grouping:** The API returns `periodKeys` (ordered list of period identifiers) so the frontend can render period groups without having to compute grouping client-side on paginated data.
+
+**Infinite scroll flow:** Frontend tracks `loadedCount` per period group and fetches the next slice when the user scrolls to the bottom of a group.
+
+**Autocomplete** uses a dedicated endpoint scoped to all spaces the user belongs to:
 
 ```
-GET /api/autocomplete?spaceId=X&field=description&q=rent
-GET /api/autocomplete?spaceId=X&field=category&q=food
+GET /api/autocomplete?field=description&q=rent
+GET /api/autocomplete?field=category&q=food
 ```
+
+Server-side `ILIKE` with a GIN trigram index handles this in <1ms. If space-limited autocomplete becomes necessary, the API accepts an optional `spaceId` filter, with a future migration path to full multi-space search.
