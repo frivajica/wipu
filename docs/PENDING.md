@@ -1,6 +1,6 @@
 # Pending Work — Backend ↔ Frontend Gap Analysis
 
-**Last updated:** May 11, 2026
+**Last updated:** May 11, 2026 (First Revision — Quick Fixes Complete)
 
 This document tracks the current gap between what the backend supports and what the frontend actually uses. It serves as a roadmap for the next development iterations.
 
@@ -10,16 +10,16 @@ This document tracks the current gap between what the backend supports and what 
 
 These API endpoints are fully implemented and tested, but no UI component or hook calls them yet.
 
-| Route | Method | What's Missing |
-|-------|--------|----------------|
-| `/api/debt-groups` | POST | "Create debt group" UI (modal/form) |
-| `/api/debt-groups/[id]` | PUT | Edit debt group name/description |
-| `/api/debt-groups/[id]` | DELETE | Delete debt group with confirmation |
-| `/api/export` | GET | Export button in ledger toolbar |
-| `/api/recurring` | GET, POST | Recurring rules list + create UI |
-| `/api/recurring/[id]/instances` | GET, POST | Skip/unskip instance toggles |
-| `/api/spaces/join` | POST | `/join/[inviteCode]` page |
-| `/api/spaces/[id]/members` | GET | Members list enrichment (see Gaps below) |
+| Route | Method | Status | Notes |
+|-------|--------|--------|-------|
+| `/api/debt-groups` | POST | ✅ Wired | Create modal + hook mutation added |
+| `/api/debt-groups/[id]` | PUT | 🔴 Unused | Edit debt group name/description |
+| `/api/debt-groups/[id]` | DELETE | 🔴 Unused | Delete debt group with confirmation |
+| `/api/export` | GET | ✅ Wired | Export button added to ledger toolbar |
+| `/api/recurring` | GET, POST | 🔴 Unused | Recurring rules list + create UI |
+| `/api/recurring/[id]/instances` | GET, POST | 🔴 Unused | Skip/unskip instance toggles |
+| `/api/spaces/join` | POST | 🔴 Unused | `/join/[inviteCode]` page |
+| `/api/spaces/[id]/members` | GET | 🔴 Unused | Members list enrichment (see Gaps below) |
 
 ### Notes
 
@@ -34,13 +34,13 @@ These API endpoints are fully implemented and tested, but no UI component or hoo
 
 These are **live bugs** — the frontend renders broken or empty because the API response is incomplete.
 
-| Issue | Impact | Fix | Priority |
-|-------|--------|-----|----------|
-| `GET /api/spaces` returns `members: []` | Space cards show "0 members" always | JOIN `space_members` + `"user"` in spaces query | High |
-| `GET /api/spaces` missing `membersData` | Manage modal shows empty member list | Add `membersData: User[]` to response shape | High |
-| `useDebtAutocomplete` client-side filters | Fetches all descriptions, filters on client | Add `type=debt` param to `/api/autocomplete` | Medium |
-| `useDebtItemLookup` fetches 500 items | Queries all ledger items, filters client-side | Add `type=debt&description=xxx` filter to API | Medium |
-| `space-card.tsx` uses `space.members.length` | Should use `membersData?.length` after API fix | Update component to read from correct field | Low (depends on API fix) |
+| Issue | Impact | Fix | Status |
+|-------|--------|-----|--------|
+| `GET /api/spaces` returns `members: []` | Space cards show "0 members" always | JOIN `space_members` + `"user"` in spaces query | ✅ Fixed in `603651a` |
+| `GET /api/spaces` missing `membersData` | Manage modal shows empty member list | Add `membersData: User[]` to response shape | ✅ Fixed in `603651a` |
+| `useDebtAutocomplete` client-side filters | Fetches all descriptions, filters on client | Add `type=debt` param to `/api/autocomplete` | ✅ Fixed in `d843ddb` |
+| `useDebtItemLookup` fetches 500 items | Queries all ledger items, filters client-side | Add `type=debt&description=xxx` filter to API | 🔴 Still active |
+| `space-card.tsx` uses `space.members.length` | Should use `membersData?.length` after API fix | Update component to read from correct field | ✅ Fixed in `603651a` |
 
 ### Detailed: Member List Bug
 
@@ -64,14 +64,14 @@ Then aggregate members per space in the response formatter.
 
 These features require **only frontend work** — the API is ready.
 
-| Feature | Backend Status | Frontend Gap | Estimated Effort |
-|---------|---------------|--------------|------------------|
-| **Member list display** | Tables exist, JOIN needed in API | Update `GET /api/spaces` response + verify modal | 1-2 hrs |
-| **Debt group creation** | `POST /api/debt-groups` exists | Add "New Group" button + form modal in debt page | 2-3 hrs |
-| **Debt group edit/delete** | `PUT/DELETE` handlers exist | Add edit/delete buttons in `DebtGroupCard` | 1-2 hrs |
-| **CSV export** | `GET /api/export` exists | Add export button to ledger toolbar | 30 min |
-| **Join via invite link** | `POST /api/spaces/join` exists | Build `/join/[inviteCode]` page + hook | 2-3 hrs |
-| **Recurring items UI** | Full CRUD API exists | Build recurring rules list, create form, skip toggles | 1-2 days |
+| Feature | Backend Status | Frontend Gap | Status |
+|---------|---------------|--------------|--------|
+| **Member list display** | Tables exist, JOIN needed in API | Update `GET /api/spaces` response + verify modal | ✅ Done `603651a` |
+| **Debt group creation** | `POST /api/debt-groups` exists | Add "New Group" button + form modal in debt page | ✅ Done `4860958` |
+| **Debt group edit/delete** | `PUT/DELETE` handlers exist | Add edit/delete buttons in `DebtGroupCard` | 🔴 Not started |
+| **CSV export** | `GET /api/export` exists | Add export button to ledger toolbar | ✅ Done `7849722` |
+| **Join via invite link** | `POST /api/spaces/join` exists | Build `/join/[inviteCode]` page + hook | 🔴 Not started |
+| **Recurring items UI** | Full CRUD API exists | Build recurring rules list, create form, skip toggles | 🔴 Not started |
 
 ---
 
@@ -81,10 +81,15 @@ These features require **only frontend work** — the API is ready.
 
 | Bug | Location | Reproduction | Status |
 |-----|----------|--------------|--------|
-| Space card shows "0 members" | `space-card.tsx:22` | Open `/spaces` page — all cards show 0 members | Needs API fix |
-| Manage modal shows empty member list | `space-manage-modal.tsx:128` | Click "Manage" on any space — no members rendered | Needs API fix |
-| Debt autocomplete searches all items | `use-debt-autocomplete.ts` | Type in debt description — suggests non-debt items | Needs API enhancement |
 | Debt item lookup scans 500 rows | `use-debt-item-lookup.ts` | Type a debt description — fetches entire ledger | Needs API enhancement |
+
+### Fixed in Quick Fixes (First Revision)
+
+| Bug | Location | Fix | Commit |
+|-----|----------|-----|--------|
+| Space card shows "0 members" | `space-card.tsx:22` | `GET /api/spaces` now returns populated `members` array | `603651a` |
+| Manage modal shows empty member list | `space-manage-modal.tsx:128` | `GET /api/spaces` now returns `membersData` | `603651a` |
+| Debt autocomplete searches all items | `use-debt-autocomplete.ts` | API now filters by `type=debt` server-side | `d843ddb` |
 
 ### Resolved Bugs (for reference)
 
@@ -101,12 +106,14 @@ These features require **only frontend work** — the API is ready.
 
 ---
 
-## 5. Quick Fixes (Do These First)
+## 5. Quick Fixes (First Revision — Done)
 
-1. **Fix member list API** — Update `GET /api/spaces` to JOIN users. This fixes two visible bugs at once.
-2. **Add `type=debt` to autocomplete** — One-line API param + hook update.
-3. **Add export button** — `GET /api/export` already works. Just needs a button.
-4. **Add debt group creation** — `POST /api/debt-groups` exists. Just needs a modal.
+All quick fixes below have been implemented and committed:
+
+1. **Fix member list API** ✅ — `GET /api/spaces` now batch-JOINs `space_members` + `"user"` via `inArray`, populating both `members` and `membersData`. Commit `603651a`.
+2. **Add `type=debt` to autocomplete** ✅ — `/api/autocomplete` accepts `type` param; `useDebtAutocomplete` passes `type=debt`. Commit `d843ddb`.
+3. **Add export button** ✅ — `ExportButton` component added to ledger toolbar; triggers CSV download via `GET /api/export`. Commit `7849722`.
+4. **Add debt group creation** ✅ — `CreateDebtGroupModal` + `use-debt.ts` mutation + header button + empty state CTA. Commit `4860958`.
 
 ---
 
