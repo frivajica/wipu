@@ -17,12 +17,16 @@ import { LedgerSkeleton } from "@/components/ledger/ledger-skeleton";
 import { LedgerEmptyState } from "@/components/ledger/ledger-empty-state";
 import { LedgerBalanceHeader } from "@/components/ledger/ledger-balance-header";
 import { ExportButton } from "@/components/ledger/export-button";
+import { RecurringPanel } from "@/components/ledger/recurring-panel";
+import { CreateRecurringRuleModal } from "@/components/ledger/create-recurring-rule-modal";
+import { useRecurring } from "@/hooks/use-recurring";
 import { DateTime } from "luxon";
 
 export default function LedgerPage() {
   const { user } = useAuth();
   const { activeSpaceId } = useSpaces();
   const { items, isLoading, balances, addItem, updateItem, deleteItem, reorderItems } = useLedger();
+  const { rules: recurringRules, createRule } = useRecurring();
   const includesDebt = useUIStore((s) => s.includesDebt);
 
   const periodType = useUIStore((s) => s.periodType);
@@ -34,6 +38,7 @@ export default function LedgerPage() {
   const setReorderByDate = useUIStore((s) => s.setReorderByDate);
   const setCustomDateRange = useUIStore((s) => s.setCustomDateRange);
   const setSort = useUIStore((s) => s.setSort);
+  const [isRecurringModalOpen, setIsRecurringModalOpen] = React.useState(false);
 
   const { groupedItems, visibleKeys, hasMore, loadMore } = useGroupedLedger({
     items,
@@ -171,6 +176,11 @@ export default function LedgerPage() {
 
       <LedgerBalanceHeader />
 
+      <RecurringPanel
+        rules={recurringRules}
+        onCreate={() => setIsRecurringModalOpen(true)}
+      />
+
       <div className="space-y-2">
         <AnimatePresence mode="popLayout">
           {visibleKeys.map((key) => (
@@ -201,6 +211,15 @@ export default function LedgerPage() {
           hasItems={items.length > 0}
         />
       </div>
+
+      <CreateRecurringRuleModal
+        isOpen={isRecurringModalOpen}
+        onClose={() => setIsRecurringModalOpen(false)}
+        onCreate={async (payload) => {
+          await createRule({ ...payload, spaceId: activeSpaceId || "" });
+        }}
+        isCreating={false}
+      />
     </div>
   );
 }
