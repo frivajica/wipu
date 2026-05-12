@@ -27,13 +27,18 @@ export function useSpaces() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Auto-correct stale activeSpaceId (e.g., from mock data migration)
+  // Auto-select first space when none is active, or correct stale IDs
   React.useEffect(() => {
-    if (spaces.length > 0 && activeSpaceId) {
-      const valid = spaces.some((s) => s.id === activeSpaceId);
-      if (!valid) {
-        setActiveSpace(spaces[0].id);
-      }
+    if (spaces.length === 0) return;
+
+    if (!activeSpaceId) {
+      setActiveSpace(spaces[0].id);
+      return;
+    }
+
+    const valid = spaces.some((s) => s.id === activeSpaceId);
+    if (!valid) {
+      setActiveSpace(spaces[0].id);
     }
   }, [spaces, activeSpaceId, setActiveSpace]);
 
