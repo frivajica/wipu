@@ -24,7 +24,7 @@ export function PeriodHeader({
   includesDebt,
 }: PeriodHeaderProps) {
   const hasDebt = debt !== 0;
-  const total = includesDebt ? runningBalance + runningDebt : runningBalance;
+  const total = includesDebt ? runningBalance : runningBalance - runningDebt;
 
   return (
     <div className="mb-3 px-1">
