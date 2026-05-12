@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useAuthStore } from "@/stores/auth-store";
 import { useSpaceStore } from "@/stores/space-store";
 import { useMutationWithToast } from "@/hooks/shared/use-mutation-with-toast";
@@ -17,11 +18,35 @@ interface RegisterPayload {
   password: string;
 }
 
+function hydrateUserFromSession(session: { data?: { user: { id: string; email: string; name?: string | null; image?: string | null } } | null }) {
+  if (!session.data?.user) return;
+  const u = session.data.user;
+  useAuthStore.getState().setUser({
+    id: u.id,
+    email: u.email,
+    name: u.name || u.email,
+    initials: (u.name || u.email)
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2),
+    avatarUrl: u.image || null,
+  });
+}
+
 export function useAuth() {
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
   const clearUser = useAuthStore((s) => s.clearUser);
   const setActiveSpace = useSpaceStore((s) => s.setActiveSpace);
+
+  // Hydrate user from Better Auth session on mount (covers direct URL access, refresh, etc.)
+  React.useEffect(() => {
+    authClient.getSession().then((session) => {
+      hydrateUserFromSession(session);
+    });
+  }, []);
 
   const loginMutation = useMutationWithToast({
     mutationFn: async ({ email, password }: LoginPayload) => {

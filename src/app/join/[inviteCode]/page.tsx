@@ -2,14 +2,16 @@
 
 import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { Users, ArrowRight, AlertCircle, Loader2 } from "lucide-react";
+import { Users, ArrowRight, AlertCircle } from "lucide-react";
 
 export default function JoinPage() {
   const params = useParams();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const inviteCode = params.inviteCode as string;
 
@@ -31,6 +33,7 @@ export default function JoinPage() {
       }
 
       setStatus("success");
+      queryClient.invalidateQueries({ queryKey: ["spaces"] });
       setTimeout(() => {
         router.push("/spaces");
       }, 1500);
