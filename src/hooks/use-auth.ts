@@ -4,6 +4,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { useSpaceStore } from "@/stores/space-store";
 import { useMutationWithToast } from "@/hooks/shared/use-mutation-with-toast";
 import { authClient } from "@/lib/auth-client";
+import { STORAGE_KEYS } from "@/lib/constants";
 
 interface LoginPayload {
   email: string;
@@ -95,6 +96,7 @@ export function useAuth() {
     await authClient.signOut();
     clearUser();
     setActiveSpace(null);
+    localStorage.removeItem(STORAGE_KEYS.SPACES);
   };
 
   return {
