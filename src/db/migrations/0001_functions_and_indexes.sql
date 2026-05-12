@@ -97,18 +97,18 @@ RETURNS TABLE(
       END AS period_key,
       CASE p_period_type
         WHEN 'weekly' THEN (
-          to_char(date, 'Month YYYY') || ' - Week ' || to_char(date, 'WW') ||
-          ' (' || to_char(date_trunc('week', date), 'MMM d') ||
-          ' to ' || to_char(date_trunc('week', date) + INTERVAL '6 days', 'MMM d') || ')'
+          to_char(date, 'FMMonth YYYY') || ' - Week ' || to_char(date, 'WW') ||
+          ' (' || to_char(date_trunc('week', date), 'FMMM d') ||
+          ' to ' || to_char(date_trunc('week', date) + INTERVAL '6 days', 'FMMM d') || ')'
         )
         WHEN 'bi-weekly' THEN (
-          to_char(date, 'Month YYYY') || ' - Bi-Week ' ||
+          to_char(date, 'FMMonth YYYY') || ' - Bi-Week ' ||
           CASE WHEN ceil(to_char(date, 'WW')::INT / 2.0) < 10 THEN '0' ELSE '' END ||
           ceil(to_char(date, 'WW')::NUMERIC / 2.0)::TEXT ||
-          ' (' || to_char(date_trunc('week', date) - INTERVAL '7 days', 'MMM d') ||
-          ' to ' || to_char(date_trunc('week', date) + INTERVAL '6 days', 'MMM d') || ')'
+          ' (' || to_char(date_trunc('week', date) - INTERVAL '7 days', 'FMMM d') ||
+          ' to ' || to_char(date_trunc('week', date) + INTERVAL '6 days', 'FMMM d') || ')'
         )
-        ELSE to_char(date, 'Month YYYY')
+        ELSE to_char(date, 'FMMonth YYYY')
       END AS display_label,
       CASE p_period_type
         WHEN 'weekly' THEN date_trunc('week', date)::DATE
