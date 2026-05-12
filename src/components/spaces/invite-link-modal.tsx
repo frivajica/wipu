@@ -16,7 +16,7 @@ interface InviteLinkModalProps {
 export function InviteLinkModal({ isOpen, onClose, inviteCode }: InviteLinkModalProps) {
   const [copied, setCopied] = React.useState(false);
   const { addToast } = useToastStore();
-  const inviteLink = `https://wipu.app/join/${inviteCode}`;
+  const inviteLink = `${window.location.origin}/join/${inviteCode}`;
   const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   React.useEffect(() => {
