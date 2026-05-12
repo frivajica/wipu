@@ -62,10 +62,11 @@ export async function GET(request: NextRequest) {
       realBalance: parseFloat((balances as any)?.real_balance) || 0,
       periods: periodsResult.rows.map((row: any) => ({
         label: row.period_key,
+        displayLabel: row.display_label,
         balance: parseFloat(row.period_balance) || 0,
         debt: parseFloat(row.period_debt) || 0,
         runningBalance: parseFloat(row.running_balance) || 0,
-        runningDebt: 0, // Calculated client-side if needed
+        runningDebt: 0,
       })),
     });
   } catch (error) {

@@ -44,6 +44,7 @@ interface PeriodGroupProps {
     debt: number;
     runningBalance: number;
     runningDebt: number;
+    displayLabel: string;
   };
 }
 
@@ -198,7 +199,7 @@ export function PeriodGroup({
       className="mb-8"
     >
       <PeriodHeader
-        label={label}
+        label={periodStats?.displayLabel || label}
         balance={periodStats?.balance ?? 0}
         debt={periodStats?.debt ?? 0}
         runningBalance={periodStats?.runningBalance ?? 0}

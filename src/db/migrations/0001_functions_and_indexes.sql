@@ -2,28 +2,28 @@
 -- Run this after drizzle-kit push
 
 -- Partial index for normal items (used in period visibility queries)
-CREATE INDEX IF NOT EXISTS idx_ledger_space_normal 
-ON ledger_items(space_id, date DESC) 
+CREATE INDEX IF NOT EXISTS idx_ledger_space_normal
+ON ledger_items(space_id, date DESC)
 WHERE type = 'default';
 
 -- Recurring items indexes
-CREATE INDEX IF NOT EXISTS idx_recurring_next 
+CREATE INDEX IF NOT EXISTS idx_recurring_next
 ON recurring_items(next_occurrence, is_active);
 
-CREATE INDEX IF NOT EXISTS idx_recurring_space 
+CREATE INDEX IF NOT EXISTS idx_recurring_space
 ON recurring_items(space_id);
 
-CREATE INDEX IF NOT EXISTS idx_recurring_instances_skipped 
-ON recurring_instances(recurring_item_id, skipped) 
+CREATE INDEX IF NOT EXISTS idx_recurring_instances_skipped
+ON recurring_instances(recurring_item_id, skipped)
 WHERE skipped = false;
 
 -- Trigram extension for autocomplete
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
-CREATE INDEX IF NOT EXISTS idx_ledger_description_trgm 
+CREATE INDEX IF NOT EXISTS idx_ledger_description_trgm
 ON ledger_items USING gin (description gin_trgm_ops);
 
-CREATE INDEX IF NOT EXISTS idx_ledger_category_trgm 
+CREATE INDEX IF NOT EXISTS idx_ledger_category_trgm
 ON ledger_items USING gin (category gin_trgm_ops);
 
 -- ═══════════════════════════════════════
@@ -68,6 +68,7 @@ CREATE OR REPLACE FUNCTION get_period_stats(
 )
 RETURNS TABLE(
   period_key TEXT,
+  display_label TEXT,
   period_start DATE,
   period_end DATE,
   period_balance NUMERIC,
@@ -90,40 +91,55 @@ RETURNS TABLE(
     SELECT
       date, amount, type,
       CASE p_period_type
-        WHEN 'weekly'    THEN to_char(date, 'IYYY-"W"IW')
-        WHEN 'biweekly'  THEN to_char(date, 'IYYY-"W"IW')
+        WHEN 'weekly' THEN to_char(date, 'IYYY-"W"IW')
+        WHEN 'bi-weekly' THEN to_char(date, 'IYYY-"W"IW')
         ELSE to_char(date, 'YYYY-MM')
       END AS period_key,
       CASE p_period_type
-        WHEN 'weekly'    THEN date_trunc('week', date)::DATE
-        WHEN 'biweekly'  THEN date_trunc('week', date)::DATE
+        WHEN 'weekly' THEN (
+          to_char(date, 'Month YYYY') || ' - Week ' || to_char(date, 'WW') ||
+          ' (' || to_char(date_trunc('week', date), 'MMM d') ||
+          ' to ' || to_char(date_trunc('week', date) + INTERVAL '6 days', 'MMM d') || ')'
+        )
+        WHEN 'bi-weekly' THEN (
+          to_char(date, 'Month YYYY') || ' - Bi-Week ' ||
+          CASE WHEN ceil(to_char(date, 'WW')::INT / 2.0) < 10 THEN '0' ELSE '' END ||
+          ceil(to_char(date, 'WW')::NUMERIC / 2.0)::TEXT ||
+          ' (' || to_char(date_trunc('week', date) - INTERVAL '7 days', 'MMM d') ||
+          ' to ' || to_char(date_trunc('week', date) + INTERVAL '6 days', 'MMM d') || ')'
+        )
+        ELSE to_char(date, 'Month YYYY')
+      END AS display_label,
+      CASE p_period_type
+        WHEN 'weekly' THEN date_trunc('week', date)::DATE
+        WHEN 'bi-weekly' THEN (date_trunc('week', date) - INTERVAL '7 days')::DATE
         ELSE date_trunc('month', date)::DATE
       END AS period_start,
       CASE p_period_type
-        WHEN 'weekly'    THEN (date_trunc('week', date) + INTERVAL '6 days')::DATE
-        WHEN 'biweekly'  THEN (date_trunc('week', date) + INTERVAL '13 days')::DATE
+        WHEN 'weekly' THEN (date_trunc('week', date) + INTERVAL '6 days')::DATE
+        WHEN 'bi-weekly' THEN (date_trunc('week', date) + INTERVAL '6 days')::DATE
         ELSE (date_trunc('month', date) + INTERVAL '1 month - 1 day')::DATE
       END AS period_end
     FROM all_items
   ),
   period_sums AS (
     SELECT
-      period_key, period_start, period_end,
+      period_key, display_label, period_start, period_end,
       COALESCE(SUM(CASE WHEN type = 'default' THEN amount ELSE 0 END), 0)
         + COALESCE(SUM(CASE WHEN type = 'debt' THEN amount ELSE 0 END), 0) AS period_balance,
       COALESCE(SUM(CASE WHEN type = 'debt' THEN amount ELSE 0 END), 0) AS period_debt,
       COUNT(*) AS item_count
     FROM with_period
-    GROUP BY period_key, period_start, period_end
+    GROUP BY period_key, display_label, period_start, period_end
   ),
   with_running AS (
     SELECT
-      period_key, period_start, period_end,
+      period_key, display_label, period_start, period_end,
       period_balance, period_debt, item_count,
       SUM(period_balance) OVER (ORDER BY period_start ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS running_balance
     FROM period_sums
   )
-  SELECT period_key, period_start, period_end, period_balance, period_debt, running_balance, item_count
+  SELECT period_key, display_label, period_start, period_end, period_balance, period_debt, running_balance, item_count
   FROM with_running
   ORDER BY period_start DESC;
 $$ LANGUAGE sql STABLE;

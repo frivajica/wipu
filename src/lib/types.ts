@@ -67,6 +67,7 @@ export interface LedgerBalances {
   realBalance: number;
   periods: Array<{
     label: string;
+    displayLabel: string;
     balance: number;
     debt: number;
     runningBalance: number;
