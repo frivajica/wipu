@@ -51,12 +51,12 @@ export default function LedgerPage() {
   const periodStatsMap = React.useMemo(() => {
     const map = new Map<string, { balance: number; debt: number; runningBalance: number; runningDebt: number; displayLabel: string }>();
     balances.periods.forEach((p) => {
-      map.set(p.label, {
+      map.set(p.displayLabel.trim(), {
         balance: p.balance,
         debt: p.debt,
         runningBalance: p.runningBalance,
         runningDebt: p.runningDebt,
-        displayLabel: p.displayLabel,
+        displayLabel: p.displayLabel.trim(),
       });
     });
     return map;
