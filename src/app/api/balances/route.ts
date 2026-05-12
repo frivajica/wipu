@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
         balance: parseFloat(row.period_balance) || 0,
         debt: parseFloat(row.period_debt) || 0,
         runningBalance: parseFloat(row.running_balance) || 0,
-        runningDebt: 0,
+        runningDebt: parseFloat(row.running_debt) || 0,
       })),
     });
   } catch (error) {

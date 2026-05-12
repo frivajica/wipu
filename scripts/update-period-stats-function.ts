@@ -21,6 +21,7 @@ RETURNS TABLE(
   period_balance NUMERIC,
   period_debt NUMERIC,
   running_balance NUMERIC,
+  running_debt NUMERIC,
   item_count INT
 ) AS $$
   WITH
@@ -83,17 +84,18 @@ RETURNS TABLE(
     SELECT
       period_key, display_label, period_start, period_end,
       period_balance, period_debt, item_count,
-      SUM(period_balance) OVER (ORDER BY period_start ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS running_balance
+      SUM(period_balance) OVER (ORDER BY period_start ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS running_balance,
+      SUM(period_debt) OVER (ORDER BY period_start ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS running_debt
     FROM period_sums
   )
-  SELECT period_key, display_label, period_start, period_end, period_balance, period_debt, running_balance, item_count
+  SELECT period_key, display_label, period_start, period_end, period_balance, period_debt, running_balance, running_debt, item_count
   FROM with_running
   ORDER BY period_start DESC;
 $$ LANGUAGE sql STABLE;
   `.trim();
 
   await db.execute(sql.raw(statements));
-  console.log("✅ get_period_stats recreated with FMMonth/FMM d fixes");
+  console.log("✅ get_period_stats recreated with running_debt");
 }
 
 applyMigration().catch((err) => {

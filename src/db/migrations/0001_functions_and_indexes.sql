@@ -136,10 +136,11 @@ RETURNS TABLE(
     SELECT
       period_key, display_label, period_start, period_end,
       period_balance, period_debt, item_count,
-      SUM(period_balance) OVER (ORDER BY period_start ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS running_balance
+      SUM(period_balance) OVER (ORDER BY period_start ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS running_balance,
+      SUM(period_debt) OVER (ORDER BY period_start ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS running_debt
     FROM period_sums
   )
-  SELECT period_key, display_label, period_start, period_end, period_balance, period_debt, running_balance, item_count
+  SELECT period_key, display_label, period_start, period_end, period_balance, period_debt, running_balance, running_debt, item_count
   FROM with_running
   ORDER BY period_start DESC;
 $$ LANGUAGE sql STABLE;
