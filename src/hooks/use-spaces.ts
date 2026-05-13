@@ -29,7 +29,10 @@ export function useSpaces() {
 
   // Auto-select first space when none is active, or correct stale IDs
   React.useEffect(() => {
-    if (spaces.length === 0) return;
+    if (spaces.length === 0) {
+      setActiveSpace(null);
+      return;
+    }
 
     if (!activeSpaceId) {
       setActiveSpace(spaces[0].id);
@@ -90,6 +93,9 @@ export function useSpaces() {
     },
     successMessage: "Space deleted",
     invalidateKeys: [["spaces"]],
+    onSuccess: () => {
+      setActiveSpace(null);
+    },
   });
 
   const leaveSpace = useMutationWithToast({
@@ -99,6 +105,9 @@ export function useSpaces() {
     },
     successMessage: "You left the space",
     invalidateKeys: [["spaces"]],
+    onSuccess: () => {
+      setActiveSpace(null);
+    },
   });
 
   const switchSpace = (spaceId: string) => {

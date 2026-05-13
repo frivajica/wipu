@@ -15,7 +15,7 @@ export interface Space {
   maxMembers: number;
   inviteCode: string;
   createdAt: string;
-  isPersonal?: boolean;
+  isDefault?: boolean;
   membersData?: User[];
 }
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { spaceMembers } from "@/db/schema";
+import { spaces, spaceMembers } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 
 // POST /api/spaces/[id]/leave - Leave a space
@@ -31,6 +31,19 @@ export async function POST(
 
     if (!membership.length) {
       return NextResponse.json({ error: "Not a member" }, { status: 403 });
+    }
+
+    const [targetSpace] = await db
+      .select()
+      .from(spaces)
+      .where(eq(spaces.id, id))
+      .limit(1);
+
+    if (targetSpace?.isDefault) {
+      return NextResponse.json(
+        { error: "Cannot leave your default space" },
+        { status: 403 }
+      );
     }
 
     await db

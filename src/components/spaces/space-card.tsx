@@ -17,8 +17,8 @@ interface SpaceCardProps {
 
 export function SpaceCard({ space, onDelete, onLeave, onInvite, onManage, onClick }: SpaceCardProps) {
   const { user } = useAuth();
-  const isOwner = user?.id === space.ownerId;
-  const isPersonal = space.isPersonal ?? false;
+  const isDefault = space.isDefault ?? false;
+  const isOwnedByUser = user?.id === space.ownerId;
   const memberCount = space.members.length;
 
   return (
@@ -37,7 +37,7 @@ export function SpaceCard({ space, onDelete, onLeave, onInvite, onManage, onClic
             <span>
               {memberCount} {memberCount === 1 ? "member" : "members"}
             </span>
-            {isOwner && (
+            {isOwnedByUser && (
               <span className="flex items-center gap-1 text-primary-accent font-medium text-xs">
                 <Crown className="h-3 w-3" />
                 Owner
@@ -48,7 +48,7 @@ export function SpaceCard({ space, onDelete, onLeave, onInvite, onManage, onClic
       </div>
 
       <div className="flex items-center gap-2 flex-wrap min-h-[36px]" onClick={(e) => e.stopPropagation()}>
-        {!isPersonal && isOwner && (
+        {!isDefault && isOwnedByUser && (
           <>
             <Button
               variant="secondary"
@@ -78,8 +78,8 @@ export function SpaceCard({ space, onDelete, onLeave, onInvite, onManage, onClic
             </Button>
           </>
         )}
-        
-        {!isPersonal && !isOwner && (
+
+        {!isDefault && !isOwnedByUser && (
           <Button
             variant="ghost"
             size="sm"

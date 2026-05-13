@@ -78,6 +78,19 @@ export async function DELETE(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    const [targetSpace] = await db
+      .select()
+      .from(spaces)
+      .where(eq(spaces.id, id))
+      .limit(1);
+
+    if (targetSpace?.isDefault) {
+      return NextResponse.json(
+        { error: "Cannot delete your default space" },
+        { status: 403 }
+      );
+    }
+
     await db.delete(spaces).where(eq(spaces.id, id));
 
     return new NextResponse(null, { status: 204 });

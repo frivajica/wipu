@@ -108,7 +108,7 @@ export const spaces = pgTable("spaces", {
     .notNull()
     .default("MXN")
     .references(() => currencies.code),
-  isPersonal: boolean("is_personal").default(false),
+  isDefault: boolean("is_default").default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 

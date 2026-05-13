@@ -167,7 +167,7 @@ export function SpaceManageModal({
           </div>
 
           <AnimatePresence>
-            {!space.isPersonal && otherMembers.length === 0 && (
+            {!space.isDefault && otherMembers.length === 0 && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}

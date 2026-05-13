@@ -56,6 +56,7 @@ export async function GET(request: NextRequest) {
         return {
           ...space,
           role,
+          isOwnedByUser: space.ownerId === session.user.id,
           members: members.map((m) => m.userId),
           membersData: members.map((m) => ({
             id: m.userId,
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, isPersonal = false } = body;
+    const { name, isDefault = false } = body;
 
     if (!name || typeof name !== "string") {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
         name,
         ownerId: session.user.id,
         inviteCode: generateInviteCode(),
-        isPersonal,
+        isDefault,
       })
       .returning();
 

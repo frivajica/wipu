@@ -115,6 +115,16 @@ export function useAuth() {
     },
     successMessage: "Account created successfully",
     invalidateKeys: [["spaces"]],
+    onSuccess: async () => {
+      const res = await fetch("/api/spaces", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "My Ledger", isDefault: true }),
+      });
+      if (!res.ok) return;
+      const { space } = await res.json();
+      setActiveSpace(space.id);
+    },
   });
 
   const logout = async () => {

@@ -89,7 +89,7 @@ async function seed() {
         ownerId,
         maxMembers: mockSpace.maxMembers,
         inviteCode: mockSpace.inviteCode,
-        isPersonal: mockSpace.isPersonal,
+        isDefault: mockSpace.isDefault,
         currency: "USD",
       })
       .returning();

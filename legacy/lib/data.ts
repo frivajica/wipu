@@ -32,7 +32,7 @@ export const mockSpaces: Space[] = [
     maxMembers: 8,
     inviteCode: generateInviteCode(),
     createdAt: "2026-01-15T00:00:00.000Z",
-    isPersonal: false,
+    isDefault: false,
   },
 ];
 
