@@ -36,9 +36,7 @@ export default function RootLayout({
           <AuthGuard>
             <Header />
             <main className="max-w-4xl mx-auto px-4 py-6">
-              <div className="mb-6">
                 <TabNav />
-              </div>
               {children}
             </main>
           </AuthGuard>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { BookOpen, CreditCard } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/auth-store";
 
 const tabs = [
   { id: "ledger", label: "Ledger", href: "/ledger", icon: BookOpen },
@@ -13,9 +14,12 @@ const tabs = [
 
 export function TabNav() {
   const pathname = usePathname();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  if (!isAuthenticated) return null;
 
   return (
-    <nav className="flex gap-1 rounded-lg bg-surface-strong p-1">
+    <nav className="flex gap-1 rounded-lg bg-surface-strong p-1 mb-6">
       {tabs.map((tab) => {
         const isActive = pathname === tab.href;
         const Icon = tab.icon;
