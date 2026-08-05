@@ -96,4 +96,5 @@ export interface UIState {
   sortField: "date" | "amount" | "description" | "category" | "profile" | null;
   sortDirection: "asc" | "desc";
   includesDebt: boolean;
+  balanceCutoffDate: string | null;
 }

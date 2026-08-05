@@ -9,6 +9,7 @@ interface UIStore extends UIState {
   setCustomDateRange: (range: { start: string; end: string } | null) => void;
   setSort: (field: "date" | "amount" | "description" | "category" | "profile" | null, direction?: "asc" | "desc") => void;
   setIncludesDebt: (includes: boolean) => void;
+  setBalanceCutoffDate: (date: string | null) => void;
 }
 
 export const useUIStore = create<UIStore>()(
@@ -20,6 +21,7 @@ export const useUIStore = create<UIStore>()(
       sortField: null,
       sortDirection: "desc",
       includesDebt: true,
+      balanceCutoffDate: null,
 
       setPeriodType: (periodType) => set({ periodType }),
 
@@ -40,6 +42,8 @@ export const useUIStore = create<UIStore>()(
         })),
 
       setIncludesDebt: (includesDebt) => set({ includesDebt }),
+
+      setBalanceCutoffDate: (balanceCutoffDate) => set({ balanceCutoffDate }),
     }),
     {
       name: STORAGE_KEYS.UI_STATE,

@@ -9,6 +9,7 @@ import { useMutationWithToast } from "@/hooks/shared/use-mutation-with-toast";
 export function useLedger() {
   const activeSpaceId = useSpaceStore((s) => s.activeSpaceId);
   const periodType = useUIStore((s) => s.periodType);
+  const balanceCutoffDate = useUIStore((s) => s.balanceCutoffDate);
 
   const { data: items, isLoading } = useQuery({
     queryKey: ["ledger", activeSpaceId],
@@ -24,12 +25,17 @@ export function useLedger() {
   });
 
   const { data: balances } = useQuery({
-    queryKey: ["balances", activeSpaceId, periodType],
+    queryKey: ["balances", activeSpaceId, periodType, balanceCutoffDate],
     queryFn: async (): Promise<LedgerBalances> => {
       if (!activeSpaceId) {
         return { totalBalance: 0, totalDebt: 0, realBalance: 0, periods: [] };
       }
-      const res = await fetch(`/api/balances?spaceId=${activeSpaceId}&periodType=${periodType}`);
+      const params = new URLSearchParams({
+        spaceId: activeSpaceId,
+        periodType,
+        ...(balanceCutoffDate ? { cutoffDate: balanceCutoffDate } : {}),
+      });
+      const res = await fetch(`/api/balances?${params}`);
       if (!res.ok) throw new Error("Failed to fetch balances");
       return res.json();
     },

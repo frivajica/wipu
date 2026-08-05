@@ -30,7 +30,7 @@ ON ledger_items USING gin (category gin_trgm_ops);
 -- BALANCE FUNCTIONS
 -- ═══════════════════════════════════════
 
-CREATE OR REPLACE FUNCTION get_space_balances(p_space_id UUID)
+CREATE OR REPLACE FUNCTION get_space_balances(p_space_id UUID, p_to DATE DEFAULT NULL)
 RETURNS TABLE(
   total_balance NUMERIC,
   total_debt NUMERIC,
@@ -38,11 +38,13 @@ RETURNS TABLE(
 ) AS $$
   WITH all_items AS (
     SELECT amount, type FROM ledger_items WHERE space_id = p_space_id
+      AND (p_to IS NULL OR date <= p_to)
     UNION ALL
     SELECT r.amount, r.type
     FROM recurring_instances ri
     JOIN recurring_items r ON ri.recurring_item_id = r.id
     WHERE r.space_id = p_space_id AND NOT ri.skipped
+      AND (p_to IS NULL OR ri.occurrence_date <= p_to)
   )
   SELECT
     COALESCE(SUM(amount), 0) AS total_balance,

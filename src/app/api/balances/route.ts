@@ -37,8 +37,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Get balances using SQL function
+    const cutoffDate = searchParams.get("cutoffDate");
     const balancesResult = await db.execute(sql`
-      SELECT * FROM get_space_balances(${spaceId})
+      SELECT * FROM get_space_balances(${spaceId}, ${cutoffDate ?? null})
     `);
     const balances = balancesResult.rows[0];
 
