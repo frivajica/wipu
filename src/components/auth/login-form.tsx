@@ -1,14 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { AuthFormLayout } from "./auth-form-layout";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 
 export function LoginForm() {
-  const router = useRouter();
   const { login, isLoginLoading, loginError } = useAuth();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -17,7 +15,6 @@ export function LoginForm() {
     e.preventDefault();
     try {
       await login({ email, password });
-      router.push("/ledger");
     } catch {
       // noop — error surfaced by useMutationWithToast
     }

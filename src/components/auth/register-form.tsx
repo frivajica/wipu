@@ -1,14 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { AuthFormLayout } from "./auth-form-layout";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 
 export function RegisterForm() {
-  const router = useRouter();
   const { register, isRegisterLoading, registerError } = useAuth();
   const [name, setName] = React.useState("");
   const [email, setEmail] = React.useState("");
@@ -18,7 +16,6 @@ export function RegisterForm() {
     e.preventDefault();
     try {
       await register({ name, email, password });
-      router.push("/ledger");
     } catch {
       // noop — error surfaced by useMutationWithToast
     }

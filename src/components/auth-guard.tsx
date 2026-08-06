@@ -47,6 +47,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
     if (!isAuthenticated && !isPublicRoute) {
       router.push("/login");
+    } else if (isAuthenticated && isPublicRoute) {
+      router.push("/ledger");
     }
   }, [isAuthenticated, pathname, router, hasHydrated]);
 
