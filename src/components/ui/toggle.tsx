@@ -9,10 +9,11 @@ export interface ToggleProps {
   checked: boolean;
   onChange: (checked: boolean) => void;
   label?: string;
+  ariaLabel?: string;
   className?: string;
 }
 
-export function Toggle({ checked, onChange, label, className }: ToggleProps) {
+export function Toggle({ checked, onChange, label, ariaLabel, className }: ToggleProps) {
   return (
     <label
       className={cn(
@@ -26,6 +27,7 @@ export function Toggle({ checked, onChange, label, className }: ToggleProps) {
       <button
         type="button"
         role="switch"
+        aria-label={ariaLabel}
         aria-checked={checked}
         onClick={() => onChange(!checked)}
         className={cn(

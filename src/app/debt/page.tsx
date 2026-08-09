@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useLedger } from "@/hooks/use-ledger";
 import { useSpaces } from "@/hooks/use-spaces";
 import { useDebt } from "@/hooks/use-debt";
-import { DebtBalanceHeader } from "@/components/debt/debt-balance-header";
+import { DebtBalanceBar } from "@/components/debt/debt-balance-bar";
 import { DebtGroupList } from "@/components/debt/debt-group-list";
 import { DebtEmptyState } from "@/components/debt/debt-empty-state";
 import { DebtSkeleton } from "@/components/debt/debt-skeleton";
@@ -16,7 +16,7 @@ import { Plus } from "lucide-react";
 export default function DebtPage() {
   return (
     <div className="space-y-6">
-      <DebtBalanceHeader />
+      <DebtBalanceBar />
       <DebtContent />
     </div>
   );

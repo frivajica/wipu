@@ -1,9 +1,11 @@
-import "dotenv/config";
-import { db } from "@/db";
-import { sql } from "drizzle-orm";
+import dotenv from "dotenv";
+dotenv.config({ path: ".env.local" });
+import { neon } from "@neondatabase/serverless";
+
+const sql = neon(process.env.DATABASE_URL!);
 
 async function applyMigration() {
-  await db.execute(sql.raw(`DROP FUNCTION IF EXISTS get_period_stats(uuid, date, date, text)`));
+  await sql`DROP FUNCTION IF EXISTS get_period_stats(uuid, date, date, text)`;
   console.log("✅ Dropped existing get_period_stats");
 
   const statements = `
@@ -32,7 +34,7 @@ RETURNS TABLE(
     SELECT ri.occurrence_date, r.amount, r.type
     FROM recurring_instances ri
     JOIN recurring_items r ON ri.recurring_item_id = r.id
-    WHERE r.space_id = p_space_id AND NOT ri.skipped
+    WHERE r.space_id = p_space_id AND r.is_active AND NOT ri.skipped
       AND ri.occurrence_date >= p_from AND ri.occurrence_date <= p_to
   ),
   with_period AS (
@@ -94,8 +96,13 @@ RETURNS TABLE(
 $$ LANGUAGE sql STABLE;
   `.trim();
 
-  await db.execute(sql.raw(statements));
-  console.log("✅ get_period_stats recreated with running_debt");
+  try {
+    await sql.query(statements);
+    console.log("✅ get_period_stats recreated with is_active filter");
+  } catch (err) {
+    console.error("Migration failed:", err);
+    process.exit(1);
+  }
 }
 
 applyMigration().catch((err) => {

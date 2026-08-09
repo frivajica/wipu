@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const BETTER_AUTH_COOKIE = "better-auth.session_token";
-const protectedRoutes = ["/ledger", "/spaces", "/debt"];
+const protectedRoutes = ["/ledger", "/spaces", "/debt", "/recurring"];
 const publicRoutes = ["/login", "/register"];
 
 function matchesRoute(path: string, routes: string[]) {

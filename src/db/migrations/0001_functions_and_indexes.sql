@@ -43,7 +43,7 @@ RETURNS TABLE(
     SELECT r.amount, r.type
     FROM recurring_instances ri
     JOIN recurring_items r ON ri.recurring_item_id = r.id
-    WHERE r.space_id = p_space_id AND NOT ri.skipped
+    WHERE r.space_id = p_space_id AND r.is_active AND NOT ri.skipped
       AND (p_to IS NULL OR ri.occurrence_date <= p_to)
   )
   SELECT
@@ -86,7 +86,7 @@ RETURNS TABLE(
     SELECT ri.occurrence_date, r.amount, r.type
     FROM recurring_instances ri
     JOIN recurring_items r ON ri.recurring_item_id = r.id
-    WHERE r.space_id = p_space_id AND NOT ri.skipped
+    WHERE r.space_id = p_space_id AND r.is_active AND NOT ri.skipped
       AND ri.occurrence_date >= p_from AND ri.occurrence_date <= p_to
   ),
   with_period AS (

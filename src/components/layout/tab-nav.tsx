@@ -3,13 +3,14 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { BookOpen, CreditCard } from "lucide-react";
+import { BookOpen, CreditCard, Repeat } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
 
 const tabs = [
   { id: "ledger", label: "Ledger", href: "/ledger", icon: BookOpen },
   { id: "debt", label: "Debt", href: "/debt", icon: CreditCard },
+  { id: "recurring", label: "Recurring", href: "/recurring", icon: Repeat },
 ];
 
 export function TabNav() {
@@ -19,7 +20,7 @@ export function TabNav() {
   if (!isAuthenticated) return null;
 
   return (
-    <nav className="flex gap-1 rounded-lg bg-surface-strong p-1 mb-6">
+    <nav className="flex gap-1 rounded-lg bg-surface-strong">
       {tabs.map((tab) => {
         const isActive = pathname === tab.href;
         const Icon = tab.icon;

@@ -8,14 +8,47 @@ export interface RecurringRule {
   id: string;
   spaceId: string;
   amount: number;
+  currency: string;
   description: string;
   category: string;
   type: string;
+  groupId: string | null;
+  frequencyUnit: string;
+  intervalCount: number;
+  byDay: string | null;
+  byMonthDay: number | null;
+  startDate: string;
+  endDate: string | null;
+  count: number | null;
+  nextOccurrence: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RecurringRuleUpdate {
+  amount?: number;
+  description?: string;
+  category?: string;
+  type?: string;
+  groupId?: string | null;
+  frequencyUnit?: string;
+  intervalCount?: number;
+  byDay?: string | null;
+  byMonthDay?: number | null;
+  startDate?: string;
+  endDate?: string | null;
+  count?: number | null;
+}
+
+export interface CreateRecurringRulePayload {
+  spaceId: string;
+  amount: number;
+  description: string;
+  category: string;
   frequencyUnit: string;
   intervalCount: number;
   startDate: string;
-  nextOccurrence: string;
-  isActive: boolean;
 }
 
 export function useRecurring() {
@@ -34,16 +67,13 @@ export function useRecurring() {
     staleTime: 5 * 60 * 1000,
   });
 
+  const invalidateKeys = [
+    ["recurring", activeSpaceId],
+    ["balances", activeSpaceId],
+  ];
+
   const createRule = useMutationWithToast({
-    mutationFn: async (payload: {
-      spaceId: string;
-      amount: number;
-      description: string;
-      category: string;
-      frequencyUnit: string;
-      intervalCount: number;
-      startDate: string;
-    }) => {
+    mutationFn: async (payload: CreateRecurringRulePayload) => {
       const res = await fetch("/api/recurring", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -53,13 +83,55 @@ export function useRecurring() {
       return res.json();
     },
     successMessage: "Recurring rule created",
-    invalidateKeys: [["recurring", activeSpaceId]],
+    invalidateKeys,
+  });
+
+  const updateRule = useMutationWithToast({
+    mutationFn: async ({ id, ...payload }: { id: string } & RecurringRuleUpdate) => {
+      const res = await fetch(`/api/recurring/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error("Failed to update recurring rule");
+      return res.json();
+    },
+    successMessage: "Recurring rule updated",
+    invalidateKeys,
+  });
+
+  const toggleActive = useMutationWithToast({
+    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
+      const res = await fetch(`/api/recurring/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive }),
+      });
+      if (!res.ok) throw new Error("Failed to update recurring rule");
+      return res.json();
+    },
+    successMessage: "Recurring rule updated",
+    invalidateKeys,
+  });
+
+  const deleteRule = useMutationWithToast({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/recurring/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete recurring rule");
+    },
+    successMessage: "Recurring rule deleted",
+    invalidateKeys,
   });
 
   return {
     rules,
     isLoading,
     createRule: createRule.mutateAsync,
+    updateRule: updateRule.mutateAsync,
+    toggleActive: toggleActive.mutateAsync,
+    deleteRule: deleteRule.mutateAsync,
     isCreating: createRule.isPending,
+    isUpdating: updateRule.isPending || toggleActive.isPending,
+    isDeleting: deleteRule.isPending,
   };
 }
