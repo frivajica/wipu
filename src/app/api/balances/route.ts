@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
 
     // Get period stats for the last 12 months
     const now = DateTime.now();
-    const from = now.minus({ months: 1 }).startOf("month").toFormat("yyyy-MM-dd");
+    const from = now.minus({ years: 1 }).startOf("month").toFormat("yyyy-MM-dd");
     const to = now.endOf("month").toFormat("yyyy-MM-dd");
 
     const periodsResult = await db.execute(sql`
