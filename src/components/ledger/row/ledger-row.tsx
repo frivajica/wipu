@@ -24,7 +24,6 @@ interface LedgerRowProps {
   isEditing?: boolean;
   onStartEdit?: () => void;
   isOwned?: boolean;
-  isDimmed?: boolean;
   isDragEnabled?: boolean;
 }
 
@@ -37,15 +36,11 @@ export function LedgerRow({
   isEditing,
   onStartEdit,
   isOwned,
-  isDimmed,
   isDragEnabled = false,
 }: LedgerRowProps) {
   const handleClick = () => {
     if (!isEditing && onStartEdit) onStartEdit();
   };
-
-  const dimClass = isDimmed ? "opacity-40" : "";
-  const dimBorderClass = isDimmed ? "border-l-border/30" : "";
 
   const gridCols = isDragEnabled
     ? "grid-cols-[28px_1fr] md:grid-cols-[28px_100px_1fr_1fr_90px_64px]"
@@ -56,11 +51,10 @@ export function LedgerRow({
     gridCols,
     "gap-2 md:gap-3 px-2.5 py-2 md:px-3 md:py-2",
     "rounded-lg bg-surface border border-border/40 border-l-4",
-    isDimmed ? dimBorderClass : getDebtColorClass(item.type),
+    getDebtColorClass(item.type),
     "shadow-card",
     "md:hover:shadow-card-hover md:hover:border-border-hover",
     "active:shadow-inner-active",
-    dimClass,
     isDragging && "opacity-90 bg-surface-elevated shadow-xl rounded-lg z-50 scale-[1.02] border-primary-accent/20",
     isEditing && "bg-primary-accent/4 border-primary-accent/20 shadow-glow-focus"
   );

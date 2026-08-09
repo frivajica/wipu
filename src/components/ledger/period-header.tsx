@@ -7,8 +7,7 @@ interface PeriodHeaderProps {
   balance: number;
   debt: number;
   runningBalance: number;
-  runningDebt: number;
-  includesDebt: boolean;
+  _runningDebt: number;
   isActive?: boolean;
 }
 
@@ -17,12 +16,11 @@ export function PeriodHeader({
   balance,
   debt,
   runningBalance,
-  runningDebt,
-  includesDebt,
+  _runningDebt,
   isActive,
 }: PeriodHeaderProps) {
-  const periodTotal = includesDebt ? balance + debt : balance;
-  const cumulativeTotal = includesDebt ? runningBalance : runningBalance - runningDebt;
+  const periodTotal = balance + debt;
+  const cumulativeTotal = runningBalance;
 
   return (
     <div className="mb-3 px-1">

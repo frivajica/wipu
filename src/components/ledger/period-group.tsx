@@ -38,7 +38,6 @@ interface PeriodGroupProps {
   onDeleteItem: (id: string) => void;
   onReorderItems: (itemIds: string[], dateUpdates?: Record<string, string>) => void;
   currentUserId: string;
-  includesDebt: boolean;
   periodStats?: {
     balance: number;
     debt: number;
@@ -63,7 +62,6 @@ export function PeriodGroup({
   onDeleteItem,
   onReorderItems,
   currentUserId,
-  includesDebt,
   periodStats,
 }: PeriodGroupProps) {
   const sortField = useUIStore((s) => s.sortField);
@@ -195,7 +193,6 @@ export function PeriodGroup({
       onCancelEdit={() => setEditingId(null)}
       currentUserId={currentUserId}
       isDragEnabled={isDragEnabled}
-      includesDebt={includesDebt}
       observeElement={isActiveDateSort ? observeElement : () => {}}
       unobserveElement={isActiveDateSort ? unobserveElement : () => {}}
       periodKey={label}
@@ -230,8 +227,7 @@ export function PeriodGroup({
         balance={periodStats?.balance ?? 0}
         debt={periodStats?.debt ?? 0}
         runningBalance={periodStats?.runningBalance ?? 0}
-        runningDebt={periodStats?.runningDebt ?? 0}
-        includesDebt={includesDebt}
+        _runningDebt={periodStats?.runningDebt ?? 0}
         isActive={currentPeriodKey === label}
       />
 

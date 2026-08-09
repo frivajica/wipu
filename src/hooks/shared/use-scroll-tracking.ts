@@ -20,7 +20,6 @@ interface ChronologicalEntry {
 
 interface UseScrollTrackingOptions {
   items: Array<{ id: string; amount: number; type: string; date: string }>;
-  includesDebt: boolean;
   initialTotal: number;
 }
 
@@ -44,7 +43,6 @@ interface UseScrollTrackingReturn {
 
 export function useScrollTracking({
   items,
-  includesDebt,
   initialTotal,
 }: UseScrollTrackingOptions): UseScrollTrackingReturn {
   const [scrollTotal, setScrollTotal] = React.useState(initialTotal);
@@ -56,16 +54,11 @@ export function useScrollTracking({
   const runningTotalRef = React.useRef(initialTotal);
   const frameRef = React.useRef<number | null>(null);
   const isPausedRef = React.useRef(false);
-  const includesDebtRef = React.useRef(includesDebt);
 
   const isSupported = React.useMemo(() => {
     return typeof document.elementFromPoint !== "undefined" &&
       typeof requestAnimationFrame !== "undefined";
   }, []);
-
-  React.useEffect(() => {
-    includesDebtRef.current = includesDebt;
-  }, [includesDebt]);
 
   const buildChronologicalMap = React.useCallback(() => {
     const allItems = Array.from(trackedElements.current.values());
@@ -78,10 +71,7 @@ export function useScrollTracking({
     let running = 0;
 
     for (const item of sorted) {
-      const includeAmount = includesDebtRef.current || item.type !== "debt";
-      if (includeAmount) {
-        running += item.amount;
-      }
+      running += item.amount;
       map.set(item.itemId, {
         itemId: item.itemId,
         runningTotal: running,

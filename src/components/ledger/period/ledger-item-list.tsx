@@ -20,7 +20,6 @@ interface LedgerItemListProps {
   onCancelEdit: () => void;
   currentUserId: string;
   isDragEnabled: boolean;
-  includesDebt: boolean;
   observeElement: (
     el: HTMLElement,
     itemId: string,
@@ -43,7 +42,6 @@ export function LedgerItemList({
   onCancelEdit,
   currentUserId,
   isDragEnabled,
-  includesDebt,
   observeElement,
   unobserveElement,
   periodKey,
@@ -80,7 +78,6 @@ export function LedgerItemList({
               onSaveEdit={onSaveEdit}
               onCancelEdit={onCancelEdit}
               isOwned={item.createdBy === currentUserId}
-              isDimmed={item.type === "debt" && !includesDebt}
               isDragEnabled={isDragEnabled}
               observeElement={observeElement}
               unobserveElement={unobserveElement}

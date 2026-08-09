@@ -35,18 +35,16 @@ export function useScrollTrackingContext(): ScrollTrackingContextValue {
 
 interface ScrollTrackingProviderProps {
   items: Array<{ id: string; amount: number; type: string; date: string }>;
-  includesDebt: boolean;
   initialTotal: number;
   children: React.ReactNode;
 }
 
 export function ScrollTrackingProvider({
   items,
-  includesDebt,
   initialTotal,
   children,
 }: ScrollTrackingProviderProps) {
-  const tracking = useScrollTracking({ items, includesDebt, initialTotal });
+  const tracking = useScrollTracking({ items, initialTotal });
 
   return (
     <ScrollTrackingContext.Provider value={tracking}>

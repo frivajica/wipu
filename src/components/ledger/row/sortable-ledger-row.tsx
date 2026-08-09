@@ -22,7 +22,6 @@ interface SortableLedgerRowProps {
   }) => void;
   onCancelEdit: () => void;
   isOwned: boolean;
-  isDimmed?: boolean;
   isDragEnabled?: boolean;
   observeElement: (
     el: HTMLElement,
@@ -47,7 +46,6 @@ export function SortableLedgerRow({
   onSaveEdit,
   onCancelEdit,
   isOwned,
-  isDimmed,
   isDragEnabled = true,
   observeElement,
   unobserveElement,
@@ -104,7 +102,6 @@ export function SortableLedgerRow({
         isDragging={isDragging}
         onStartEdit={onStartEdit}
         isOwned={isOwned}
-        isDimmed={isDimmed}
         isDragEnabled={isDragEnabled}
       />
     </div>

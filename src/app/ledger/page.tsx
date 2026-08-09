@@ -24,7 +24,6 @@ export default function LedgerPage() {
   const { user } = useAuth();
   const { activeSpaceId } = useSpaces();
   const { items, isLoading, balances, addItem, updateItem, deleteItem, reorderItems } = useLedger();
-  const includesDebt = useUIStore((s) => s.includesDebt);
 
   const periodType = useUIStore((s) => s.periodType);
   const customDateRange = useUIStore((s) => s.customDateRange);
@@ -69,7 +68,7 @@ export default function LedgerPage() {
     return items;
   }, [visibleKeys, groupedItems]);
 
-  const globalTotal = includesDebt ? balances.totalBalance : balances.realBalance;
+  const globalTotal = balances.totalBalance;
 
   const defaultDateRange = React.useMemo(
     () => ({
@@ -182,7 +181,6 @@ export default function LedgerPage() {
 
       <ScrollTrackingProvider
         items={flatItems}
-        includesDebt={includesDebt}
         initialTotal={globalTotal}
       >
         <LedgerBalanceBar />
@@ -201,7 +199,6 @@ export default function LedgerPage() {
                 onReorderItems={handleReorderItems}
                 currentUserId={user?.id || ""}
                 periodStats={periodStatsMap.get(key)}
-                includesDebt={includesDebt}
               />
             ))}
           </AnimatePresence>
