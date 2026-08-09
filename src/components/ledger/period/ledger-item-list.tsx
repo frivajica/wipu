@@ -21,6 +21,15 @@ interface LedgerItemListProps {
   currentUserId: string;
   isDragEnabled: boolean;
   includesDebt: boolean;
+  observeElement: (
+    el: HTMLElement,
+    itemId: string,
+    amount: number,
+    type: string,
+    periodKey: string
+  ) => void;
+  unobserveElement: (el: HTMLElement) => void;
+  periodKey: string;
 }
 
 export function LedgerItemList({
@@ -34,6 +43,9 @@ export function LedgerItemList({
   currentUserId,
   isDragEnabled,
   includesDebt,
+  observeElement,
+  unobserveElement,
+  periodKey,
 }: LedgerItemListProps) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -69,6 +81,9 @@ export function LedgerItemList({
               isOwned={item.createdBy === currentUserId}
               isDimmed={item.type === "debt" && !includesDebt}
               isDragEnabled={isDragEnabled}
+              observeElement={observeElement}
+              unobserveElement={unobserveElement}
+              periodKey={periodKey}
             />
           );
         })}

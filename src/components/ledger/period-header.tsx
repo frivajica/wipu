@@ -9,6 +9,7 @@ interface PeriodHeaderProps {
   runningBalance: number;
   runningDebt: number;
   includesDebt: boolean;
+  isActive?: boolean;
 }
 
 export function PeriodHeader({
@@ -18,13 +19,16 @@ export function PeriodHeader({
   runningBalance,
   runningDebt,
   includesDebt,
+  isActive,
 }: PeriodHeaderProps) {
   const periodTotal = includesDebt ? balance + debt : balance;
   const cumulativeTotal = includesDebt ? runningBalance : runningBalance - runningDebt;
 
   return (
     <div className="mb-3 px-1">
-      <h3 className="text-xl font-bold font-display text-text-primary tracking-tight mb-2">
+      <h3 className={`text-xl font-bold font-display tracking-tight mb-2 transition-colors duration-150 ${
+        isActive ? "text-primary-accent" : "text-text-primary"
+      }`}>
         {label}
       </h3>
       <div className="flex items-center justify-between gap-4 rounded-lg bg-surface-strong px-3 py-2">

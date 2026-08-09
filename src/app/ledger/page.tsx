@@ -16,6 +16,7 @@ import { LedgerSkeleton } from "@/components/ledger/ledger-skeleton";
 import { LedgerEmptyState } from "@/components/ledger/ledger-empty-state";
 import { LedgerBalanceBar } from "@/components/ledger/ledger-balance-bar";
 import { ExportButton } from "@/components/ledger/export-button";
+import { ScrollTrackingProvider } from "@/contexts/scroll-tracking-context";
 import { DateTime } from "luxon";
 
 export default function LedgerPage() {
@@ -53,6 +54,21 @@ export default function LedgerPage() {
     });
     return map;
   }, [balances.periods]);
+
+  const flatItems = React.useMemo(() => {
+    const items: Array<{ id: string; amount: number; type: string }> = [];
+    for (const key of visibleKeys) {
+      const group = groupedItems.get(key);
+      if (group) {
+        for (const item of group) {
+          items.push({ id: item.id, amount: item.amount, type: item.type });
+        }
+      }
+    }
+    return items;
+  }, [visibleKeys, groupedItems]);
+
+  const globalTotal = includesDebt ? balances.totalBalance : balances.realBalance;
 
   const defaultDateRange = React.useMemo(
     () => ({
@@ -163,37 +179,43 @@ export default function LedgerPage() {
         />
       </div>
 
-      <LedgerBalanceBar />
+      <ScrollTrackingProvider
+        items={flatItems}
+        includesDebt={includesDebt}
+        initialTotal={globalTotal}
+      >
+        <LedgerBalanceBar />
 
-      <div className="space-y-2">
-        <AnimatePresence mode="popLayout">
-          {visibleKeys.map((key) => (
-            <PeriodGroup
-              key={key}
-              label={key}
-              items={groupedItems.get(key) || []}
-              onAddItem={addItem}
-              onEditItem={handleEditItem}
-              onDeleteItem={deleteItem}
-              onReorderItems={handleReorderItems}
-              currentUserId={user?.id || ""}
-              periodStats={periodStatsMap.get(key)}
-              includesDebt={includesDebt}
-            />
-          ))}
-        </AnimatePresence>
+        <div className="space-y-2">
+          <AnimatePresence mode="popLayout">
+            {visibleKeys.map((key) => (
+              <PeriodGroup
+                key={key}
+                label={key}
+                items={groupedItems.get(key) || []}
+                onAddItem={addItem}
+                onEditItem={handleEditItem}
+                onDeleteItem={deleteItem}
+                onReorderItems={handleReorderItems}
+                currentUserId={user?.id || ""}
+                periodStats={periodStatsMap.get(key)}
+                includesDebt={includesDebt}
+              />
+            ))}
+          </AnimatePresence>
 
-        {visibleKeys.length === 0 && (
-          <LedgerEmptyState onAdd={handleAddFirstItem} />
-        )}
+          {visibleKeys.length === 0 && (
+            <LedgerEmptyState onAdd={handleAddFirstItem} />
+          )}
 
-        <InfiniteScrollLoader
-          isLoading={isLoading}
-          hasMore={hasMore}
-          onLoadMore={loadMore}
-          hasItems={items.length > 0}
-        />
-      </div>
+          <InfiniteScrollLoader
+            isLoading={isLoading}
+            hasMore={hasMore}
+            onLoadMore={loadMore}
+            hasItems={items.length > 0}
+          />
+        </div>
+      </ScrollTrackingProvider>
     </div>
   );
 }

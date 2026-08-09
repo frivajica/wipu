@@ -1,9 +1,10 @@
 "use client";
 
+import * as React from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { LedgerItem } from "@/lib/types";
-import { LedgerRow } from "../row/ledger-row";
+import { LedgerRow } from "./ledger-row";
 import { InlineEditRow } from "../inline-edit-row";
 
 interface SortableLedgerRowProps {
@@ -23,6 +24,15 @@ interface SortableLedgerRowProps {
   isOwned: boolean;
   isDimmed?: boolean;
   isDragEnabled?: boolean;
+  observeElement: (
+    el: HTMLElement,
+    itemId: string,
+    amount: number,
+    type: string,
+    periodKey: string
+  ) => void;
+  unobserveElement: (el: HTMLElement) => void;
+  periodKey: string;
 }
 
 export function SortableLedgerRow({
@@ -37,6 +47,9 @@ export function SortableLedgerRow({
   isOwned,
   isDimmed,
   isDragEnabled = true,
+  observeElement,
+  unobserveElement,
+  periodKey,
 }: SortableLedgerRowProps) {
   const {
     attributes,
@@ -47,14 +60,24 @@ export function SortableLedgerRow({
     isDragging,
   } = useSortable({ id: item.id });
 
+  const rowRef = React.useRef<HTMLElement | null>(null);
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
   };
 
+  React.useEffect(() => {
+    const el = rowRef.current;
+    if (el && !isEditing) {
+      observeElement(el, item.id, item.amount, item.type, periodKey);
+      return () => unobserveElement(el);
+    }
+  }, [item.id, item.amount, item.type, periodKey, isEditing, observeElement, unobserveElement]);
+
   if (isEditing) {
     return (
-      <div ref={setNodeRef} style={style}>
+    <div ref={(node) => { setNodeRef(node); rowRef.current = node; }} style={style}>
         <InlineEditRow
           amount={item.amount}
           description={item.description}
@@ -68,7 +91,7 @@ export function SortableLedgerRow({
   }
 
   return (
-    <div ref={setNodeRef} style={style}>
+    <div ref={(node) => { setNodeRef(node); rowRef.current = node; }} style={style}>
       <LedgerRow
         item={item}
         userName={userName}

@@ -22,6 +22,7 @@ import { LedgerItem } from "@/lib/types";
 import { PeriodHeader } from "./period-header";
 import { AddItemRow } from "./add-item-row";
 import { LedgerItemList } from "./period/ledger-item-list";
+import { useScrollTrackingContext } from "@/contexts/scroll-tracking-context";
 
 import { Plus, ArrowUp, ArrowDown } from "lucide-react";
 import { useUIStore } from "@/stores/ui-store";
@@ -95,6 +96,9 @@ export function PeriodGroup({
     (_state, newItems: LedgerItem[]) => newItems
   );
 
+  const { pause, resume, observeElement, unobserveElement, currentPeriodKey } =
+    useScrollTrackingContext();
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 },
@@ -104,7 +108,12 @@ export function PeriodGroup({
     })
   );
 
+  const handleDragStart = () => {
+    pause();
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
+    resume();
     const { active, over } = event;
     if (over && active.id !== over.id) {
       const oldIndex = optimisticItems.findIndex((item) => item.id === active.id);
@@ -185,6 +194,9 @@ export function PeriodGroup({
       currentUserId={currentUserId}
       isDragEnabled={isDragEnabled}
       includesDebt={includesDebt}
+      observeElement={observeElement}
+      unobserveElement={unobserveElement}
+      periodKey={label}
     />
   );
 
@@ -192,6 +204,7 @@ export function PeriodGroup({
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
       <SortableContext
@@ -217,6 +230,7 @@ export function PeriodGroup({
         runningBalance={periodStats?.runningBalance ?? 0}
         runningDebt={periodStats?.runningDebt ?? 0}
         includesDebt={includesDebt}
+        isActive={currentPeriodKey === label}
       />
 
       <div className={cn(
