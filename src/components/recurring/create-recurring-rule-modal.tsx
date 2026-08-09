@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { DateTime } from "luxon";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,7 +30,7 @@ function initialValues(): RecurringRuleFormValues {
     category: "",
     frequencyUnit: "monthly",
     intervalCount: "1",
-    startDate: new Date().toISOString().split("T")[0],
+    startDate: DateTime.now().toFormat("yyyy-MM-dd"),
   };
 }
 
