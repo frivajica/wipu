@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { spaceMembers } from "@/db/schema";
 import { eq, and, sql } from "drizzle-orm";
+import { DateTime } from "luxon";
 
 interface SpaceBalanceRow {
   total_balance: string;
@@ -59,15 +60,15 @@ export async function GET(request: NextRequest) {
     const balances = balancesResult.rows[0] as unknown as SpaceBalanceRow | undefined;
 
     // Get period stats for the last 12 months
-    const now = new Date();
-    const from = new Date(now.getFullYear() - 1, now.getMonth(), 1);
-    const to = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const now = DateTime.now();
+    const from = now.minus({ months: 1 }).startOf("month").toFormat("yyyy-MM-dd");
+    const to = now.endOf("month").toFormat("yyyy-MM-dd");
 
     const periodsResult = await db.execute(sql`
       SELECT * FROM get_period_stats(
         ${spaceId},
-        ${from.toISOString().split("T")[0]},
-        ${to.toISOString().split("T")[0]},
+        ${from},
+        ${to},
         ${periodType}
       )
     `);
