@@ -5,7 +5,7 @@ import { neon } from "@neondatabase/serverless";
 const sql = neon(process.env.DATABASE_URL!);
 
 async function migrate() {
-  console.log("🔄 Running balance cutoff migration...");
+  console.info("🔄 Running balance cutoff migration...");
 
   await sql`
     CREATE OR REPLACE FUNCTION get_space_balances(p_space_id UUID, p_to DATE DEFAULT NULL)
@@ -31,9 +31,9 @@ async function migrate() {
       FROM all_items;
     $$ LANGUAGE sql STABLE;
   `;
-  console.log("  ✅ get_space_balances updated with p_to parameter");
+  console.info("  ✅ get_space_balances updated with p_to parameter");
 
-  console.log("\n✅ Migration complete");
+  console.info("\n✅ Migration complete");
 }
 
 migrate().catch(console.error);

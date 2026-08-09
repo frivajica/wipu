@@ -67,7 +67,7 @@ $$ LANGUAGE plpgsql;
   `.trim();
 
   await db.execute(sql.raw(statements));
-  console.log("✅ Trigger function updated");
+  console.info("✅ Trigger function updated");
 }
 
 applyMigration().catch((err) => {

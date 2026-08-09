@@ -19,14 +19,14 @@ const tables = [
 ];
 
 async function dropAll() {
-  console.log("💥 Dropping all existing tables...");
+  console.info("💥 Dropping all existing tables...");
 
   for (const table of tables) {
     await db.execute(sql.raw(`DROP TABLE IF EXISTS ${table} CASCADE;`));
-    console.log(`  ✅ Dropped ${table}`);
+    console.info(`  ✅ Dropped ${table}`);
   }
 
-  console.log("✅ All tables dropped. Ready for fresh push.");
+  console.info("✅ All tables dropped. Ready for fresh push.");
 }
 
 dropAll().catch((err) => {

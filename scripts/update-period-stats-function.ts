@@ -6,7 +6,7 @@ const sql = neon(process.env.DATABASE_URL!);
 
 async function applyMigration() {
   await sql`DROP FUNCTION IF EXISTS get_period_stats(uuid, date, date, text)`;
-  console.log("✅ Dropped existing get_period_stats");
+  console.info("✅ Dropped existing get_period_stats");
 
   const statements = `
 CREATE OR REPLACE FUNCTION get_period_stats(
@@ -98,7 +98,7 @@ $$ LANGUAGE sql STABLE;
 
   try {
     await sql.query(statements);
-    console.log("✅ get_period_stats recreated with is_active filter");
+    console.info("✅ get_period_stats recreated with is_active filter");
   } catch (err) {
     console.error("Migration failed:", err);
     process.exit(1);
