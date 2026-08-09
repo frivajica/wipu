@@ -25,6 +25,7 @@ interface LedgerRowProps {
   onStartEdit?: () => void;
   isOwned?: boolean;
   isDragEnabled?: boolean;
+  isActive?: boolean;
 }
 
 export function LedgerRow({
@@ -37,6 +38,7 @@ export function LedgerRow({
   onStartEdit,
   isOwned,
   isDragEnabled = false,
+  isActive,
 }: LedgerRowProps) {
   const handleClick = () => {
     if (!isEditing && onStartEdit) onStartEdit();
@@ -53,6 +55,7 @@ export function LedgerRow({
     "rounded-lg bg-surface border border-border/40 border-l-4",
     getDebtColorClass(item.type),
     "shadow-card",
+    isActive && "shadow-card-hover border-border-hover",
     "md:hover:shadow-card-hover md:hover:border-border-hover",
     "active:shadow-inner-active",
     isDragging && "opacity-90 bg-surface-elevated shadow-xl rounded-lg z-50 scale-[1.02] border-primary-accent/20",

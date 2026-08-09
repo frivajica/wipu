@@ -68,15 +68,9 @@ export function LedgerBalanceBar() {
 
   return (
     <BalanceBar>
-      <div ref={barRef} className="flex items-center justify-end gap-2">
+      <div ref={barRef} className="flex items-center gap-2">
         <div className="flex items-center gap-2 ml-auto">
           <AnimatePresence mode="popLayout">
-            <BalancePill
-              key="at-this-point"
-              label="At This Point"
-              value={displayTotal}
-              highlight={isActiveDateSort && displayTotal !== globalTotal}
-            />
             {isSticky && (
               <BalancePill
                 key="all-time"
@@ -84,6 +78,12 @@ export function LedgerBalanceBar() {
                 value={globalTotal}
               />
             )}
+            <BalancePill
+              key="at-this-point"
+              label="At This Point"
+              value={displayTotal}
+              highlight={isActiveDateSort && displayTotal !== globalTotal}
+            />
           </AnimatePresence>
         </div>
       </div>

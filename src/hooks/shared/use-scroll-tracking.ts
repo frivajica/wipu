@@ -27,6 +27,7 @@ interface UseScrollTrackingReturn {
   scrollTotal: number;
   currentPeriodKey: string | null;
   mouseY: number;
+  activeItemId: string | null;
   observeElement: (
     el: HTMLElement,
     itemId: string,
@@ -48,12 +49,14 @@ export function useScrollTracking({
   const [scrollTotal, setScrollTotal] = React.useState(initialTotal);
   const [currentPeriodKey, setCurrentPeriodKey] = React.useState<string | null>(null);
   const [mouseY, setMouseY] = React.useState(-1);
+  const [activeItemId, setActiveItemId] = React.useState<string | null>(null);
 
   const trackedElements = React.useRef(new Map<HTMLElement, TrackedElement>());
   const chronologicalMap = React.useRef(new Map<string, ChronologicalEntry>());
   const runningTotalRef = React.useRef(initialTotal);
   const frameRef = React.useRef<number | null>(null);
   const isPausedRef = React.useRef(false);
+  const lastCursorYRef = React.useRef<number>(-1);
 
   const isSupported = React.useMemo(() => {
     return typeof document.elementFromPoint !== "undefined" &&
@@ -103,6 +106,8 @@ export function useScrollTracking({
       return;
     }
 
+    lastCursorYRef.current = y;
+
     let found: TrackedElement | null = null;
 
     for (const item of trackedElements.current.values()) {
@@ -123,6 +128,8 @@ export function useScrollTracking({
         }
       }
     }
+
+    setActiveItemId(found?.itemId ?? null);
 
     if (found) {
       const entry = chronologicalMap.current.get(found.itemId);
@@ -156,14 +163,25 @@ export function useScrollTracking({
       }
     };
 
+    const handleScroll = () => {
+      if (!frameRef.current && lastCursorYRef.current >= 0) {
+        frameRef.current = requestAnimationFrame(() => {
+          computeFromCursor(lastCursorYRef.current);
+          frameRef.current = null;
+        });
+      }
+    };
+
     try {
       document.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("scroll", handleScroll, { passive: true });
     } catch {
       // ignore
     }
 
     return () => {
       document.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("scroll", handleScroll);
       if (frameRef.current) {
         cancelAnimationFrame(frameRef.current);
         frameRef.current = null;
@@ -247,6 +265,7 @@ export function useScrollTracking({
     scrollTotal,
     currentPeriodKey,
     mouseY,
+    activeItemId,
     observeElement,
     unobserveElement,
     pause,

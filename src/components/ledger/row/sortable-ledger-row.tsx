@@ -6,6 +6,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { LedgerItem } from "@/lib/types";
 import { LedgerRow } from "./ledger-row";
 import { InlineEditRow } from "../inline-edit-row";
+import { useScrollTrackingContext } from "@/contexts/scroll-tracking-context";
 
 interface SortableLedgerRowProps {
   item: LedgerItem;
@@ -61,6 +62,8 @@ export function SortableLedgerRow({
     isDragging,
   } = useSortable({ id: item.id });
 
+  const { activeItemId } = useScrollTrackingContext();
+
   const rowRef = React.useRef<HTMLElement | null>(null);
 
   const style = {
@@ -103,6 +106,7 @@ export function SortableLedgerRow({
         onStartEdit={onStartEdit}
         isOwned={isOwned}
         isDragEnabled={isDragEnabled}
+        isActive={item.id === activeItemId}
       />
     </div>
   );

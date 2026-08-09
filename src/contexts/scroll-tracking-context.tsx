@@ -7,6 +7,7 @@ interface ScrollTrackingContextValue {
   scrollTotal: number;
   currentPeriodKey: string | null;
   mouseY: number;
+  activeItemId: string | null;
   observeElement: (
     el: HTMLElement,
     itemId: string,
