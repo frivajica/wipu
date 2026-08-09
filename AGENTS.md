@@ -473,6 +473,21 @@ feat: Add Y component
 fix: Resolve Z bug
 ```
 
+### Docker
+
+The app ships with a multi-stage Dockerfile for production deployment:
+
+```bash
+docker build -t wipu .
+docker run -p 3000:3000 \
+  -e DATABASE_URL=... \
+  -e BETTER_AUTH_SECRET=... \
+  -e BETTER_AUTH_URL=... \
+  wipu
+```
+
+The build uses `output: "standalone"` in `next.config.ts` for a minimal production bundle (~150MB final image).
+
 ---
 
 *Last updated: May 11, 2026*

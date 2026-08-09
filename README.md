@@ -130,6 +130,20 @@ pnpm build
 pnpm start
 ```
 
+### Docker
+
+```bash
+# Build the image
+docker build -t wipu .
+
+# Run with environment variables
+docker run -p 3000:3000 \
+  -e DATABASE_URL=postgresql://... \
+  -e BETTER_AUTH_SECRET=your-secret \
+  -e BETTER_AUTH_URL=http://localhost:3000 \
+  wipu
+```
+
 ### Lint
 
 ```bash
