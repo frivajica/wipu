@@ -37,7 +37,6 @@ interface PeriodGroupProps {
   onDeleteItem: (id: string) => void;
   onReorderItems: (itemIds: string[], dateUpdates?: Record<string, string>) => void;
   currentUserId: string;
-  reorderByDate: boolean;
   includesDebt: boolean;
   periodStats?: {
     balance: number;
@@ -63,7 +62,6 @@ export function PeriodGroup({
   onDeleteItem,
   onReorderItems,
   currentUserId,
-  reorderByDate,
   includesDebt,
   periodStats,
 }: PeriodGroupProps) {
@@ -112,22 +110,19 @@ export function PeriodGroup({
       const oldIndex = optimisticItems.findIndex((item) => item.id === active.id);
       const newIndex = optimisticItems.findIndex((item) => item.id === over.id);
       const newItems = arrayMove(optimisticItems, oldIndex, newIndex);
-      let dateUpdates: Record<string, string> | undefined;
 
-      if (reorderByDate) {
-        const movedItem = newItems[newIndex];
-        const before = newItems[newIndex - 1];
-        const after = newItems[newIndex + 1];
+      const movedItem = newItems[newIndex];
+      const before = newItems[newIndex - 1];
+      const after = newItems[newIndex + 1];
 
-        let newDate: string;
-        if (before && after) {
-          newDate = getMidpointDate(before.date, after.date);
-        } else {
-          newDate = (before || after).date;
-        }
-        movedItem.date = newDate;
-        dateUpdates = { [movedItem.id]: newDate };
+      let newDate: string;
+      if (before && after) {
+        newDate = getMidpointDate(before.date, after.date);
+      } else {
+        newDate = (before || after).date;
       }
+      movedItem.date = newDate;
+      const dateUpdates = { [movedItem.id]: newDate };
 
       React.startTransition(() => {
         addOptimisticItems(newItems);
@@ -176,6 +171,8 @@ export function PeriodGroup({
 
   const displayItems = optimisticItems;
 
+  const isDragEnabled = sortField === null;
+
   const list = (
     <LedgerItemList
       items={displayItems}
@@ -186,10 +183,25 @@ export function PeriodGroup({
       onSaveEdit={handleEditSave}
       onCancelEdit={() => setEditingId(null)}
       currentUserId={currentUserId}
-      isDragEnabled={reorderByDate}
+      isDragEnabled={isDragEnabled}
       includesDebt={includesDebt}
     />
   );
+
+  const content = isDragEnabled ? (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      <SortableContext
+        items={displayItems.map((item) => item.id)}
+        strategy={verticalListSortingStrategy}
+      >
+        {list}
+      </SortableContext>
+    </DndContext>
+  ) : list;
 
   return (
     <motion.section
@@ -209,7 +221,7 @@ export function PeriodGroup({
 
       <div className={cn(
         "hidden md:grid gap-3 px-3 pb-2 text-xs font-semibold text-text-tertiary uppercase tracking-wider transition-all duration-200 ease-out",
-        reorderByDate 
+        isDragEnabled 
           ? "grid-cols-[28px_100px_1fr_1fr_90px_64px]" 
           : "grid-cols-[0_100px_1fr_1fr_90px_64px]"
       )}>
@@ -231,18 +243,7 @@ export function PeriodGroup({
         </div>
       </div>
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-      >
-        <SortableContext
-          items={displayItems.map((item) => item.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          {list}
-        </SortableContext>
-      </DndContext>
+      {content}
 
       <AnimatePresence>
         {isAdding ? (

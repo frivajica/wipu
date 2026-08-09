@@ -88,7 +88,6 @@ export interface SpaceState {
 
 export interface UIState {
   periodType: PeriodType;
-  reorderByDate: boolean;
   customDateRange: {
     start: string;
     end: string;

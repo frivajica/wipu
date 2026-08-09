@@ -34,7 +34,7 @@ export function SortResetCue({ visible, sortField, onReset }: SortResetCueProps)
                 onClick={onReset}
                 className="text-sm font-medium text-amber-900 hover:text-amber-700 underline cursor-pointer"
               >
-                Reset sort
+                Reset to enable drag
               </button>
             </div>
           </div>

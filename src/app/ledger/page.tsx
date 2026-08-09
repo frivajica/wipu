@@ -8,7 +8,6 @@ import { useSpaces } from "@/hooks/use-spaces";
 import { useUIStore } from "@/stores/ui-store";
 import { useGroupedLedger } from "@/hooks/use-grouped-ledger";
 import { PeriodSelector } from "@/components/ledger/period-selector";
-import { ReorderToggle } from "@/components/ledger/reorder-toggle";
 import { CustomDateRange } from "@/components/ledger/custom-date-range";
 import { PeriodGroup } from "@/components/ledger/period-group";
 import { SortResetCue } from "@/components/ledger/sort-reset-cue";
@@ -17,28 +16,21 @@ import { LedgerSkeleton } from "@/components/ledger/ledger-skeleton";
 import { LedgerEmptyState } from "@/components/ledger/ledger-empty-state";
 import { LedgerBalanceHeader } from "@/components/ledger/ledger-balance-header";
 import { ExportButton } from "@/components/ledger/export-button";
-import { RecurringPanel } from "@/components/ledger/recurring-panel";
-import { CreateRecurringRuleModal } from "@/components/ledger/create-recurring-rule-modal";
-import { useRecurring } from "@/hooks/use-recurring";
 import { DateTime } from "luxon";
 
 export default function LedgerPage() {
   const { user } = useAuth();
   const { activeSpaceId } = useSpaces();
   const { items, isLoading, balances, addItem, updateItem, deleteItem, reorderItems } = useLedger();
-  const { rules: recurringRules, createRule } = useRecurring();
   const includesDebt = useUIStore((s) => s.includesDebt);
 
   const periodType = useUIStore((s) => s.periodType);
-  const reorderByDate = useUIStore((s) => s.reorderByDate);
   const customDateRange = useUIStore((s) => s.customDateRange);
   const sortField = useUIStore((s) => s.sortField);
   const sortDirection = useUIStore((s) => s.sortDirection);
   const setPeriodType = useUIStore((s) => s.setPeriodType);
-  const setReorderByDate = useUIStore((s) => s.setReorderByDate);
   const setCustomDateRange = useUIStore((s) => s.setCustomDateRange);
   const setSort = useUIStore((s) => s.setSort);
-  const [isRecurringModalOpen, setIsRecurringModalOpen] = React.useState(false);
 
   const { groupedItems, visibleKeys, hasMore, loadMore } = useGroupedLedger({
     items,
@@ -140,10 +132,6 @@ export default function LedgerPage() {
             <div className="w-full sm:w-auto">
               <PeriodSelector value={periodType} onChange={setPeriodType} />
             </div>
-            <ReorderToggle
-              checked={reorderByDate}
-              onChange={setReorderByDate}
-            />
             <ExportButton spaceId={activeSpaceId} />
           </div>
         </div>
@@ -169,18 +157,13 @@ export default function LedgerPage() {
         </AnimatePresence>
 
         <SortResetCue
-          visible={sortField !== null && !reorderByDate}
+          visible={sortField !== null}
           sortField={sortField}
           onReset={() => setSort(null)}
         />
       </div>
 
       <LedgerBalanceHeader />
-
-      <RecurringPanel
-        rules={recurringRules}
-        onCreate={() => setIsRecurringModalOpen(true)}
-      />
 
       <div className="space-y-2">
         <AnimatePresence mode="popLayout">
@@ -194,7 +177,6 @@ export default function LedgerPage() {
               onDeleteItem={deleteItem}
               onReorderItems={handleReorderItems}
               currentUserId={user?.id || ""}
-              reorderByDate={reorderByDate}
               periodStats={periodStatsMap.get(key)}
               includesDebt={includesDebt}
             />
@@ -212,15 +194,6 @@ export default function LedgerPage() {
           hasItems={items.length > 0}
         />
       </div>
-
-      <CreateRecurringRuleModal
-        isOpen={isRecurringModalOpen}
-        onClose={() => setIsRecurringModalOpen(false)}
-        onCreate={async (payload) => {
-          await createRule({ ...payload, spaceId: activeSpaceId || "" });
-        }}
-        isCreating={false}
-      />
     </div>
   );
 }
