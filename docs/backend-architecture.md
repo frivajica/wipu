@@ -401,7 +401,6 @@ $$ LANGUAGE sql STABLE;
 | Period type selection (monthly, weekly, etc.) | UI preference persisted in Zustand |
 | Period grouping | The API returns `periodKeys[]` (ordered list of period identifiers) and items pre-filtered to the date range. Frontend iterates the bounded slice and groups by period name — still client-side because data is pre-filtered (~9,000 items max per query window, completes in <5ms) |
 | Active space selection | Pure client state (which space is currently viewed) |
-| `includesDebt` toggle | Purely visual — does NOT affect API calls. API always returns all items. Frontend dims `type='debt'` rows and switches "Total" pill between `realBalance` and `totalBalance` |
 | Currency formatting | `Intl.NumberFormat` with locale — belongs in UI layer |
 | Optimistic updates | TanStack Query optimistically adjusts totals on add/edit |
 | Drag & drop interaction | DnD Kit handles the gesture; sends final order to backend |

@@ -89,14 +89,14 @@ Total Debt: $250
 
 **Balance display:**
 ```
-+----------+  +----------+  +----------+  +----------+
-| Balance  |  | Debt     |  | Running  |  | Running  |
-| $13      |  | $8       |  | $13      |  | $8       |
-+----------+  +----------+  +----------+  +----------+
++----------+  +------------------+
+| Period   |  | Cumulative Total |
+| $13      |  | $5,432           |
++----------+  +------------------+
 ```
 
-- Balance/Running: `text-primary`
-- Debt/Running Debt: `text-debt` (blue)
+- Period: `text-primary`
+- Cumulative Total: `text-primary`
 
 ### 2.4 Add Item Form Updates
 

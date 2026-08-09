@@ -243,7 +243,7 @@ Stores manage purely client-side state:
 |---|---|
 | `auth-store.ts` | User session, token, authentication status |
 | `space-store.ts` | Spaces list, active space ID |
-| `ui-store.ts` | Period type, reorder by date, sort preferences, custom date range, includesDebt |
+| `ui-store.ts` | Period type, sort preferences, custom date range, balance cutoff date |
 
 ### 6.2 TanStack Query — Server State
 
@@ -500,7 +500,7 @@ Balances are computed server-side via `get_space_balances()` and `get_period_sta
 | `totalDebt` | Sum of all debt items (positive = owe more) |
 | `realBalance` | Sum of non-debt items only |
 
-The `includesDebt` toggle in `ui-store.ts` controls whether debt items are visually dimmed and whether debt pills show in period headers. All items remain in the list; only their visual weight changes.
+The `includesDebt` toggle has been removed. Debt items are always included in all balance calculations. The scroll-tracking system provides a cursor-aware "At This Point" running total that updates as the user moves their cursor over ledger items.
 
 ### 16.3 Visual Cues
 
@@ -521,8 +521,8 @@ Debt items are differentiated by a left-edge color bar:
 | Component | Responsibility |
 |---|---|
 | `TabNav` | Ledger/Debt tab switching with animated active state |
-| `LedgerBalanceHeader` | Balance overview with includesDebt toggle, 2-pill layout (Total Debt + Total) |
-| `PeriodHeader` | Period label with 2-pill layout (Debt + Total), hover cards for Period/Cumulative breakdown |
+| `LedgerBalanceBar` | Sticky balance bar with "At This Point" (scroll-aware running total) and "All Time" (appears when bar becomes sticky) |
+| `PeriodHeader` | Period label with 2-pill layout (Period + Cumulative Total), active highlight when at cursor position |
 | `DebtBalanceHeader` | Debt-specific balance display (Total Debt + Real Balance) |
 | `DebtGroupCard` | Individual debt group with balance, permanently expanded item list, add form |
 | `DebtGroupList` | 2-column grid of debt group cards with staggered animations |
@@ -532,4 +532,29 @@ Debt items are differentiated by a left-edge color bar:
 | `SortableDebtItemRow` | DnD wrapper for `DebtItemRow` |
 | `AddDebtItemRow` | Compact add form pre-configured for debt (groupId fixed) |
 | `GroupSelector` | Default/Debt dropdown for add item form |
-| `LedgerRow` | Ledger row with color cue bar (`border-l-debt` vs `border-l-border`) and dimming support |
+| `LedgerRow` | Ledger row with color cue bar (`border-l-debt` vs `border-l-border`) and active highlight at cursor position |
+| `CursorLine` | Fixed-position dashed line at cursor Y (only visible during date-descending sort) |
+| `LedgerBalanceBar` | Sticky balance bar with "At This Point" (scroll-aware running total) and "All Time" (appears when bar becomes sticky) |
+
+### 16.6 Scroll Tracking System
+
+The ledger provides cursor-aware running totals via a three-pass detection system:
+
+| Component | Purpose |
+|---|---|
+| `useScrollTracking` | Core hook: builds chronological map of items sorted by date (+ DOM position tiebreaker), computes running totals, detects item at cursor via direct `getBoundingClientRect` comparison |
+| `ScrollTrackingProvider` | Context provider wrapping ledger content, exposes `scrollTotal`, `activeItemId`, `mouseY`, `observeElement`, `unobserveElement`, `pause`, `resume` |
+| `CursorLine` | Visual cue: dashed horizontal line at cursor Y position |
+
+**Detection passes:**
+1. Direct hit: check if cursor Y falls within any row's `getBoundingClientRect()` bounds
+2. Gap fallback: find the nearest row below the cursor
+3. Bottom fallback: if cursor is below all rows, use the last chronological entry (equals "All Time")
+
+**Failsafes:**
+- Feature detection (`elementFromPoint` + `requestAnimationFrame`)
+- Try/catch around observer setup
+- `requestAnimationFrame` throttle on state updates (max 60fps)
+- Pause/resume during drag-and-drop to prevent callback storms
+
+**Chronological ordering:** Items are sorted by date ascending. When multiple items share the same date, DOM position (top of `getBoundingClientRect`) is used as the tiebreaker so items higher on screen get higher running totals.

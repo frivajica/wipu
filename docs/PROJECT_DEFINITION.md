@@ -4,7 +4,7 @@
 
 **App Name:** Wipu  
 **Type:** Progressive Web App (PWA)  
-**Target Users:** Couples, small groups (max 8 per space)  
+**Target Users:** Couples, small groups (max 15 per space)  
 **Purpose:** A shared expense/income tracker for couples and small teams, prioritizing logical date inheritance, high-density visibility, and rapid data entry.
 
 ## 2. Core Concept
@@ -35,15 +35,17 @@ A ledger-based finance tracker where items are grouped by selectable time period
 
 ## 4. Architecture
 
-### 4.1 Frontend-Only Phase (Current)
-- All data stored in `data.js` (mock database) and persisted to `localStorage`.
-- TanStack Query hooks treat `data.js` as the "backend" via async mock functions.
-- Zustand stores manage client-side state (auth session, active space, UI toggles).
-- All CRUD operations mutate `data.js` and trigger TanStack Query invalidation.
+### 4.1 Backend Phase (Current)
+- PostgreSQL via Neon (serverless Postgres, free tier)
+- Better Auth for self-hosted authentication (Drizzle adapter)
+- Drizzle ORM for type-safe schema and queries
+- HTTP API routes under `app/api/` with method handlers (GET, POST, PUT, DELETE)
+- TanStack Query hooks call API routes for all data fetching and mutations
+- Zustand stores manage client-side state (active space, UI toggles)
 
-### 4.2 Future Backend Phase
-- **Supabase** (recommended): PostgreSQL, Auth, Realtime, Row Level Security.
-- Migration path: Replace mock query functions with Supabase client calls. Zustand stores and UI components remain largely unchanged.
+### 4.2 Future Supabase Phase
+- Supabase drop-in replacement for Neon + Better Auth (PostgreSQL, Auth, Realtime, Row Level Security)
+- Migration path: Replace Drizzle/Neon API routes with Supabase client calls. Zustand stores and UI components remain unchanged.
 
 ## 5. Data Model
 
@@ -125,7 +127,7 @@ A ledger-based finance tracker where items are grouped by selectable time period
   - Smart Date ON: inherit date from neighbor based on drop position
   - Smart Date OFF: retain original date
   - Sort-lock: if sorted by date and Smart Date OFF, drag is disabled with reset cue
-- **Sorting**: Default Date (Ascending). Same-date items preserve original relative order.
+- **Sorting**: Default Date (Descending). Same-date items ordered by DOM position.
 - **Row Actions**: 
   - Swipe to delete (mobile)
   - Right-click context menu → Delete (desktop)
@@ -223,12 +225,12 @@ wipu/
 
 ## 9. Constraints & Rules
 
-- Max 8 members per space
+- Max 15 members per space
 - Personal space cannot be left
 - Items cannot be dragged across period groups
 - Custom view shows single group, infinite scroll after 50 items
-- All mock data persisted to localStorage
-- Invite links are mock-only (copy to clipboard, no actual join flow)
+- PostgreSQL backend with Better Auth (Neon PostgreSQL, Drizzle ORM)
+- Cookie-based sessions
 - Numeric input only for amounts (no expressions in MVP)
 - Each ledger item has exactly one owner/updater (no shared items)
 - Drag handles minimum 44px touch target
@@ -236,7 +238,6 @@ wipu/
 
 ## 10. Future Phases
 
-- **Phase 2**: Supabase backend, real auth, real-time sync
 - **Phase 3**: Budgets screen
 - **Phase 4**: Analytics screen
 - **Phase 5**: AI category suggestions, profile pictures, push notifications, dark mode
