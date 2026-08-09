@@ -55,18 +55,18 @@ export function useScrollTracking({
   const chronologicalMap = React.useRef(new Map<string, ChronologicalEntry>());
   const runningTotalRef = React.useRef(initialTotal);
   const frameRef = React.useRef<number | null>(null);
+  const [isSupported] = React.useState(() => {
+    const supported = typeof document.elementFromPoint !== "undefined" &&
+      typeof requestAnimationFrame !== "undefined";
+    isSupportedRef.current = supported;
+    return supported;
+  });
   const isPausedRef = React.useRef(false);
-  const isSupportedRef = React.useRef(false);
   const includesDebtRef = React.useRef(includesDebt);
 
   React.useEffect(() => {
     includesDebtRef.current = includesDebt;
   }, [includesDebt]);
-
-  React.useEffect(() => {
-    runningTotalRef.current = initialTotal;
-    setScrollTotal(initialTotal);
-  }, [initialTotal]);
 
   const buildChronologicalMap = React.useCallback(() => {
     const allItems = Array.from(trackedElements.current.values());
@@ -154,12 +154,6 @@ export function useScrollTracking({
   }, []);
 
   React.useEffect(() => {
-    const hasEFP = typeof document.elementFromPoint !== "undefined";
-    const hasRAF = typeof requestAnimationFrame !== "undefined";
-    isSupportedRef.current = hasEFP && hasRAF;
-  }, []);
-
-  React.useEffect(() => {
     if (!isSupportedRef.current) return;
 
     const handleMouseMove = (e: MouseEvent) => {
@@ -174,7 +168,7 @@ export function useScrollTracking({
     try {
       document.addEventListener("mousemove", handleMouseMove);
     } catch {
-      isSupportedRef.current = false;
+      // ignore
     }
 
     return () => {
@@ -209,7 +203,7 @@ export function useScrollTracking({
       try {
         buildChronologicalMap();
       } catch {
-        isSupportedRef.current = false;
+        // ignore
       }
     },
     [buildChronologicalMap]
@@ -266,6 +260,6 @@ export function useScrollTracking({
     unobserveElement,
     pause,
     resume,
-    isSupported: isSupportedRef.current,
+    isSupported,
   };
 }

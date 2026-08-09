@@ -14,7 +14,7 @@ export function CursorLine() {
 
   return (
     <div
-      className="fixed left-0 right-0 z-10 pointer-events-none"
+      className="fixed left-0 right-0 z-[20] pointer-events-none"
       style={{
         top: mouseY,
         borderTop: "1px dashed rgba(212, 208, 203, 0.6)",

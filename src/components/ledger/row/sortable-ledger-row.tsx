@@ -76,7 +76,7 @@ export function SortableLedgerRow({
       observeElement(el, item.id, item.amount, item.type, periodKey, date);
       return () => unobserveElement(el);
     }
-  }, [item.id, item.amount, item.type, periodKey, isEditing, observeElement, unobserveElement]);
+  }, [item.id, item.amount, item.type, periodKey, date, isEditing, observeElement, unobserveElement]);
 
   if (isEditing) {
     return (
