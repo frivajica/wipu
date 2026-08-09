@@ -64,7 +64,9 @@ export function useScrollTracking({
     const allItems = Array.from(trackedElements.current.values());
 
     const sorted = allItems.sort((a, b) => {
-      return DateTime.fromISO(a.date).toMillis() - DateTime.fromISO(b.date).toMillis();
+      const dateDiff = DateTime.fromISO(a.date).toMillis() - DateTime.fromISO(b.date).toMillis();
+      if (dateDiff !== 0) return dateDiff;
+      return a.itemId.localeCompare(b.itemId);
     });
 
     const map = new Map<string, ChronologicalEntry>();
