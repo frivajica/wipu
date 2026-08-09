@@ -171,7 +171,7 @@ export function PeriodGroup({
 
   const displayItems = optimisticItems;
 
-  const isDragEnabled = sortField === null;
+  const isDragEnabled = sortField === null || sortField === "date";
 
   const list = (
     <LedgerItemList

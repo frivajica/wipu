@@ -157,7 +157,7 @@ export default function LedgerPage() {
         </AnimatePresence>
 
         <SortResetCue
-          visible={sortField !== null}
+          visible={sortField !== null && sortField !== "date"}
           sortField={sortField}
           onReset={() => setSort(null)}
         />
