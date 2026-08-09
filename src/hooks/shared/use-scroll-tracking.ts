@@ -101,14 +101,12 @@ export function useScrollTracking({
       return;
     }
 
-    const cx = window.innerWidth / 2;
-    const elements = document.elementsFromPoint(cx, y);
-
     let found: TrackedElement | null = null;
-    for (const el of elements) {
-      const tracked = trackedElements.current.get(el as HTMLElement);
-      if (tracked) {
-        found = tracked;
+
+    for (const item of trackedElements.current.values()) {
+      const rect = item.el.getBoundingClientRect();
+      if (y >= rect.top && y <= rect.bottom) {
+        found = item;
         break;
       }
     }
