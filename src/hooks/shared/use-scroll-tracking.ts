@@ -55,14 +55,13 @@ export function useScrollTracking({
   const chronologicalMap = React.useRef(new Map<string, ChronologicalEntry>());
   const runningTotalRef = React.useRef(initialTotal);
   const frameRef = React.useRef<number | null>(null);
-  const [isSupported] = React.useState(() => {
-    const supported = typeof document.elementFromPoint !== "undefined" &&
-      typeof requestAnimationFrame !== "undefined";
-    isSupportedRef.current = supported;
-    return supported;
-  });
   const isPausedRef = React.useRef(false);
   const includesDebtRef = React.useRef(includesDebt);
+
+  const isSupported = React.useMemo(() => {
+    return typeof document.elementFromPoint !== "undefined" &&
+      typeof requestAnimationFrame !== "undefined";
+  }, []);
 
   React.useEffect(() => {
     includesDebtRef.current = includesDebt;
@@ -154,7 +153,7 @@ export function useScrollTracking({
   }, []);
 
   React.useEffect(() => {
-    if (!isSupportedRef.current) return;
+    if (!isSupported) return;
 
     const handleMouseMove = (e: MouseEvent) => {
       if (!frameRef.current) {
@@ -178,7 +177,7 @@ export function useScrollTracking({
         frameRef.current = null;
       }
     };
-  }, [computeFromCursor]);
+  }, [computeFromCursor, isSupported]);
 
   const observeElement = React.useCallback(
     (
@@ -189,7 +188,7 @@ export function useScrollTracking({
       periodKey: string,
       date: string
     ) => {
-      if (!isSupportedRef.current) return;
+      if (!isSupported) return;
 
       trackedElements.current.set(el, {
         el,
@@ -206,11 +205,11 @@ export function useScrollTracking({
         // ignore
       }
     },
-    [buildChronologicalMap]
+    [buildChronologicalMap, isSupported]
   );
 
   const unobserveElement = React.useCallback((el: HTMLElement) => {
-    if (!isSupportedRef.current) return;
+    if (!isSupported) return;
 
     trackedElements.current.delete(el);
 
@@ -219,7 +218,7 @@ export function useScrollTracking({
     } catch {
       // ignore
     }
-  }, [buildChronologicalMap]);
+  }, [buildChronologicalMap, isSupported]);
 
   const pause = React.useCallback(() => {
     isPausedRef.current = true;
@@ -231,7 +230,7 @@ export function useScrollTracking({
   }, [buildChronologicalMap]);
 
   React.useEffect(() => {
-    if (!isSupportedRef.current) return;
+    if (!isSupported) return;
 
     const itemAmounts = new Map(items.map((i) => [i.id, i]));
     let changed = false;
@@ -250,7 +249,7 @@ export function useScrollTracking({
     if (changed) {
       buildChronologicalMap();
     }
-  }, [items, buildChronologicalMap]);
+  }, [items, buildChronologicalMap, isSupported]);
 
   return {
     scrollTotal,
