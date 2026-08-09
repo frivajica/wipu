@@ -110,47 +110,44 @@ export function useScrollTracking({
       return;
     }
 
-    const el = document.elementFromPoint(
-      window.innerWidth / 2,
-      y
-    ) as HTMLElement | null;
+    const cx = window.innerWidth / 2;
+    const elements = document.elementsFromPoint(cx, y);
 
-    if (!el) {
-      setMouseY(y);
-      return;
+    let found: TrackedElement | null = null;
+    for (const el of elements) {
+      const tracked = trackedElements.current.get(el as HTMLElement);
+      if (tracked) {
+        found = tracked;
+        break;
+      }
     }
 
-    let trackedEl: HTMLElement | null = el;
-    while (trackedEl && !trackedElements.current.has(trackedEl)) {
-      trackedEl = trackedEl.parentElement;
-    }
-
-    if (!trackedEl) {
-      const rect = el.getBoundingClientRect();
-      if (rect.top < window.innerHeight / 2) {
-        const last = Array.from(chronologicalMap.current.values()).pop();
-        if (last) {
-          setScrollTotal(last.runningTotal);
-          setCurrentPeriodKey(last.periodKey);
+    if (!found) {
+      let minGap = Infinity;
+      for (const item of trackedElements.current.values()) {
+        const rect = item.el.getBoundingClientRect();
+        if (rect.top >= y && rect.top - y < minGap) {
+          minGap = rect.top - y;
+          found = item;
         }
+      }
+    }
+
+    if (found) {
+      const entry = chronologicalMap.current.get(found.itemId);
+      if (entry) {
+        setScrollTotal(entry.runningTotal);
+        setCurrentPeriodKey(entry.periodKey);
+      }
+    } else {
+      const last = Array.from(chronologicalMap.current.values()).pop();
+      if (last) {
+        setScrollTotal(last.runningTotal);
+        setCurrentPeriodKey(last.periodKey);
       } else {
         setScrollTotal(runningTotalRef.current);
         setCurrentPeriodKey(null);
       }
-      setMouseY(y);
-      return;
-    }
-
-    const tracked = trackedElements.current.get(trackedEl);
-    if (!tracked) {
-      setMouseY(y);
-      return;
-    }
-
-    const entry = chronologicalMap.current.get(tracked.itemId);
-    if (entry) {
-      setScrollTotal(entry.runningTotal);
-      setCurrentPeriodKey(entry.periodKey);
     }
 
     setMouseY(y);
