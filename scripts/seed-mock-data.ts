@@ -22,7 +22,7 @@ import { assertBackendConfig } from "@/lib/config";
 assertBackendConfig();
 
 async function seed() {
-  console.log("🌱 Seeding database...");
+  console.info("🌱 Seeding database...");
 
   // 1. Seed currencies first (required by spaces FK)
   await db
@@ -35,7 +35,7 @@ async function seed() {
       { code: "JPY", name: "Japanese Yen", symbol: "¥", decimalPlaces: 0 },
     ])
     .onConflictDoNothing();
-  console.log("  ✅ Currencies seeded");
+  console.info("  ✅ Currencies seeded");
 
   // 2. Create users via Better Auth API
   const userIdMap = new Map<string, string>(); // oldId -> newId
@@ -52,7 +52,7 @@ async function seed() {
         },
       });
       userIdMap.set(mockUser.id, result.user.id);
-      console.log(`  ✅ User created: ${mockUser.email} (${result.user.id})`);
+      console.info(`  ✅ User created: ${mockUser.email} (${result.user.id})`);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       // If user already exists, try to find their ID
@@ -63,7 +63,7 @@ async function seed() {
         const existing = result.rows[0] as { id: string } | undefined;
         if (existing) {
           userIdMap.set(mockUser.id, existing.id);
-          console.log(`  ⚠️  User exists: ${mockUser.email} (${existing.id})`);
+          console.info(`  ⚠️  User exists: ${mockUser.email} (${existing.id})`);
         }
       } else {
         console.error(`  ❌ Failed to create user ${mockUser.email}:`, message);
@@ -95,7 +95,7 @@ async function seed() {
       .returning();
 
     spaceIdMap.set(mockSpace.id, inserted.id);
-    console.log(`  ✅ Space created: ${mockSpace.name} (${inserted.id})`);
+    console.info(`  ✅ Space created: ${mockSpace.name} (${inserted.id})`);
 
     // 4. Insert space members
     for (const memberId of mockSpace.members) {
@@ -108,7 +108,7 @@ async function seed() {
         role: memberId === mockSpace.ownerId ? "owner" : "member",
       });
     }
-    console.log(`     Members: ${mockSpace.members.length}`);
+    console.info(`     Members: ${mockSpace.members.length}`);
   }
 
   // 5. Insert categories
@@ -121,7 +121,7 @@ async function seed() {
       name: mockCat.name,
     });
   }
-  console.log(`  ✅ Categories: ${mockCategories.length}`);
+  console.info(`  ✅ Categories: ${mockCategories.length}`);
 
   // 6. Insert debt groups
   const debtGroupIdMap = new Map<string, string>(); // oldId -> newId
@@ -141,7 +141,7 @@ async function seed() {
       .returning();
     debtGroupIdMap.set(mockGroup.id, inserted.id);
   }
-  console.log(`  ✅ Debt groups: ${mockDebtGroups.length}`);
+  console.info(`  ✅ Debt groups: ${mockDebtGroups.length}`);
 
   // 7. Insert ledger items
   let ledgerCount = 0;
@@ -174,12 +174,12 @@ async function seed() {
     });
     ledgerCount++;
   }
-  console.log(`  ✅ Ledger items: ${ledgerCount}`);
+  console.info(`  ✅ Ledger items: ${ledgerCount}`);
 
-  console.log("\n🎉 Seed complete!");
-  console.log(`   Users: ${userIdMap.size}`);
-  console.log(`   Spaces: ${spaceIdMap.size}`);
-  console.log(`   Ledger items: ${ledgerCount}`);
+  console.info("\n🎉 Seed complete!");
+  console.info(`   Users: ${userIdMap.size}`);
+  console.info(`   Spaces: ${spaceIdMap.size}`);
+  console.info(`   Ledger items: ${ledgerCount}`);
 }
 
 seed().catch((err) => {
