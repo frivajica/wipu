@@ -90,9 +90,19 @@ export function useScrollTracking({
       });
     }
 
+    const visibleTotal = running;
+    const offset = initialTotal - visibleTotal;
+
+    for (const [itemId, entry] of map) {
+      map.set(itemId, {
+        ...entry,
+        runningTotal: entry.runningTotal + offset,
+      });
+    }
+
     chronologicalMap.current = map;
-    runningTotalRef.current = running;
-  }, []);
+    runningTotalRef.current = initialTotal;
+  }, [initialTotal]);
 
   const computeFromCursor = React.useCallback((y: number) => {
     if (isPausedRef.current) {
