@@ -2,7 +2,7 @@ import { db } from "./index";
 import { currencies } from "./schema";
 
 async function seed() {
-  console.log("Seeding currencies...");
+  console.info("Seeding currencies...");
 
   await db
     .insert(currencies)
@@ -15,7 +15,7 @@ async function seed() {
     ])
     .onConflictDoNothing();
 
-  console.log("Currencies seeded successfully");
+  console.info("Currencies seeded successfully");
 }
 
 seed().catch(console.error);

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { categories, spaceMembers, ledgerItems } from "@/db/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { spaceMembers, ledgerItems } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 
 // POST /api/debt-category-sync - Bulk sync category for debt items
 export async function POST(request: NextRequest) {

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { ledgerItems, spaceMembers, categories } from "@/db/schema";
-import { eq, and, sql, ilike } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 
 // GET /api/autocomplete?field=description|category&q=query&spaceId=X
 export async function GET(request: NextRequest) {

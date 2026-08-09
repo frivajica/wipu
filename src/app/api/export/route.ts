@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { ledgerItems, spaceMembers, recurringItems } from "@/db/schema";
+import { ledgerItems, spaceMembers } from "@/db/schema";
 import { eq, and, gte, lte } from "drizzle-orm";
 
 // GET /api/export?spaceId=X&from=YYYY-MM-DD&to=YYYY-MM-DD

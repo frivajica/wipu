@@ -4,6 +4,21 @@ import { db } from "@/db";
 import { spaceMembers } from "@/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 
+interface SpaceBalanceRow {
+  total_balance: string;
+  total_debt: string;
+  real_balance: string;
+}
+
+interface PeriodStatRow {
+  period_key: string;
+  display_label: string;
+  period_balance: string;
+  period_debt: string;
+  running_balance: string;
+  running_debt: string;
+}
+
 // GET /api/balances?spaceId=X&periodType=monthly
 export async function GET(request: NextRequest) {
   try {
@@ -41,7 +56,7 @@ export async function GET(request: NextRequest) {
     const balancesResult = await db.execute(sql`
       SELECT * FROM get_space_balances(${spaceId}, ${cutoffDate ?? null})
     `);
-    const balances = balancesResult.rows[0];
+    const balances = balancesResult.rows[0] as unknown as SpaceBalanceRow | undefined;
 
     // Get period stats for the last 12 months
     const now = new Date();
@@ -58,17 +73,20 @@ export async function GET(request: NextRequest) {
     `);
 
     return NextResponse.json({
-      totalBalance: parseFloat((balances as any)?.total_balance) || 0,
-      totalDebt: parseFloat((balances as any)?.total_debt) || 0,
-      realBalance: parseFloat((balances as any)?.real_balance) || 0,
-      periods: periodsResult.rows.map((row: any) => ({
-        label: row.period_key,
-        displayLabel: row.display_label,
-        balance: parseFloat(row.period_balance) || 0,
-        debt: parseFloat(row.period_debt) || 0,
-        runningBalance: parseFloat(row.running_balance) || 0,
-        runningDebt: parseFloat(row.running_debt) || 0,
-      })),
+      totalBalance: parseFloat(balances?.total_balance ?? "0") || 0,
+      totalDebt: parseFloat(balances?.total_debt ?? "0") || 0,
+      realBalance: parseFloat(balances?.real_balance ?? "0") || 0,
+      periods: periodsResult.rows.map((row: unknown) => {
+        const r = row as PeriodStatRow;
+        return {
+          label: r.period_key,
+          displayLabel: r.display_label,
+          balance: parseFloat(r.period_balance) || 0,
+          debt: parseFloat(r.period_debt) || 0,
+          runningBalance: parseFloat(r.running_balance) || 0,
+          runningDebt: parseFloat(r.running_debt) || 0,
+        };
+      }),
     });
   } catch (error) {
     console.error("GET /api/balances failed:", error);

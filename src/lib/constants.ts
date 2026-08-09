@@ -1,7 +1,3 @@
-export const APP_NAME = "Wipu";
-
-export const MAX_SPACE_MEMBERS = 8;
-
 export const DEFAULT_PERIOD_TYPE = "monthly" as const;
 
 export const PERIOD_TYPES = [
@@ -18,12 +14,3 @@ export const STORAGE_KEYS = {
   CATEGORIES: "wipu_categories",
   UI_STATE: "wipu_ui_state",
 } as const;
-
-export const DEFAULT_CATEGORIES = [
-  "Rent",
-  "Groceries",
-  "Salary",
-  "Utilities",
-  "Dining",
-  "Entertainment",
-];

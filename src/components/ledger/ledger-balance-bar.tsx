@@ -63,7 +63,7 @@ export function LedgerBalanceBar() {
             className="rounded-lg bg-surface-strong px-2.5 py-1 text-center"
           >
             <p className="text-[9px] font-medium text-text-secondary uppercase tracking-wide">
-              Total
+              Total Today
             </p>
             <p className="text-sm font-bold text-text">
               {formatCurrency(total)}

@@ -2,7 +2,32 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { ledgerItems, spaceMembers } from "@/db/schema";
-import { eq, and, gte, lte, sql, desc } from "drizzle-orm";
+import { eq, and, gte, lte, sql } from "drizzle-orm";
+
+interface LedgerItemRow {
+  id: string;
+  space_id: string;
+  amount: string;
+  currency: string;
+  description: string;
+  category: string;
+  date: string;
+  type: string;
+  group_id: string | null;
+  sort_order: number;
+  version: number;
+  created_by: string | null;
+  updated_by: string | null;
+  updatedByName: string;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+function toIsoDate(value: string | null | undefined): string | null {
+  if (!value) return null;
+  if (value.includes("T")) return value;
+  return new Date(value + "T00:00:00").toISOString();
+}
 
 // GET /api/ledger-items?spaceId=X&from=YYYY-MM-DD&to=YYYY-MM-DD&limit=500&offset=0
 export async function GET(request: NextRequest) {
@@ -71,28 +96,33 @@ export async function GET(request: NextRequest) {
       OFFSET ${offset}
     `);
 
+    const totalCount = parseInt(countResult.count as unknown as string, 10);
+
     return NextResponse.json({
-      items: items.rows.map((row: any) => ({
-        id: row.id,
-        spaceId: row.space_id,
-        amount: parseFloat(row.amount),
-        currency: row.currency,
-        description: row.description,
-        category: row.category,
-        date: row.date,
-        type: row.type,
-        groupId: row.group_id,
-        sortOrder: row.sort_order,
-        version: row.version,
-        createdBy: row.created_by,
-        updatedBy: row.updated_by,
-        updatedByName: row.updatedByName,
-        createdAt: row.created_at?.toISOString?.() || row.created_at,
-        updatedAt: row.updated_at?.toISOString?.() || row.updated_at,
-      })),
+      items: items.rows.map((row: unknown) => {
+        const r = row as LedgerItemRow;
+        return {
+          id: r.id,
+          spaceId: r.space_id,
+          amount: parseFloat(r.amount),
+          currency: r.currency,
+          description: r.description,
+          category: r.category,
+          date: r.date,
+          type: r.type,
+          groupId: r.group_id,
+          sortOrder: r.sort_order,
+          version: r.version,
+          createdBy: r.created_by,
+          updatedBy: r.updated_by,
+          updatedByName: r.updatedByName,
+          createdAt: toIsoDate(r.created_at),
+          updatedAt: toIsoDate(r.updated_at),
+        };
+      }),
       pagination: {
-        totalCount: parseInt(countResult.count as unknown as string, 10),
-        hasMore: offset + limit < parseInt(countResult.count as unknown as string, 10),
+        totalCount,
+        hasMore: offset + limit < totalCount,
         nextOffset: offset + limit,
       },
     });
