@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { ledgerItems, spaceMembers } from "@/db/schema";
 import { eq, and, gte, lte, sql } from "drizzle-orm";
+import { DateTime } from "luxon";
 
 interface LedgerItemRow {
   id: string;
@@ -26,7 +27,9 @@ interface LedgerItemRow {
 function toIsoDate(value: string | null | undefined): string | null {
   if (!value) return null;
   if (value.includes("T")) return value;
-  return new Date(value + "T00:00:00").toISOString();
+  const d = DateTime.fromISO(value, { zone: "utc" });
+  if (!d.isValid) return null;
+  return d.toISO();
 }
 
 // GET /api/ledger-items?spaceId=X&from=YYYY-MM-DD&to=YYYY-MM-DD&limit=500&offset=0
