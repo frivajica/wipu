@@ -6,6 +6,7 @@ import { useScrollTracking } from "@/hooks/shared/use-scroll-tracking";
 interface ScrollTrackingContextValue {
   scrollTotal: number;
   currentPeriodKey: string | null;
+  mouseY: number;
   observeElement: (
     el: HTMLElement,
     itemId: string,

@@ -16,6 +16,7 @@ import { LedgerSkeleton } from "@/components/ledger/ledger-skeleton";
 import { LedgerEmptyState } from "@/components/ledger/ledger-empty-state";
 import { LedgerBalanceBar } from "@/components/ledger/ledger-balance-bar";
 import { ExportButton } from "@/components/ledger/export-button";
+import { CursorLine } from "@/components/ledger/cursor-line";
 import { ScrollTrackingProvider } from "@/contexts/scroll-tracking-context";
 import { DateTime } from "luxon";
 
@@ -185,6 +186,7 @@ export default function LedgerPage() {
         initialTotal={globalTotal}
       >
         <LedgerBalanceBar />
+        <CursorLine />
 
         <div className="space-y-2">
           <AnimatePresence mode="popLayout">

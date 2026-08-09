@@ -10,6 +10,13 @@ interface TrackedElement {
   periodKey: string;
 }
 
+interface CumulativeEntry {
+  itemId: string;
+  runningTotal: number;
+  periodKey: string;
+  el: HTMLElement;
+}
+
 interface UseScrollTrackingOptions {
   items: Array<{ id: string; amount: number; type: string }>;
   includesDebt: boolean;
@@ -19,6 +26,7 @@ interface UseScrollTrackingOptions {
 interface UseScrollTrackingReturn {
   scrollTotal: number;
   currentPeriodKey: string | null;
+  mouseY: number;
   observeElement: (
     el: HTMLElement,
     itemId: string,
@@ -39,15 +47,16 @@ export function useScrollTracking({
 }: UseScrollTrackingOptions): UseScrollTrackingReturn {
   const [scrollTotal, setScrollTotal] = React.useState(initialTotal);
   const [currentPeriodKey, setCurrentPeriodKey] = React.useState<string | null>(null);
+  const [mouseY, setMouseY] = React.useState(-1);
 
-  const itemsAboveLine = React.useRef(new Set<string>());
   const trackedElements = React.useRef(new Map<HTMLElement, TrackedElement>());
+  const cumulativeArray = React.useRef<CumulativeEntry[]>([]);
   const runningTotalRef = React.useRef(initialTotal);
   const frameRef = React.useRef<number | null>(null);
   const isPausedRef = React.useRef(false);
   const isSupportedRef = React.useRef(false);
-  const observerRef = React.useRef<IntersectionObserver | null>(null);
   const includesDebtRef = React.useRef(includesDebt);
+  const containerRef = React.useRef<HTMLElement | null>(null);
 
   React.useEffect(() => {
     includesDebtRef.current = includesDebt;
@@ -58,80 +67,115 @@ export function useScrollTracking({
     setScrollTotal(initialTotal);
   }, [initialTotal]);
 
-  React.useEffect(() => {
-    const hasIO = typeof IntersectionObserver !== "undefined";
-    const hasRAF = typeof requestAnimationFrame !== "undefined";
-    isSupportedRef.current = hasIO && hasRAF;
+  const rebuildCumulativeArray = React.useCallback(() => {
+    const entries: CumulativeEntry[] = [];
+    let running = 0;
 
-    if (!hasIO || !hasRAF) return;
+    const sorted = Array.from(trackedElements.current.values()).sort((a, b) => {
+      const rectA = a.el.getBoundingClientRect();
+      const rectB = b.el.getBoundingClientRect();
+      return rectA.top - rectB.top;
+    });
+
+    for (const item of sorted) {
+      const includeAmount = includesDebtRef.current || item.type !== "debt";
+      if (includeAmount) {
+        running += item.amount;
+      }
+      entries.push({
+        itemId: item.itemId,
+        runningTotal: running,
+        periodKey: item.periodKey,
+        el: item.el,
+      });
+    }
+
+    cumulativeArray.current = entries;
+    runningTotalRef.current = running;
+  }, []);
+
+  const computeFromCursor = React.useCallback((y: number) => {
+    if (isPausedRef.current || cumulativeArray.current.length === 0) {
+      setMouseY(y);
+      return;
+    }
+
+    const el = document.elementFromPoint(
+      window.innerWidth / 2,
+      y
+    ) as HTMLElement | null;
+
+    if (!el) {
+      setMouseY(y);
+      return;
+    }
+
+    let trackedEl: HTMLElement | null = el;
+    while (trackedEl && !trackedElements.current.has(trackedEl)) {
+      trackedEl = trackedEl.parentElement;
+    }
+
+    if (!trackedEl) {
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight / 2) {
+        const last = cumulativeArray.current[cumulativeArray.current.length - 1];
+        if (last) {
+          setScrollTotal(last.runningTotal);
+          setCurrentPeriodKey(last.periodKey);
+        }
+      } else {
+        setScrollTotal(runningTotalRef.current);
+        setCurrentPeriodKey(null);
+      }
+      setMouseY(y);
+      return;
+    }
+
+    const idx = cumulativeArray.current.findIndex(
+      (e) => e.el === trackedEl
+    );
+
+    if (idx >= 0) {
+      const entry = cumulativeArray.current[idx];
+      setScrollTotal(entry.runningTotal);
+      setCurrentPeriodKey(entry.periodKey);
+    }
+
+    setMouseY(y);
+  }, []);
+
+  React.useEffect(() => {
+    const hasEFP = typeof document.elementFromPoint !== "undefined";
+    const hasRAF = typeof requestAnimationFrame !== "undefined";
+    isSupportedRef.current = hasEFP && hasRAF;
+  }, []);
+
+  React.useEffect(() => {
+    if (!isSupportedRef.current) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!frameRef.current) {
+        frameRef.current = requestAnimationFrame(() => {
+          computeFromCursor(e.clientY);
+          frameRef.current = null;
+        });
+      }
+    };
 
     try {
-      const observer = new IntersectionObserver(
-        (entries) => {
-          if (isPausedRef.current) return;
-
-          for (const entry of entries) {
-            const el = entry.target as HTMLElement;
-            const tracked = trackedElements.current.get(el);
-            if (!tracked) continue;
-
-            const includeAmount =
-              includesDebtRef.current || tracked.type !== "debt";
-            const amountDelta = includeAmount ? tracked.amount : 0;
-
-            if (entry.isIntersecting) {
-              if (!itemsAboveLine.current.has(tracked.itemId)) {
-                itemsAboveLine.current.add(tracked.itemId);
-                runningTotalRef.current += amountDelta;
-              }
-            } else {
-              if (itemsAboveLine.current.has(tracked.itemId)) {
-                itemsAboveLine.current.delete(tracked.itemId);
-                runningTotalRef.current -= amountDelta;
-              }
-            }
-          }
-
-          if (!frameRef.current) {
-            frameRef.current = requestAnimationFrame(() => {
-              setScrollTotal(runningTotalRef.current);
-
-              let latestPeriodKey: string | null = null;
-              let lowestY = -Infinity;
-              for (const [el, tracked] of trackedElements.current) {
-                if (itemsAboveLine.current.has(tracked.itemId)) {
-                  const rect = el.getBoundingClientRect();
-                  if (rect.bottom > lowestY) {
-                    lowestY = rect.bottom;
-                    latestPeriodKey = tracked.periodKey;
-                  }
-                }
-              }
-              setCurrentPeriodKey(latestPeriodKey);
-              frameRef.current = null;
-            });
-          }
-        },
-        {
-          rootMargin: "-60px 0px 0px 0px",
-          threshold: 0,
-        }
-      );
-
-      observerRef.current = observer;
+      document.addEventListener("mousemove", handleMouseMove);
     } catch {
       isSupportedRef.current = false;
-      observerRef.current = null;
     }
 
     return () => {
-      observerRef.current?.disconnect();
+      document.removeEventListener("mousemove", handleMouseMove);
       if (frameRef.current) {
         cancelAnimationFrame(frameRef.current);
         frameRef.current = null;
       }
     };
-  }, []);
+  }, [computeFromCursor]);
 
   const observeElement = React.useCallback(
     (
@@ -141,7 +185,7 @@ export function useScrollTracking({
       type: string,
       periodKey: string
     ) => {
-      if (!isSupportedRef.current || !observerRef.current) return;
+      if (!isSupportedRef.current) return;
 
       trackedElements.current.set(el, {
         el,
@@ -152,76 +196,60 @@ export function useScrollTracking({
       });
 
       try {
-        observerRef.current.observe(el);
+        rebuildCumulativeArray();
       } catch {
         isSupportedRef.current = false;
       }
     },
-    []
+    [rebuildCumulativeArray]
   );
 
   const unobserveElement = React.useCallback((el: HTMLElement) => {
-    if (!isSupportedRef.current || !observerRef.current) return;
+    if (!isSupportedRef.current) return;
 
-    const tracked = trackedElements.current.get(el);
-    if (tracked && itemsAboveLine.current.has(tracked.itemId)) {
-      const includeAmount = includesDebtRef.current || tracked.type !== "debt";
-      if (includeAmount) {
-        runningTotalRef.current -= tracked.amount;
-      }
-      itemsAboveLine.current.delete(tracked.itemId);
-    }
+    trackedElements.current.delete(el);
 
     try {
-      observerRef.current.unobserve(el);
+      rebuildCumulativeArray();
     } catch {
       // ignore
     }
-    trackedElements.current.delete(el);
-  }, []);
+  }, [rebuildCumulativeArray]);
 
   const pause = React.useCallback(() => {
     isPausedRef.current = true;
-    observerRef.current?.disconnect();
   }, []);
 
   const resume = React.useCallback(() => {
     isPausedRef.current = false;
-    if (observerRef.current) {
-      for (const { el } of trackedElements.current.values()) {
-        try {
-          observerRef.current.observe(el);
-        } catch {
-          // ignore
-        }
-      }
-    }
-  }, []);
+    rebuildCumulativeArray();
+  }, [rebuildCumulativeArray]);
 
   React.useEffect(() => {
+    if (!isSupportedRef.current) return;
+
     const itemAmounts = new Map(items.map((i) => [i.id, i]));
+    let changed = false;
     for (const [el, tracked] of trackedElements.current) {
       const current = itemAmounts.get(tracked.itemId);
       if (current && current.amount !== tracked.amount) {
-        const wasAbove = itemsAboveLine.current.has(tracked.itemId);
-        const includeAmount =
-          includesDebtRef.current || tracked.type !== "debt";
-        if (wasAbove && includeAmount) {
-          runningTotalRef.current -= tracked.amount;
-          runningTotalRef.current += current.amount;
-        }
         trackedElements.current.set(el, {
           ...tracked,
           amount: current.amount,
           type: current.type,
         });
+        changed = true;
       }
     }
-  }, [items]);
+    if (changed) {
+      rebuildCumulativeArray();
+    }
+  }, [items, rebuildCumulativeArray]);
 
   return {
     scrollTotal,
     currentPeriodKey,
+    mouseY,
     observeElement,
     unobserveElement,
     pause,
