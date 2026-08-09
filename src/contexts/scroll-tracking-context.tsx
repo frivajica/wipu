@@ -12,7 +12,8 @@ interface ScrollTrackingContextValue {
     itemId: string,
     amount: number,
     type: string,
-    periodKey: string
+    periodKey: string,
+    date: string
   ) => void;
   unobserveElement: (el: HTMLElement) => void;
   pause: () => void;
@@ -33,7 +34,7 @@ export function useScrollTrackingContext(): ScrollTrackingContextValue {
 }
 
 interface ScrollTrackingProviderProps {
-  items: Array<{ id: string; amount: number; type: string }>;
+  items: Array<{ id: string; amount: number; type: string; date: string }>;
   includesDebt: boolean;
   initialTotal: number;
   children: React.ReactNode;

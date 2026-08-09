@@ -1,11 +1,16 @@
 "use client";
 
 import { useScrollTrackingContext } from "@/contexts/scroll-tracking-context";
+import { useUIStore } from "@/stores/ui-store";
 
 export function CursorLine() {
   const { mouseY, isSupported } = useScrollTrackingContext();
+  const sortField = useUIStore((s) => s.sortField);
+  const sortDirection = useUIStore((s) => s.sortDirection);
 
-  if (!isSupported || mouseY < 0) return null;
+  const isActiveDateSort = sortField === "date" && sortDirection === "desc";
+
+  if (!isSupported || !isActiveDateSort || mouseY < 0) return null;
 
   return (
     <div

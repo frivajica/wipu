@@ -99,6 +99,8 @@ export function PeriodGroup({
   const { pause, resume, observeElement, unobserveElement, currentPeriodKey } =
     useScrollTrackingContext();
 
+  const isActiveDateSort = sortField === "date" && sortDirection === "desc";
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 },
@@ -194,8 +196,8 @@ export function PeriodGroup({
       currentUserId={currentUserId}
       isDragEnabled={isDragEnabled}
       includesDebt={includesDebt}
-      observeElement={observeElement}
-      unobserveElement={unobserveElement}
+      observeElement={isActiveDateSort ? observeElement : () => {}}
+      unobserveElement={isActiveDateSort ? unobserveElement : () => {}}
       periodKey={label}
     />
   );

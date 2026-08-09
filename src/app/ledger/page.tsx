@@ -57,12 +57,12 @@ export default function LedgerPage() {
   }, [balances.periods]);
 
   const flatItems = React.useMemo(() => {
-    const items: Array<{ id: string; amount: number; type: string }> = [];
+    const items: Array<{ id: string; amount: number; type: string; date: string }> = [];
     for (const key of visibleKeys) {
       const group = groupedItems.get(key);
       if (group) {
         for (const item of group) {
-          items.push({ id: item.id, amount: item.amount, type: item.type });
+          items.push({ id: item.id, amount: item.amount, type: item.type, date: item.date });
         }
       }
     }

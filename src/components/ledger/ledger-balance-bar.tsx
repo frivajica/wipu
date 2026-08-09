@@ -38,12 +38,15 @@ export function LedgerBalanceBar() {
   const { balances } = useLedger();
   const includesDebt = useUIStore((s) => s.includesDebt);
   const setIncludesDebt = useUIStore((s) => s.setIncludesDebt);
+  const sortField = useUIStore((s) => s.sortField);
+  const sortDirection = useUIStore((s) => s.sortDirection);
   const { scrollTotal, currentPeriodKey, isSupported } =
     useScrollTrackingContext();
 
   const hasDebt = balances.totalDebt !== 0;
   const globalTotal = includesDebt ? balances.totalBalance : balances.realBalance;
-  const displayTotal = isSupported ? scrollTotal : globalTotal;
+  const isActiveDateSort = sortField === "date" && sortDirection === "desc";
+  const displayTotal = isSupported && isActiveDateSort ? scrollTotal : globalTotal;
 
   const periodTotal = (() => {
     if (!currentPeriodKey) return 0;
@@ -108,7 +111,7 @@ export function LedgerBalanceBar() {
               key="at-this-point"
               label="At This Point"
               value={displayTotal}
-              highlight={isSupported && displayTotal !== globalTotal}
+              highlight={isActiveDateSort && displayTotal !== globalTotal}
             />
             <BalancePill
               key="period"

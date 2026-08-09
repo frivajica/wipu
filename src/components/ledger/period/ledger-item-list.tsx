@@ -26,7 +26,8 @@ interface LedgerItemListProps {
     itemId: string,
     amount: number,
     type: string,
-    periodKey: string
+    periodKey: string,
+    date: string
   ) => void;
   unobserveElement: (el: HTMLElement) => void;
   periodKey: string;
@@ -84,6 +85,7 @@ export function LedgerItemList({
               observeElement={observeElement}
               unobserveElement={unobserveElement}
               periodKey={periodKey}
+              date={item.date}
             />
           );
         })}

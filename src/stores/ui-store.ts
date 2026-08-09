@@ -16,7 +16,7 @@ export const useUIStore = create<UIStore>()(
     (set) => ({
       periodType: DEFAULT_PERIOD_TYPE,
       customDateRange: null,
-      sortField: null,
+      sortField: "date",
       sortDirection: "desc",
       includesDebt: true,
       balanceCutoffDate: null,

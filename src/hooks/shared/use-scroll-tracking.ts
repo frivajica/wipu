@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { DateTime } from "luxon";
 
 interface TrackedElement {
   el: HTMLElement;
@@ -8,17 +9,17 @@ interface TrackedElement {
   amount: number;
   type: string;
   periodKey: string;
+  date: string;
 }
 
-interface CumulativeEntry {
+interface ChronologicalEntry {
   itemId: string;
   runningTotal: number;
   periodKey: string;
-  el: HTMLElement;
 }
 
 interface UseScrollTrackingOptions {
-  items: Array<{ id: string; amount: number; type: string }>;
+  items: Array<{ id: string; amount: number; type: string; date: string }>;
   includesDebt: boolean;
   initialTotal: number;
 }
@@ -32,7 +33,8 @@ interface UseScrollTrackingReturn {
     itemId: string,
     amount: number,
     type: string,
-    periodKey: string
+    periodKey: string,
+    date: string
   ) => void;
   unobserveElement: (el: HTMLElement) => void;
   pause: () => void;
@@ -50,13 +52,12 @@ export function useScrollTracking({
   const [mouseY, setMouseY] = React.useState(-1);
 
   const trackedElements = React.useRef(new Map<HTMLElement, TrackedElement>());
-  const cumulativeArray = React.useRef<CumulativeEntry[]>([]);
+  const chronologicalMap = React.useRef(new Map<string, ChronologicalEntry>());
   const runningTotalRef = React.useRef(initialTotal);
   const frameRef = React.useRef<number | null>(null);
   const isPausedRef = React.useRef(false);
   const isSupportedRef = React.useRef(false);
   const includesDebtRef = React.useRef(includesDebt);
-  const containerRef = React.useRef<HTMLElement | null>(null);
 
   React.useEffect(() => {
     includesDebtRef.current = includesDebt;
@@ -67,35 +68,34 @@ export function useScrollTracking({
     setScrollTotal(initialTotal);
   }, [initialTotal]);
 
-  const rebuildCumulativeArray = React.useCallback(() => {
-    const entries: CumulativeEntry[] = [];
-    let running = 0;
+  const buildChronologicalMap = React.useCallback(() => {
+    const allItems = Array.from(trackedElements.current.values());
 
-    const sorted = Array.from(trackedElements.current.values()).sort((a, b) => {
-      const rectA = a.el.getBoundingClientRect();
-      const rectB = b.el.getBoundingClientRect();
-      return rectA.top - rectB.top;
+    const sorted = allItems.sort((a, b) => {
+      return DateTime.fromISO(a.date).toMillis() - DateTime.fromISO(b.date).toMillis();
     });
+
+    const map = new Map<string, ChronologicalEntry>();
+    let running = 0;
 
     for (const item of sorted) {
       const includeAmount = includesDebtRef.current || item.type !== "debt";
       if (includeAmount) {
         running += item.amount;
       }
-      entries.push({
+      map.set(item.itemId, {
         itemId: item.itemId,
         runningTotal: running,
         periodKey: item.periodKey,
-        el: item.el,
       });
     }
 
-    cumulativeArray.current = entries;
+    chronologicalMap.current = map;
     runningTotalRef.current = running;
   }, []);
 
   const computeFromCursor = React.useCallback((y: number) => {
-    if (isPausedRef.current || cumulativeArray.current.length === 0) {
+    if (isPausedRef.current) {
       setMouseY(y);
       return;
     }
@@ -118,7 +118,7 @@ export function useScrollTracking({
     if (!trackedEl) {
       const rect = el.getBoundingClientRect();
       if (rect.top < window.innerHeight / 2) {
-        const last = cumulativeArray.current[cumulativeArray.current.length - 1];
+        const last = Array.from(chronologicalMap.current.values()).pop();
         if (last) {
           setScrollTotal(last.runningTotal);
           setCurrentPeriodKey(last.periodKey);
@@ -131,12 +131,14 @@ export function useScrollTracking({
       return;
     }
 
-    const idx = cumulativeArray.current.findIndex(
-      (e) => e.el === trackedEl
-    );
+    const tracked = trackedElements.current.get(trackedEl);
+    if (!tracked) {
+      setMouseY(y);
+      return;
+    }
 
-    if (idx >= 0) {
-      const entry = cumulativeArray.current[idx];
+    const entry = chronologicalMap.current.get(tracked.itemId);
+    if (entry) {
       setScrollTotal(entry.runningTotal);
       setCurrentPeriodKey(entry.periodKey);
     }
@@ -183,7 +185,8 @@ export function useScrollTracking({
       itemId: string,
       amount: number,
       type: string,
-      periodKey: string
+      periodKey: string,
+      date: string
     ) => {
       if (!isSupportedRef.current) return;
 
@@ -193,15 +196,16 @@ export function useScrollTracking({
         amount,
         type,
         periodKey,
+        date,
       });
 
       try {
-        rebuildCumulativeArray();
+        buildChronologicalMap();
       } catch {
         isSupportedRef.current = false;
       }
     },
-    [rebuildCumulativeArray]
+    [buildChronologicalMap]
   );
 
   const unobserveElement = React.useCallback((el: HTMLElement) => {
@@ -210,11 +214,11 @@ export function useScrollTracking({
     trackedElements.current.delete(el);
 
     try {
-      rebuildCumulativeArray();
+      buildChronologicalMap();
     } catch {
       // ignore
     }
-  }, [rebuildCumulativeArray]);
+  }, [buildChronologicalMap]);
 
   const pause = React.useCallback(() => {
     isPausedRef.current = true;
@@ -222,8 +226,8 @@ export function useScrollTracking({
 
   const resume = React.useCallback(() => {
     isPausedRef.current = false;
-    rebuildCumulativeArray();
-  }, [rebuildCumulativeArray]);
+    buildChronologicalMap();
+  }, [buildChronologicalMap]);
 
   React.useEffect(() => {
     if (!isSupportedRef.current) return;
@@ -232,19 +236,20 @@ export function useScrollTracking({
     let changed = false;
     for (const [el, tracked] of trackedElements.current) {
       const current = itemAmounts.get(tracked.itemId);
-      if (current && current.amount !== tracked.amount) {
+      if (current && (current.amount !== tracked.amount || current.type !== tracked.type || current.date !== tracked.date)) {
         trackedElements.current.set(el, {
           ...tracked,
           amount: current.amount,
           type: current.type,
+          date: current.date,
         });
         changed = true;
       }
     }
     if (changed) {
-      rebuildCumulativeArray();
+      buildChronologicalMap();
     }
-  }, [items, rebuildCumulativeArray]);
+  }, [items, buildChronologicalMap]);
 
   return {
     scrollTotal,

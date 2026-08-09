@@ -29,10 +29,12 @@ interface SortableLedgerRowProps {
     itemId: string,
     amount: number,
     type: string,
-    periodKey: string
+    periodKey: string,
+    date: string
   ) => void;
   unobserveElement: (el: HTMLElement) => void;
   periodKey: string;
+  date: string;
 }
 
 export function SortableLedgerRow({
@@ -50,6 +52,7 @@ export function SortableLedgerRow({
   observeElement,
   unobserveElement,
   periodKey,
+  date,
 }: SortableLedgerRowProps) {
   const {
     attributes,
@@ -70,7 +73,7 @@ export function SortableLedgerRow({
   React.useEffect(() => {
     const el = rowRef.current;
     if (el && !isEditing) {
-      observeElement(el, item.id, item.amount, item.type, periodKey);
+      observeElement(el, item.id, item.amount, item.type, periodKey, date);
       return () => unobserveElement(el);
     }
   }, [item.id, item.amount, item.type, periodKey, isEditing, observeElement, unobserveElement]);
