@@ -12,6 +12,7 @@ export function useSpaces() {
   const user = useAuthStore((s) => s.user);
   const activeSpaceId = useSpaceStore((s) => s.activeSpaceId);
   const setActiveSpace = useSpaceStore((s) => s.setActiveSpace);
+  const hasHydrated = useSpaceStore((s) => s.hasHydrated);
   const { addToast } = useToastStore();
 
   const { data: spaces = [], isLoading } = useQuery({
@@ -29,6 +30,7 @@ export function useSpaces() {
 
   // Auto-select first space when none is active, or correct stale IDs
   React.useEffect(() => {
+    if (!hasHydrated) return;
     if (spaces.length === 0) {
       setActiveSpace(null);
       return;
@@ -43,7 +45,7 @@ export function useSpaces() {
     if (!valid) {
       setActiveSpace(spaces[0].id);
     }
-  }, [spaces, activeSpaceId, setActiveSpace]);
+  }, [spaces, activeSpaceId, setActiveSpace, hasHydrated]);
 
   const createSpace = useMutationWithToast({
     mutationFn: async (name: string) => {
