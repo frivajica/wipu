@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
     const balancesResult = await db.execute(sql`
       SELECT * FROM get_space_balances(${spaceId}, ${cutoffDate ?? null})
     `);
-    const balances = balancesResult.rows[0] as unknown as SpaceBalanceRow | undefined;
+    const balances = balancesResult[0] as unknown as SpaceBalanceRow | undefined;
 
     // Get period stats for the last 12 months
     const now = DateTime.now();
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
       totalBalance: parseFloat(balances?.total_balance ?? "0") || 0,
       totalDebt: parseFloat(balances?.total_debt ?? "0") || 0,
       realBalance: parseFloat(balances?.real_balance ?? "0") || 0,
-      periods: periodsResult.rows.map((row: unknown) => {
+      periods: periodsResult.map((row: unknown) => {
         const r = row as PeriodStatRow;
         return {
           label: r.period_key,

@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
     const totalCount = parseInt(countResult.count as unknown as string, 10);
 
     return NextResponse.json({
-      items: items.rows.map((row: unknown) => {
+      items: items.map((row: unknown) => {
         const r = row as LedgerItemRow;
         return {
           id: r.id,

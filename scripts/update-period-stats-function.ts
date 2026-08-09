@@ -1,8 +1,8 @@
 import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
-import { neon } from "@neondatabase/serverless";
+import postgres from "postgres";
 
-const sql = neon(process.env.DATABASE_URL!);
+const sql = postgres(process.env.DATABASE_URL!);
 
 async function applyMigration() {
   await sql`DROP FUNCTION IF EXISTS get_period_stats(uuid, date, date, text)`;
@@ -97,7 +97,7 @@ $$ LANGUAGE sql STABLE;
   `.trim();
 
   try {
-    await sql.query(statements);
+    await sql.unsafe(statements);
     console.info("✅ get_period_stats recreated with is_active filter");
   } catch (err) {
     console.error("Migration failed:", err);

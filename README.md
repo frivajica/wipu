@@ -45,8 +45,8 @@ Wipu is a Progressive Web App (PWA) for couples and small teams (up to 15 member
 | [TanStack Query](https://tanstack.com/query/latest) | Server state, caching, and mutations |
 | [Better Auth](https://www.better-auth.com/) | Self-hosted authentication with session management |
 | [Neon PostgreSQL](https://neon.tech/) | Serverless Postgres (free tier) |
+| [postgres](https://github.com/porsager/postgres) | Postgres.js — wire-protocol driver (Neon + local Postgres) |
 | [Drizzle ORM](https://orm.drizzle.team/) | Type-safe SQL ORM with schema-as-code |
-| [@neondatabase/serverless](https://github.com/neondatabase/serverless) | Neon HTTP driver for serverless environments |
 | [@dnd-kit](https://dndkit.com/) | Accessible drag & drop for reordering |
 | [Framer Motion](https://www.framer.com/motion/) | Layout animations and micro-interactions |
 | [luxon](https://moment.github.io/luxon/) | Date utilities and period grouping |

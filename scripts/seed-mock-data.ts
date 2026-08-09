@@ -60,7 +60,7 @@ async function seed() {
         const result = await db.execute(
           sql`SELECT id FROM "user" WHERE email = ${mockUser.email}`
         );
-        const existing = result.rows[0] as { id: string } | undefined;
+        const existing = result[0] as { id: string } | undefined;
         if (existing) {
           userIdMap.set(mockUser.id, existing.id);
           console.info(`  ⚠️  User exists: ${mockUser.email} (${existing.id})`);
