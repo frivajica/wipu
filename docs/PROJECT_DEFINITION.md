@@ -36,16 +36,16 @@ A ledger-based finance tracker where items are grouped by selectable time period
 ## 4. Architecture
 
 ### 4.1 Backend Phase (Current)
-- PostgreSQL via Neon (serverless Postgres, free tier)
+- PostgreSQL on a single self-hosted instance (dev: `wipu_dev`, prod: `wipu`)
 - Better Auth for self-hosted authentication (Drizzle adapter)
 - Drizzle ORM for type-safe schema and queries
 - HTTP API routes under `app/api/` with method handlers (GET, POST, PUT, DELETE)
 - TanStack Query hooks call API routes for all data fetching and mutations
 - Zustand stores manage client-side state (active space, UI toggles)
 
-### 4.2 Future Supabase Phase
-- Supabase drop-in replacement for Neon + Better Auth (PostgreSQL, Auth, Realtime, Row Level Security)
-- Migration path: Replace Drizzle/Neon API routes with Supabase client calls. Zustand stores and UI components remain unchanged.
+### 4.2 Future Phase
+
+No vendor backend migration is currently planned. The Postgres + Drizzle + Better Auth stack is the target architecture.
 
 ## 5. Data Model
 
@@ -229,7 +229,7 @@ wipu/
 - Personal space cannot be left
 - Items cannot be dragged across period groups
 - Custom view shows single group, infinite scroll after 50 items
-- PostgreSQL backend with Better Auth (Neon PostgreSQL, Drizzle ORM)
+- PostgreSQL backend with Better Auth (self-hosted Postgres, Drizzle ORM)
 - Cookie-based sessions
 - Numeric input only for amounts (no expressions in MVP)
 - Each ledger item has exactly one owner/updater (no shared items)

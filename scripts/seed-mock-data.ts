@@ -180,6 +180,7 @@ async function seed() {
   console.info(`   Users: ${userIdMap.size}`);
   console.info(`   Spaces: ${spaceIdMap.size}`);
   console.info(`   Ledger items: ${ledgerCount}`);
+  await db.$client.end();
 }
 
 seed().catch((err) => {

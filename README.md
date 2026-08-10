@@ -44,8 +44,8 @@ Wipu is a Progressive Web App (PWA) for couples and small teams (up to 15 member
 | [Zustand](https://zustand-demo.pmnd.rs/) | Lightweight client state management |
 | [TanStack Query](https://tanstack.com/query/latest) | Server state, caching, and mutations |
 | [Better Auth](https://www.better-auth.com/) | Self-hosted authentication with session management |
-| [Neon PostgreSQL](https://neon.tech/) | Serverless Postgres (free tier) |
-| [postgres](https://github.com/porsager/postgres) | Postgres.js — wire-protocol driver (Neon + local Postgres) |
+| [PostgreSQL](https://www.postgresql.org/) | Database — self-hosted local Postgres (single instance, `wipu` prod / `wipu_dev` dev) |
+| [postgres](https://github.com/porsager/postgres) | Postgres.js — wire-protocol driver for Postgres |
 | [Drizzle ORM](https://orm.drizzle.team/) | Type-safe SQL ORM with schema-as-code |
 | [@dnd-kit](https://dndkit.com/) | Accessible drag & drop for reordering |
 | [Framer Motion](https://www.framer.com/motion/) | Layout animations and micro-interactions |
@@ -61,7 +61,7 @@ Wipu is a Progressive Web App (PWA) for couples and small teams (up to 15 member
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) 18 or later
-- [pnpm](https://pnpm.io/installation) 10.10.0 (managed via `packageManager` field)
+- [pnpm](https://pnpm.io/installation) 11.20.0 (managed via `packageManager` field)
 
 ### Installation
 
@@ -76,17 +76,23 @@ pnpm install
 
 ### Database Setup
 
-1. **Create a Neon project** → [console.neon.tech](https://console.neon.tech)
-2. **Copy your connection string** from the Neon dashboard
-3. **Create `.env.local`** in the project root:
+The app uses the `postgres` (postgres.js) wire-protocol driver with Drizzle and works against a **self-hosted PostgreSQL** instance. Dev and prod share one instance with separate databases: `wipu_dev` (dev) and `wipu` (prod). In dev the connection points at the local instance's loopback port (`127.0.0.1:55432`); in the Docker deploy it uses the compose service name — only `DATABASE_URL` differs.
+
+**Environment variables** (validated by `assertBackendConfig()` when `USE_REAL_BACKEND=true`):
 
 ```env
-# Database
-DATABASE_URL=postgresql://neondb_owner:password@ep-xxx.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+# Database connection string (local Postgres; same instance, separate DB per environment)
+DATABASE_URL=postgresql://user:password@127.0.0.1:55432/wipu_dev
 
-# Auth (Better Auth)
+# Auth (Better Auth) — secret must be at least 32 characters
 BETTER_AUTH_SECRET=your-32-char-secret-here
 BETTER_AUTH_URL=http://localhost:3000
+
+# Public URL baked into the client bundle (build arg in Docker)
+NEXT_PUBLIC_APP_URL=https://your-app.domain
+
+# Enable the real backend (mock data otherwise)
+USE_REAL_BACKEND=true
 ```
 
 Generate a secure auth secret:
@@ -94,14 +100,22 @@ Generate a secure auth secret:
 openssl rand -base64 32
 ```
 
-4. **Push the schema** and apply custom SQL:
+**Local PostgreSQL (dev and prod on one instance):**
+1. Stand up a PostgreSQL instance (e.g. the `db` service in the wipu Docker compose stack, which publishes `127.0.0.1:55432`).
+2. Create the dev role + database (the compose `db` service does this automatically on a fresh volume via initdb.d; for an existing volume, run the `CREATE ROLE wipu_dev LOGIN PASSWORD '…'` and `CREATE DATABASE wipu_dev OWNER wipu_dev` statements once as the `postgres` user).
+3. Point `DATABASE_URL` at it in `.env.local` — the app always reads `DATABASE_URL`/`BETTER_AUTH_SECRET` regardless of environment. The compose stack retrieves the **prod** values from Vaultwarden under `WIPU_DB_PASSWORD_PROD` / `WIPU_BETTER_AUTH_SECRET_PROD`; dev values are self-managed in a gitignored `.env.local`.
+
+**Apply the schema and custom SQL:**
 
 ```bash
 pnpm db:push
+npx tsx scripts/migrate-balance-cutoff.ts
+npx tsx scripts/update-period-stats-function.ts
 npx tsx scripts/fix-audit-trigger.ts
+psql "$DATABASE_URL" -f scripts/attach-triggers.sql
 ```
 
-5. **Seed with demo data**:
+**Seed with demo data (optional):**
 
 ```bash
 pnpm db:seed
@@ -132,16 +146,23 @@ pnpm start
 
 ### Docker
 
+`NEXT_PUBLIC_APP_URL` is baked into the client bundle at build time, so it must be passed as a build arg.
+
 ```bash
 # Build the image
-docker build -t wipu .
+docker build --build-arg NEXT_PUBLIC_APP_URL=https://your-app.domain -t wipu .
 
 # Run with environment variables
 docker run -p 3000:3000 \
   -e DATABASE_URL=postgresql://... \
   -e BETTER_AUTH_SECRET=your-secret \
   -e BETTER_AUTH_URL=http://localhost:3000 \
+  -e NEXT_PUBLIC_APP_URL=https://your-app.domain \
+  -e USE_REAL_BACKEND=true \
   wipu
+
+# Liveness check
+curl http://localhost:3000/api/health
 ```
 
 ### Lint
@@ -175,6 +196,7 @@ src/
 │   │   ├── debt-groups/    # Debt group CRUD
 │   │   ├── debt-category-sync/  # Bulk category updates
 │   │   ├── export/         # CSV generation
+│   │   ├── health/         # Liveness probe for container healthchecks
 │   │   ├── ledger-items/   # Ledger CRUD + pagination
 │   │   ├── recurring/      # Recurring rules & instances
 │   │   └── spaces/         # Space management + membership
@@ -189,7 +211,7 @@ src/
 │   ├── debt/               # Debt domain: group cards, item rows
 │   └── spaces/             # Space cards, modals, invite flows
 ├── db/
-│   ├── index.ts            # Neon client singleton
+│   ├── index.ts            # postgres.js client + Drizzle instance
 │   ├── schema.ts           # Drizzle schema (all tables + auth tables)
 │   ├── migrations/         # SQL functions, triggers, indexes
 │   └── seed.ts             # Currency reference data seed
@@ -213,9 +235,13 @@ src/
 │   ├── types.ts            # Shared TypeScript types
 │   └── constants.ts        # App constants
 scripts/
-├── seed-mock-data.ts       # Full database seed (users → ledger items)
-├── fix-audit-trigger.ts    # Apply custom SQL triggers/functions
-└── drop-all-tables.ts      # Clean reset helper
+├── seed-mock-data.ts           # Full database seed (users → ledger items)
+├── fix-audit-trigger.ts        # Create audit_trigger_fn (SQL function)
+├── migrate-balance-cutoff.ts   # get_space_balances with balance-cutoff param
+├── migrate-is-default.ts       # Mark the default space
+├── update-period-stats-function.ts # get_period_stats (9-column version)
+├── attach-triggers.sql         # CREATE TRIGGER statements for audited tables
+└── drop-all-tables.ts          # Clean reset helper
 ```
 
 ---
@@ -236,7 +262,7 @@ Key rules at a glance:
 
 ## Current Phase: PostgreSQL Backend + Better Auth
 
-The app is fully migrated from mock data to a real PostgreSQL backend via Neon. Better Auth handles session management. All ledger CRUD, space management, debt tracking, and balance calculations are backed by Drizzle ORM queries and PostgreSQL functions.
+The app is fully migrated from mock data to a real PostgreSQL backend. The `postgres` (postgres.js) wire-protocol driver works against the self-hosted PostgreSQL instance shared by dev (`wipu_dev`) and prod (`wipu`). Better Auth handles session management. All ledger CRUD, space management, debt tracking, and balance calculations are backed by Drizzle ORM queries and PostgreSQL functions.
 
 The frontend architecture remains unchanged — only `queryFn` internals in hooks were swapped for `fetch()` calls to the API layer.
 

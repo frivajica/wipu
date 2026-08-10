@@ -103,6 +103,7 @@ $$ LANGUAGE sql STABLE;
     console.error("Migration failed:", err);
     process.exit(1);
   }
+  await sql.end();
 }
 
 applyMigration().catch((err) => {

@@ -53,15 +53,15 @@ React Components
 
 ## 2. Backend Stack
 
-**Decision: Next.js API Routes + Drizzle ORM + Neon Postgres**
+**Decision: Next.js API Routes + Drizzle ORM + Postgres.js (self-hosted Postgres — `wipu_dev` for dev, `wipu` for prod on one instance)**
 
 | Layer | Technology | Role |
 |---|---|---|
-| **Database** | [Neon](https://neon.tech/) (serverless PostgreSQL) | Primary data store. Scales to zero, database branching for dev/staging. |
+| **Database** | [PostgreSQL](https://www.postgresql.org/) via [postgres](https://github.com/porsager/postgres) (postgres.js) | Postgres.js wire-protocol driver. Single self-hosted instance: `wipu_dev` (dev) for development, `wipu` for the production Docker deploy. |
 | **ORM** | [Drizzle ORM](https://orm.drizzle.team/) | Type-safe, schema-as-code, lightweight. Excellent TypeScript DX. |
 | **API** | Next.js API Routes (existing) | Business logic, auth, authorization. Single Node runtime. |
 | **Auth** | [Better Auth](https://www.better-auth.com/) or [Lucia](https://lucia-auth.com/) | Self-hosted auth with session management. No proprietary SDK. |
-| **Realtime** | TBD (Ably, Partykit, or Supabase Realtime standalone) | Added when multi-user live sync becomes critical. |
+| **Realtime** | TBD (Ably or Partykit) | Added when multi-user live sync becomes critical. |
 
 ### Why This Stack
 
@@ -69,15 +69,15 @@ React Components
 - **Single runtime** — Node/TypeScript everywhere, one mental model, one deployment target
 - **Drizzle's type safety** is superior to generated types from BaaS solutions — schema-as-code means types are always in sync
 - **Full control over authorization** — explicit middleware instead of complex RLS policies across 7+ tables
-- **Neon's serverless Postgres** — free tier, scales to zero, database branching for dev/staging environments
-- **No vendor lock-in** — Neon is standard Postgres, Drizzle works with any Postgres provider, auth is self-hosted
+- **Standard Postgres + postgres.js driver** — the driver is provider-agnostic and Drizzle works with any Postgres database; one self-hosted instance serves both dev (`wipu_dev`) and prod (`wipu`)
+- **No vendor lock-in** — Postgres is standard, Drizzle works with any Postgres provider, auth is self-hosted
 - **Predictable costs** — no surprise bills from realtime connections or database egress
 
 ### Alternatives Considered
 
-**Supabase (BaaS):** Auth + RLS + Realtime bundled, but introduces a second runtime (Deno for Edge Functions), splits logic between Supabase client SDK and Next.js API routes, complex RLS policies for multi-level access, and unpredictable cost scaling. The codebase originally planned for Supabase, but the existing API route architecture aligns better with a direct ORM approach.
+**Supabase (BaaS):** Auth + RLS + Realtime bundled, but introduces a second runtime (Deno for Edge Functions), splits logic between Supabase client SDK and Next.js API routes, complex RLS policies for multi-level access, and unpredictable cost scaling. The codebase originally planned for Supabase, but the existing API route architecture aligns better with a direct ORM approach. **Not pursued.**
 
-**Hybrid (Neon + Supabase Realtime only):** Viable — uses Neon as primary DB with Drizzle, adds only Supabase Realtime for live sync. This remains an option for Phase 4 (Realtime) if a standalone realtime service proves simpler than Ably or Partykit.
+**Managed Postgres (e.g. Neon):** Viable and provider-agnostic, but adds remote per-env infrastructure for no benefit over a single self-hosted instance hosting separate `wipu_dev` / `wipu` databases. **Not used.**
 
 ---
 
@@ -258,7 +258,8 @@ CREATE INDEX idx_ledger_category_trgm ON ledger_items USING gin (category gin_tr
 -- BALANCE FUNCTIONS
 -- ═══════════════════════════════════════
 
-CREATE OR REPLACE FUNCTION get_space_balances(p_space_id UUID)
+-- Deployed via scripts/migrate-balance-cutoff.ts
+CREATE OR REPLACE FUNCTION get_space_balances(p_space_id UUID, p_to DATE DEFAULT NULL)
 RETURNS TABLE(
   total_balance NUMERIC,
   total_debt NUMERIC,
@@ -266,11 +267,13 @@ RETURNS TABLE(
 ) AS $$
   WITH all_items AS (
     SELECT amount, type FROM ledger_items WHERE space_id = p_space_id
+      AND (p_to IS NULL OR date <= p_to)
     UNION ALL
     SELECT r.amount, r.type
     FROM recurring_instances ri
     JOIN recurring_items r ON ri.recurring_item_id = r.id
-    WHERE r.space_id = p_space_id AND NOT ri.skipped
+    WHERE r.space_id = p_space_id AND r.is_active AND NOT ri.skipped
+      AND (p_to IS NULL OR ri.occurrence_date <= p_to)
   )
   SELECT
     COALESCE(SUM(amount), 0) AS total_balance,
@@ -288,23 +291,26 @@ RETURNS NUMERIC AS $$
     AND group_id = p_group_id;
 $$ LANGUAGE sql STABLE;
 
+-- Deployed via scripts/update-period-stats-function.ts
 CREATE OR REPLACE FUNCTION get_period_stats(
   p_space_id UUID,
   p_from DATE,
   p_to DATE,
-  p_period_type TEXT  -- 'monthly' | 'weekly' | 'biweekly'
+  p_period_type TEXT  -- 'monthly' | 'weekly' | 'bi-weekly'
 )
 RETURNS TABLE(
   period_key TEXT,
+  display_label TEXT,
   period_start DATE,
   period_end DATE,
   period_balance NUMERIC,
   period_debt NUMERIC,
   running_balance NUMERIC,
+  running_debt NUMERIC,
   item_count INT
 ) AS $$
   WITH
-  -- Union normal ledger items with non-skipped recurring instances
+  -- Union normal ledger items with active, non-skipped recurring instances
   all_items AS (
     SELECT date, amount, type FROM ledger_items
     WHERE space_id = p_space_id AND date >= p_from AND date <= p_to
@@ -312,26 +318,41 @@ RETURNS TABLE(
     SELECT ri.occurrence_date, r.amount, r.type
     FROM recurring_instances ri
     JOIN recurring_items r ON ri.recurring_item_id = r.id
-    WHERE r.space_id = p_space_id AND NOT ri.skipped
+    WHERE r.space_id = p_space_id AND r.is_active AND NOT ri.skipped
       AND ri.occurrence_date >= p_from AND ri.occurrence_date <= p_to
   ),
-  -- Assign period key based on period type
+  -- Assign period key, display label, and start/end based on period type
   with_period AS (
     SELECT
       date, amount, type,
       CASE p_period_type
-        WHEN 'weekly'    THEN to_char(date, 'IYYY-"W"IW')
-        WHEN 'biweekly'  THEN to_char(date, 'IYYY-"W"IW')  -- grouped pairs in app layer
+        WHEN 'weekly' THEN to_char(date, 'IYYY-"W"IW')
+        WHEN 'bi-weekly' THEN to_char(date, 'IYYY-"W"IW')
         ELSE to_char(date, 'YYYY-MM')
       END AS period_key,
       CASE p_period_type
-        WHEN 'weekly'    THEN date_trunc('week', date)::DATE
-        WHEN 'biweekly'  THEN date_trunc('week', date)::DATE
+        WHEN 'weekly' THEN (
+          to_char(date, 'FMMonth YYYY') || ' - Week ' || to_char(date, 'WW') ||
+          ' (' || to_char(date_trunc('week', date), 'FMMM d') ||
+          ' to ' || to_char(date_trunc('week', date) + INTERVAL '6 days', 'FMMM d') || ')'
+        )
+        WHEN 'bi-weekly' THEN (
+          to_char(date, 'FMMonth YYYY') || ' - Bi-Week ' ||
+          CASE WHEN ceil(to_char(date, 'WW')::INT / 2.0) < 10 THEN '0' ELSE '' END ||
+          ceil(to_char(date, 'WW')::NUMERIC / 2.0)::TEXT ||
+          ' (' || to_char(date_trunc('week', date) - INTERVAL '7 days', 'FMMM d') ||
+          ' to ' || to_char(date_trunc('week', date) + INTERVAL '6 days', 'FMMM d') || ')'
+        )
+        ELSE to_char(date, 'FMMonth YYYY')
+      END AS display_label,
+      CASE p_period_type
+        WHEN 'weekly' THEN date_trunc('week', date)::DATE
+        WHEN 'bi-weekly' THEN (date_trunc('week', date) - INTERVAL '7 days')::DATE
         ELSE date_trunc('month', date)::DATE
       END AS period_start,
       CASE p_period_type
-        WHEN 'weekly'    THEN (date_trunc('week', date) + INTERVAL '6 days')::DATE
-        WHEN 'biweekly'  THEN (date_trunc('week', date) + INTERVAL '13 days')::DATE
+        WHEN 'weekly' THEN (date_trunc('week', date) + INTERVAL '6 days')::DATE
+        WHEN 'bi-weekly' THEN (date_trunc('week', date) + INTERVAL '6 days')::DATE
         ELSE (date_trunc('month', date) + INTERVAL '1 month - 1 day')::DATE
       END AS period_end
     FROM all_items
@@ -339,23 +360,24 @@ RETURNS TABLE(
   -- Aggregate per period
   period_sums AS (
     SELECT
-      period_key, period_start, period_end,
+      period_key, display_label, period_start, period_end,
       COALESCE(SUM(CASE WHEN type = 'default' THEN amount ELSE 0 END), 0)
         + COALESCE(SUM(CASE WHEN type = 'debt' THEN amount ELSE 0 END), 0) AS period_balance,
       COALESCE(SUM(CASE WHEN type = 'debt' THEN amount ELSE 0 END), 0) AS period_debt,
       COUNT(*) AS item_count
     FROM with_period
-    GROUP BY period_key, period_start, period_end
+    GROUP BY period_key, display_label, period_start, period_end
   ),
-  -- Running balance via window function
+  -- Running totals via window functions
   with_running AS (
     SELECT
-      period_key, period_start, period_end,
+      period_key, display_label, period_start, period_end,
       period_balance, period_debt, item_count,
-      SUM(period_balance) OVER (ORDER BY period_start ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS running_balance
+      SUM(period_balance) OVER (ORDER BY period_start ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS running_balance,
+      SUM(period_debt) OVER (ORDER BY period_start ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS running_debt
     FROM period_sums
   )
-  SELECT period_key, period_start, period_end, period_balance, period_debt, running_balance, item_count
+  SELECT period_key, display_label, period_start, period_end, period_balance, period_debt, running_balance, running_debt, item_count
   FROM with_running
   ORDER BY period_start DESC;
 $$ LANGUAGE sql STABLE;
@@ -592,7 +614,8 @@ The recurring system follows a **rule-based model with precomputed instances** (
 ### Balance Function (updated)
 
 ```sql
-CREATE OR REPLACE FUNCTION get_space_balances(p_space_id UUID)
+-- Deployed via scripts/migrate-balance-cutoff.ts
+CREATE OR REPLACE FUNCTION get_space_balances(p_space_id UUID, p_to DATE DEFAULT NULL)
 RETURNS TABLE(
   total_balance NUMERIC,
   total_debt NUMERIC,
@@ -600,11 +623,13 @@ RETURNS TABLE(
 ) AS $$
   WITH all_items AS (
     SELECT amount, type FROM ledger_items WHERE space_id = p_space_id
+      AND (p_to IS NULL OR date <= p_to)
     UNION ALL
-    SELECT ri.amount, ri.type
+    SELECT r.amount, r.type
     FROM recurring_instances ri
     JOIN recurring_items r ON ri.recurring_item_id = r.id
-    WHERE r.space_id = p_space_id AND NOT ri.skipped
+    WHERE r.space_id = p_space_id AND r.is_active AND NOT ri.skipped
+      AND (p_to IS NULL OR ri.occurrence_date <= p_to)
   )
   SELECT
     COALESCE(SUM(amount), 0) AS total_balance,

@@ -106,7 +106,7 @@ _No active bugs remaining._
 | `currency` FK violation on seed | Added currency seeding to seed script | pre-commit |
 | Audit trigger fails on `spaces` insert | Added `undefined_column` exception handling | pre-commit |
 | Invalid UUID on debt group insert | Removed hardcoded `id` from seed, let DB generate | pre-commit |
-| `ENOTFOUND neon-host` | Updated `.env.local` with real DATABASE_URL | local config |
+| `ENOTFOUND neon-host` | Updated `.env.local` with the real `DATABASE_URL` (local Postgres) | local config |
 
 ---
 
@@ -123,9 +123,8 @@ All quick fixes below have been implemented and committed:
 
 ## 6. Future Considerations
 
-- **Supabase migration**: The architecture is designed for a drop-in replacement at the API route layer. All Drizzle queries can become Supabase client calls. Zustand stores and UI components remain unchanged.
 - **Realtime sync**: Not yet implemented. Better Auth sessions + TanStack Query polling is the current pattern.
-- **Row Level Security**: Currently handled by explicit membership checks in API routes. Supabase RLS would replace these.
+- **Row Level Security**: Currently handled by explicit membership checks in API routes.
 - **Image uploads**: `avatarUrl` field exists on `User` type but no upload flow is wired up.
 
 ---

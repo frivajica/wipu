@@ -3,7 +3,7 @@
 > **Version:** 1.0
 > **Based on:** `docs/backend-architecture.md`
 > **Estimated Duration:** ~20 days of active development
-> **Goal:** Production-ready backend with Neon PostgreSQL, Drizzle ORM, Better Auth, and full API coverage
+> **Goal:** Production-ready backend with self-hosted PostgreSQL, Drizzle ORM, Better Auth, and full API coverage
 
 ---
 
@@ -46,7 +46,7 @@ This plan details the complete backend implementation for Wipu, transitioning fr
 
 | Layer | Before | After |
 |---|---|---|
-| Database | In-memory arrays (`lib/data.ts`) | Neon PostgreSQL |
+| Database | In-memory arrays (`lib/data.ts`) | PostgreSQL |
 | ORM | None | Drizzle ORM |
 | Auth | Manual cookie sessions (`lib/session.ts`) | Better Auth |
 | API Routes | Mock DB calls | Real SQL queries |
@@ -68,7 +68,7 @@ This plan details the complete backend implementation for Wipu, transitioning fr
 
 ```bash
 # Database
-pnpm add drizzle-orm @neondatabase/serverless
+pnpm add drizzle-orm postgres
 pnpm add -D drizzle-kit
 
 # Auth (Better Auth — free, self-hosted)
@@ -85,7 +85,7 @@ pnpm add dotenv
 
 ```env
 # Database
-DATABASE_URL=postgresql://user:pass@neon-host/dbname?sslmode=require
+DATABASE_URL=postgresql://user:pass@host:5432/wipu_dev
 
 # Auth (Better Auth)
 BETTER_AUTH_SECRET=your-32-char-secret-here
@@ -178,12 +178,12 @@ wipu/
 **Duration:** ~1 day
 **Goal:** Install dependencies, configure database connection, set up Drizzle, verify connectivity.
 
-- [ ] Install dependencies: `drizzle-orm`, `@neondatabase/serverless`, `drizzle-kit`, `better-auth`, `dotenv`
+- [ ] Install dependencies: `drizzle-orm`, `postgres`, `drizzle-kit`, `better-auth`, `dotenv`
 - [ ] Create `.env.local` with `DATABASE_URL`
 - [ ] Create `drizzle.config.ts`
 - [ ] Create `src/db/index.ts` — database client singleton
 - [ ] Create `src/db/schema.ts` — define all tables (copy from `backend-architecture.md`)
-- [ ] Run `pnpm drizzle-kit push` to create tables in Neon
+- [ ] Run `pnpm drizzle-kit push` to create tables in PostgreSQL
 - [ ] Verify connection with a simple `SELECT 1` query
 - [ ] Add `src/db/schema.ts` to `.gitignore`? No — schema is source code, keep it
 - [ ] **Verify:** Can query the database from a test API route
@@ -223,7 +223,7 @@ wipu/
 - [ ] Attach triggers to `ledger_items`, `debt_groups`, `spaces`
 - [ ] Run `pnpm drizzle-kit push` to sync schema
 - [ ] Run `pnpm drizzle-kit generate` to create migration files
-- [ ] **Verify:** All tables exist in Neon, indexes are present, functions are callable
+- [ ] **Verify:** All tables exist in PostgreSQL, indexes are present, functions are callable
 
 **Key decisions:**
 - Use `uuid` type with `gen_random_uuid()` default for all PKs
@@ -568,9 +568,8 @@ For period stats, use the SQL function `get_period_stats()` defined in schema.
 
 ### Realtime (Optional for Phase 8)
 
-- [ ] Evaluate: Better Auth + Drizzle + Neon doesn't include realtime out of the box
+- [ ] Evaluate: Better Auth + Drizzle + Postgres doesn't include realtime out of the box
 - [ ] Options:
-  - **Supabase Realtime standalone** (just the realtime part, not the full BaaS)
   - **Ably** (managed WebSocket service)
   - **PartyKit** (Cloudflare Workers-based)
   - **Server-Sent Events** (SSE) via Next.js (simplest, good enough for 15 users)
@@ -698,7 +697,7 @@ export async function GET(request: Request) {
 - [ ] Balance query returns < 10ms
 - [ ] Autocomplete returns < 10ms with trigram index
 - [ ] Pagination keeps frontend memory < 2MB per space view
-- [ ] Database connection pooling is configured (Neon handles this)
+- [ ] Database connection pooling is configured (postgres.js manages pooled connections)
 - [ ] N+1 queries eliminated (use JOINs, not nested selects)
 - [ ] Audit triggers don't significantly slow down writes (< 5ms overhead)
 - [ ] Recurring instance generation doesn't block API requests (async/cron)
@@ -730,7 +729,7 @@ const queryFn = USE_REAL_BACKEND
 When ready to switch:
 - [ ] Export mock data to JSON
 - [ ] Write migration script to insert into PostgreSQL
-- [ ] Run script against Neon database
+- [ ] Run script against the dev PostgreSQL database
 - [ ] Verify data integrity (counts match, relationships intact)
 - [ ] Switch feature flag
 - [ ] Monitor for errors

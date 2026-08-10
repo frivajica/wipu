@@ -8,9 +8,9 @@ This document is the single source of truth for architectural decisions, coding 
 
 **Wipu** is a Progressive Web App (PWA) for shared expense/income tracking among couples and small groups (max 8 per space). It prioritizes logical date inheritance, high-density visibility, and rapid data entry.
 
-**Current Phase:** PostgreSQL backend with Better Auth (Neon PostgreSQL, Drizzle ORM, self-hosted auth). The mock database (`legacy/lib/data.ts`) has been fully replaced. All data flows through HTTP API routes backed by Drizzle queries and PostgreSQL functions.
+**Current Phase:** PostgreSQL backend with Better Auth (postgres.js wire-protocol driver; self-hosted local Postgres on one instance — `wipu_dev` for development, `wipu` for the production Docker deploy; Drizzle ORM, self-hosted auth). The mock database (`legacy/lib/data.ts`) has been fully replaced. All data flows through HTTP API routes backed by Drizzle queries and PostgreSQL functions.
 
-**Future Phase:** Supabase migration (PostgreSQL, Auth, Realtime, Row Level Security). The architecture is designed so that swapping Drizzle/Neon for Supabase client calls is a drop-in replacement at the API route layer. Zustand stores and UI components remain unchanged.
+**Future Phase:** None currently planned — Postgres-only backend with Drizzle + Better Auth.
 
 ---
 
@@ -18,12 +18,12 @@ This document is the single source of truth for architectural decisions, coding 
 
 | Layer | Technology | Version | Notes |
 |---|---|---|---|
-| Package Manager | pnpm | 10.10.0 | Fast, disk-space efficient |
+| Package Manager | pnpm | 11.20.0 | Fast, disk-space efficient |
 | Framework | Next.js | 16.1.6 | App Router, React Compiler opt-in, Turbopack |
 | UI Library | React / React DOM | 19.1.0 | Required by Next.js 16 |
 | Language | TypeScript | 5.9.3 | Strict mode |
 | Styling | Tailwind CSS | 4.1.4 | Custom design tokens via `@theme` |
-| Database | Neon PostgreSQL | — | Serverless Postgres (free tier) |
+| Database | PostgreSQL | — | postgres.js wire-protocol driver; one self-hosted instance, `wipu_dev` (dev) or `wipu` (prod) |
 | ORM | Drizzle ORM | 0.45.2 | Schema-as-code, type-safe queries |
 | Auth | Better Auth | 1.6.10 | Self-hosted, Drizzle adapter |
 | Client State | Zustand | 5.0.3 | Auth, spaces, UI state |
@@ -290,7 +290,7 @@ Two-tier defense for route protection:
 
 **No Zustand persist for auth:** The auth store is hydrated from the cookie on mount, not from localStorage. This prevents stale session state and hydration mismatches.
 
-**Pattern:** Hooks call Better Auth client (`authClient.signIn.email`, `authClient.signUp.email`) for auth operations, and use `auth.api.getSession({ headers })` in API routes. This aligns with the Supabase migration path and eliminates bundler boundary issues.
+**Pattern:** Hooks call Better Auth client (`authClient.signIn.email`, `authClient.signUp.email`) for auth operations, and use `auth.api.getSession({ headers })` in API routes.
 
 ---
 
@@ -394,6 +394,7 @@ An autocomplete input should decompose into:
 2. **Never import `mockDb` in `.tsx` components.**
 3. **Enrich data in hooks or API routes.** If a component needs user names, the hook should attach them. Server-side enrichment happens in API routes.
 4. **Consistent mutation pattern:** `useMutationWithToast` + invalidate queries.
+5. **DB client:** `src/db/index.ts` exposes a single Drizzle instance built on the `postgres` (postgres.js) driver. `assertBackendConfig()` in `src/lib/config.ts` throws when `USE_REAL_BACKEND=true` if `DATABASE_URL` is missing or `BETTER_AUTH_SECRET` is shorter than 32 characters.
 
 ### 12.1 Server-Only Boundaries
 
