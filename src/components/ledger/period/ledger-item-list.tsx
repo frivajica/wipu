@@ -30,7 +30,7 @@ interface LedgerItemListProps {
   ) => void;
   unobserveElement: (el: HTMLElement) => void;
   periodKey: string;
-  registerDragRow?: (id: string, date: string, el: HTMLElement | null, periodKey: string) => void;
+  registerDragRow?: (id: string, date: string, el: HTMLElement | null) => void;
 }
 
 export function LedgerItemList({

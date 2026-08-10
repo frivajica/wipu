@@ -21,7 +21,6 @@ import { useLedger } from "@/hooks/use-ledger";
 import { useSpaces } from "@/hooks/use-spaces";
 import { useUIStore } from "@/stores/ui-store";
 import { useGroupedLedger } from "@/hooks/use-grouped-ledger";
-import { useDragDatePreview } from "@/hooks/shared/use-drag-date-preview";
 import { PeriodSelector } from "@/components/ledger/period-selector";
 import { CustomDateRange } from "@/components/ledger/custom-date-range";
 import { PeriodGroup } from "@/components/ledger/period-group";
@@ -32,9 +31,7 @@ import { LedgerEmptyState } from "@/components/ledger/ledger-empty-state";
 import { LedgerBalanceBar } from "@/components/ledger/ledger-balance-bar";
 import { ExportButton } from "@/components/ledger/export-button";
 import { CursorLine } from "@/components/ledger/cursor-line";
-import { GhostRows } from "@/components/ledger/ghost-rows";
-import { ScrollTrackingProvider, useScrollTrackingContext } from "@/contexts/scroll-tracking-context";
-import { DndActiveContext } from "@/contexts/dnd-active-context";
+import { ScrollTrackingProvider } from "@/contexts/scroll-tracking-context";
 import { DateTime } from "luxon";
 
 export default function LedgerPage() {
@@ -97,39 +94,12 @@ export default function LedgerPage() {
     []
   );
 
-  const datePreview = useDragDatePreview(periodType);
-
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 },
     }),
     useSensor(KeyboardSensor)
   );
-
-  const [isDragActive, setIsDragActive] = React.useState(false);
-
-  const pointerYRef = React.useRef<number>(-1);
-
-  React.useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      pointerYRef.current = e.clientY;
-      datePreview.updatePointerY(e.clientY);
-    };
-    const handleTouchMove = (e: TouchEvent) => {
-      if (e.touches.length > 0) {
-        pointerYRef.current = e.touches[0].clientY;
-        datePreview.updatePointerY(e.touches[0].clientY);
-      }
-    };
-    if (datePreview.isPreviewActive) {
-      window.addEventListener("mousemove", handleMouseMove, { passive: true });
-      window.addEventListener("touchmove", handleTouchMove, { passive: true });
-    }
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("touchmove", handleTouchMove);
-    };
-  }, [datePreview.isPreviewActive, datePreview.updatePointerY]);
 
   const handleAddFirstItem = React.useCallback(
     async (data: {
@@ -168,51 +138,32 @@ export default function LedgerPage() {
     [updateItem, user?.id]
   );
 
+  const handleReorderItems = React.useCallback(
+    (itemIds: string[], dateUpdates?: Record<string, string>) => {
+      return reorderItems({
+        spaceId: activeSpaceId || "",
+        itemIds,
+        dateUpdates,
+        updatedBy: user?.id,
+      });
+    },
+    [reorderItems, activeSpaceId, user?.id]
+  );
+
   const handleDragEnd = React.useCallback((event: DragEndEvent) => {
-    const { active } = event;
+    const { active, over } = event;
     const activeId = String(active.id);
-    const pointerY = pointerYRef.current;
+    const overId = over ? String(over.id) : null;
 
     const activeIndex = flatItems.findIndex((i) => i.id === activeId);
     if (activeIndex === -1) return;
 
-    const rowMap = datePreview.getRowMap();
-    const rows = flatItems
-      .filter((i) => i.id !== activeId)
-      .map((i) => {
-        const tracked = rowMap.get(i.id);
-        return {
-          id: i.id,
-          rect: tracked?.el ? tracked.el.getBoundingClientRect() : null,
-        };
-      })
-      .filter((r): r is { id: string; rect: DOMRect } => r.rect !== null)
-      .sort((a, b) => a.rect.top - b.rect.top);
-
     let targetIndex: number;
-    if (rows.length === 0) {
-      targetIndex = 0;
+    if (overId) {
+      targetIndex = flatItems.findIndex((i) => i.id === overId);
+      if (targetIndex === -1) return;
     } else {
-      targetIndex = flatItems.length;
-      for (let i = 0; i < rows.length - 1; i++) {
-        if (pointerY >= rows[i].rect!.bottom && pointerY <= rows[i + 1].rect!.top) {
-          targetIndex = flatItems.findIndex((item) => item.id === rows[i + 1].id);
-          break;
-        }
-      }
-      if (targetIndex === flatItems.length) {
-        for (let i = 0; i < rows.length; i++) {
-          if (pointerY >= rows[i].rect!.top && pointerY <= rows[i].rect!.bottom) {
-            const midY = (rows[i].rect!.top + rows[i].rect!.bottom) / 2;
-            const idx = flatItems.findIndex((item) => item.id === rows[i].id);
-            targetIndex = pointerY < midY ? idx : idx + 1;
-            break;
-          }
-        }
-        if (targetIndex === flatItems.length && pointerY < rows[0].rect!.top) {
-          targetIndex = 0;
-        }
-      }
+      return;
     }
 
     const newItems = arrayMove(flatItems, activeIndex, targetIndex);
@@ -236,29 +187,7 @@ export default function LedgerPage() {
         updatedBy: user?.id || "",
       },
     });
-    setIsDragActive(false);
-  }, [flatItems, datePreview, updateItem, user?.id]);
-
-  const handleDragStart = React.useCallback((event: { active: { id: string | number } }) => {
-    setIsDragActive(true);
-    datePreview.setActive(String(event.active.id));
-  }, [datePreview]);
-
-  const handleReorderItems = React.useCallback(
-    (itemIds: string[], dateUpdates?: Record<string, string>) => {
-      return reorderItems({
-        spaceId: activeSpaceId || "",
-        itemIds,
-        dateUpdates,
-        updatedBy: user?.id,
-      });
-    },
-    [reorderItems, activeSpaceId, user?.id]
-  );
-
-  const handleDragCancel = React.useCallback(() => {
-    setIsDragActive(false);
-  }, []);
+  }, [flatItems, updateItem, user?.id]);
 
   const isDragEnabled = sortField === null || sortField === "date";
 
@@ -322,15 +251,12 @@ export default function LedgerPage() {
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
-            onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
-            onDragCancel={handleDragCancel}
           >
-            <DndActiveContext.Provider value={isDragActive}>
-              <SortableContext
-                items={flatItemIds}
-                strategy={verticalListSortingStrategy}
-              >
+            <SortableContext
+              items={flatItemIds}
+              strategy={verticalListSortingStrategy}
+            >
               <LedgerBalanceBar />
               <CursorLine />
 
@@ -347,7 +273,6 @@ export default function LedgerPage() {
                       onReorderItems={handleReorderItems}
                       currentUserId={user?.id || ""}
                       periodStats={periodStatsMap.get(key)}
-                      registerDragRow={datePreview.registerRow}
                     />
                   ))}
                 </AnimatePresence>
@@ -363,18 +288,7 @@ export default function LedgerPage() {
                   hasItems={items.length > 0}
                 />
               </div>
-
-              {datePreview.ghostRows && (
-                <GhostRows
-                  dates={datePreview.ghostRows.dates}
-                  gapY={datePreview.ghostRows.gapY}
-                  expandedHeight={datePreview.ghostRows.expandedHeight}
-                  pointerY={datePreview.ghostRows.pointerY}
-                  highlightedDate={datePreview.ghostRows.highlightedDate}
-                />
-              )}
             </SortableContext>
-            </DndActiveContext.Provider>
           </DndContext>
         ) : (
           <>

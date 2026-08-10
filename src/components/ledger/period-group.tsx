@@ -27,7 +27,6 @@ interface PeriodGroupProps {
     runningDebt: number;
     displayLabel: string;
   };
-  registerDragRow?: (id: string, date: string, el: HTMLElement | null, periodKey: string) => void;
 }
 
 export function PeriodGroup({
@@ -37,7 +36,6 @@ export function PeriodGroup({
   onDeleteItem,
   currentUserId,
   periodStats,
-  registerDragRow,
 }: PeriodGroupProps) {
   const sortField = useUIStore((s) => s.sortField);
   const sortDirection = useUIStore((s) => s.sortDirection);
@@ -138,7 +136,6 @@ export function PeriodGroup({
         observeElement={isActiveDateSort ? observeElement : () => {}}
         unobserveElement={isActiveDateSort ? unobserveElement : () => {}}
         periodKey={label}
-        registerDragRow={registerDragRow}
       />
     </motion.section>
   );
