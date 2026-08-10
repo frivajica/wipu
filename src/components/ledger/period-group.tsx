@@ -27,7 +27,7 @@ interface PeriodGroupProps {
     runningDebt: number;
     displayLabel: string;
   };
-  registerDragRow?: (id: string, date: string, el: HTMLElement | null) => void;
+  registerDragRow?: (id: string, date: string, el: HTMLElement | null, periodKey: string) => void;
 }
 
 export function PeriodGroup({

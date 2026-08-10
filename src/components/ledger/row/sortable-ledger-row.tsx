@@ -35,7 +35,7 @@ interface SortableLedgerRowProps {
   unobserveElement: (el: HTMLElement) => void;
   periodKey: string;
   date: string;
-  registerDragRow?: (id: string, date: string, el: HTMLElement | null) => void;
+  registerDragRow?: (id: string, date: string, el: HTMLElement | null, periodKey: string) => void;
 }
 
 export function SortableLedgerRow({
@@ -77,10 +77,10 @@ export function SortableLedgerRow({
     const el = rowRef.current;
     if (el && !isEditing) {
       observeElement(el, item.id, item.amount, item.type, periodKey, date);
-      registerDragRow?.(item.id, item.date, el);
+      registerDragRow?.(item.id, item.date, el, periodKey);
       return () => {
         unobserveElement(el);
-        registerDragRow?.(item.id, item.date, null);
+        registerDragRow?.(item.id, item.date, null, periodKey);
       };
     }
   }, [item.id, item.amount, item.type, periodKey, date, isEditing, observeElement, unobserveElement, registerDragRow]);

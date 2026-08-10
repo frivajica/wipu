@@ -32,8 +32,9 @@ import { LedgerEmptyState } from "@/components/ledger/ledger-empty-state";
 import { LedgerBalanceBar } from "@/components/ledger/ledger-balance-bar";
 import { ExportButton } from "@/components/ledger/export-button";
 import { CursorLine } from "@/components/ledger/cursor-line";
-import { GapInsertion } from "@/components/ledger/gap-insertion";
+import { GhostRows } from "@/components/ledger/ghost-rows";
 import { ScrollTrackingProvider, useScrollTrackingContext } from "@/contexts/scroll-tracking-context";
+import { DndActiveContext } from "@/contexts/dnd-active-context";
 import { DateTime } from "luxon";
 
 export default function LedgerPage() {
@@ -96,7 +97,7 @@ export default function LedgerPage() {
     []
   );
 
-  const datePreview = useDragDatePreview();
+  const datePreview = useDragDatePreview(periodType);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -105,12 +106,18 @@ export default function LedgerPage() {
     useSensor(KeyboardSensor)
   );
 
+  const [isDragActive, setIsDragActive] = React.useState(false);
+
+  const pointerYRef = React.useRef<number>(-1);
+
   React.useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
+      pointerYRef.current = e.clientY;
       datePreview.updatePointerY(e.clientY);
     };
     const handleTouchMove = (e: TouchEvent) => {
       if (e.touches.length > 0) {
+        pointerYRef.current = e.touches[0].clientY;
         datePreview.updatePointerY(e.touches[0].clientY);
       }
     };
@@ -164,17 +171,54 @@ export default function LedgerPage() {
   const handleDragEnd = React.useCallback((event: DragEndEvent) => {
     const { active } = event;
     const activeId = String(active.id);
+    const pointerY = pointerYRef.current;
 
     const activeIndex = flatItems.findIndex((i) => i.id === activeId);
     if (activeIndex === -1) return;
 
-    const targetIndex = datePreview.insertIndex;
-    if (targetIndex < 0) return;
+    const rowMap = datePreview.getRowMap();
+    const rows = flatItems
+      .filter((i) => i.id !== activeId)
+      .map((i) => {
+        const tracked = rowMap.get(i.id);
+        return {
+          id: i.id,
+          rect: tracked?.el ? tracked.el.getBoundingClientRect() : null,
+        };
+      })
+      .filter((r): r is { id: string; rect: DOMRect } => r.rect !== null)
+      .sort((a, b) => a.rect.top - b.rect.top);
+
+    let targetIndex: number;
+    if (rows.length === 0) {
+      targetIndex = 0;
+    } else {
+      targetIndex = flatItems.length;
+      for (let i = 0; i < rows.length - 1; i++) {
+        if (pointerY >= rows[i].rect!.bottom && pointerY <= rows[i + 1].rect!.top) {
+          targetIndex = flatItems.findIndex((item) => item.id === rows[i + 1].id);
+          break;
+        }
+      }
+      if (targetIndex === flatItems.length) {
+        for (let i = 0; i < rows.length; i++) {
+          if (pointerY >= rows[i].rect!.top && pointerY <= rows[i].rect!.bottom) {
+            const midY = (rows[i].rect!.top + rows[i].rect!.bottom) / 2;
+            const idx = flatItems.findIndex((item) => item.id === rows[i].id);
+            targetIndex = pointerY < midY ? idx : idx + 1;
+            break;
+          }
+        }
+        if (targetIndex === flatItems.length && pointerY < rows[0].rect!.top) {
+          targetIndex = 0;
+        }
+      }
+    }
 
     const newItems = arrayMove(flatItems, activeIndex, targetIndex);
-    const movedItem = newItems[targetIndex];
-    const before = newItems[targetIndex - 1];
-    const after = newItems[targetIndex + 1];
+    const movedIndex = targetIndex > activeIndex ? targetIndex - 1 : targetIndex;
+    const before = newItems[movedIndex - 1];
+    const after = newItems[movedIndex + 1];
 
     let newDate: string;
     if (before && after) {
@@ -192,9 +236,11 @@ export default function LedgerPage() {
         updatedBy: user?.id || "",
       },
     });
-  }, [flatItems, datePreview.insertIndex, updateItem, user?.id]);
+    setIsDragActive(false);
+  }, [flatItems, datePreview, updateItem, user?.id]);
 
   const handleDragStart = React.useCallback((event: { active: { id: string | number } }) => {
+    setIsDragActive(true);
     datePreview.setActive(String(event.active.id));
   }, [datePreview]);
 
@@ -209,6 +255,10 @@ export default function LedgerPage() {
     },
     [reorderItems, activeSpaceId, user?.id]
   );
+
+  const handleDragCancel = React.useCallback(() => {
+    setIsDragActive(false);
+  }, []);
 
   const isDragEnabled = sortField === null || sortField === "date";
 
@@ -274,11 +324,13 @@ export default function LedgerPage() {
             collisionDetection={closestCenter}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
+            onDragCancel={handleDragCancel}
           >
-            <SortableContext
-              items={flatItemIds}
-              strategy={verticalListSortingStrategy}
-            >
+            <DndActiveContext.Provider value={isDragActive}>
+              <SortableContext
+                items={flatItemIds}
+                strategy={verticalListSortingStrategy}
+              >
               <LedgerBalanceBar />
               <CursorLine />
 
@@ -312,10 +364,17 @@ export default function LedgerPage() {
                 />
               </div>
 
-              {datePreview.isPreviewActive && (
-                <GapInsertion y={datePreview.gapY} date={datePreview.previewDate} isActive={datePreview.isPreviewActive} />
+              {datePreview.ghostRows && (
+                <GhostRows
+                  dates={datePreview.ghostRows.dates}
+                  gapY={datePreview.ghostRows.gapY}
+                  gapHeight={datePreview.ghostRows.gapHeight}
+                  pointerY={datePreview.ghostRows.pointerY}
+                  highlightedDate={datePreview.ghostRows.highlightedDate}
+                />
               )}
             </SortableContext>
+            </DndActiveContext.Provider>
           </DndContext>
         ) : (
           <>

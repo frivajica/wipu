@@ -7,6 +7,7 @@ import { useUIStore } from "@/stores/ui-store";
 import { formatCurrency } from "@/lib/formatting";
 import { BalanceBar } from "@/components/layout/balance-bar";
 import { useScrollTrackingContext } from "@/contexts/scroll-tracking-context";
+import { useDndActive } from "@/contexts/dnd-active-context";
 import { useAuth } from "@/hooks/use-auth";
 import { useSpaces } from "@/hooks/use-spaces";
 import { Plus } from "lucide-react";
@@ -23,12 +24,25 @@ export function LedgerBalanceBar() {
   const sortDirection = useUIStore((s) => s.sortDirection);
   const { scrollTotal, isSupported, activeItemId } =
     useScrollTrackingContext();
+  const isDragActive = useDndActive();
 
   const [isAdding, setIsAdding] = React.useState(false);
+  const [frozenTotal, setFrozenTotal] = React.useState<number | null>(null);
 
   const globalTotal = balances.totalBalance;
   const isActiveDateSort = sortField === "date" && sortDirection === "desc";
   const displayTotal = isSupported && isActiveDateSort ? scrollTotal : globalTotal;
+
+  React.useEffect(() => {
+    if (isDragActive && frozenTotal === null) {
+      setFrozenTotal(displayTotal);
+    }
+    if (!isDragActive && frozenTotal !== null) {
+      setFrozenTotal(null);
+    }
+  }, [isDragActive, displayTotal, frozenTotal]);
+
+  const effectiveTotal = frozenTotal ?? displayTotal;
 
   const barRef = React.useRef<HTMLDivElement>(null);
   const [isSticky, setIsSticky] = React.useState(false);
@@ -147,7 +161,7 @@ export function LedgerBalanceBar() {
           )}
           <div
             className={`rounded-lg px-2.5 py-1 text-center whitespace-nowrap ${
-              isActiveDateSort && displayTotal !== globalTotal
+              isActiveDateSort && effectiveTotal !== globalTotal
                 ? "bg-primary-accent/10"
                 : "bg-surface-strong"
             }`}
@@ -155,7 +169,7 @@ export function LedgerBalanceBar() {
             <p className="text-[9px] font-medium text-text-secondary uppercase tracking-wide">
               At This Point
             </p>
-            <p className="text-sm font-bold text-text">{formatCurrency(displayTotal)}</p>
+            <p className="text-sm font-bold text-text">{formatCurrency(effectiveTotal)}</p>
           </div>
         </motion.div>
       </motion.div>

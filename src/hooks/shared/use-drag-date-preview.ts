@@ -1,28 +1,97 @@
 "use client";
 
 import * as React from "react";
+import { DateTime } from "luxon";
 import { interpolateDate } from "@/lib/date-utils";
+import { PeriodType } from "@/lib/types";
 
 interface TrackedRow {
   id: string;
   date: string;
   el: HTMLElement | null;
+  periodKey: string;
 }
 
-export function useDragDatePreview() {
+interface GhostRowsData {
+  dates: string[];
+  gapY: number;
+  gapHeight: number;
+  pointerY: number;
+  highlightedDate: string | null;
+  isEdgeCase: "top" | "bottom" | false;
+}
+
+function getPeriodBoundaries(date: string, periodType: PeriodType): { start: string; end: string } {
+  const dt = DateTime.fromISO(date);
+  switch (periodType) {
+    case "monthly":
+      return { start: dt.startOf("month").toISODate() || date, end: dt.endOf("month").toISODate() || date };
+    case "weekly":
+      return { start: dt.startOf("week").toISODate() || date, end: dt.endOf("week").toISODate() || date };
+    case "bi-weekly": {
+      const weekNumber = dt.weekNumber;
+      const biWeekStart = dt.startOf("week").minus({ weeks: (weekNumber - 1) % 2 });
+      const biWeekEnd = biWeekStart.plus({ weeks: 1 }).endOf("week");
+      return { start: biWeekStart.toISODate() || date, end: biWeekEnd.toISODate() || date };
+    }
+    case "custom":
+      return { start: date, end: date };
+    default:
+      return { start: dt.startOf("month").toISODate() || date, end: dt.endOf("month").toISODate() || date };
+  }
+}
+
+function generateGhostDates(
+  topDate: string,
+  bottomDate: string,
+  isEdgeCase: "top" | "bottom" | false,
+  periodType: PeriodType,
+  maxCount: number = 60
+): string[] {
+  const dates: string[] = [];
+
+  if (isEdgeCase === "top") {
+    const { end } = getPeriodBoundaries(bottomDate, periodType);
+    let current = DateTime.fromISO(topDate);
+    const endDate = DateTime.fromISO(end);
+    while (current <= endDate && dates.length < maxCount) {
+      dates.push(current.toISODate() || topDate);
+      current = current.plus({ days: 1 });
+    }
+  } else if (isEdgeCase === "bottom") {
+    const { start } = getPeriodBoundaries(topDate, periodType);
+    let current = DateTime.fromISO(start);
+    const endDate = DateTime.fromISO(bottomDate);
+    while (current <= endDate && dates.length < maxCount) {
+      dates.push(current.toISODate() || bottomDate);
+      current = current.plus({ days: 1 });
+    }
+  } else {
+    let current = DateTime.fromISO(topDate);
+    const endDate = DateTime.fromISO(bottomDate);
+    while (current <= endDate && dates.length < maxCount) {
+      dates.push(current.toISODate() || topDate);
+      current = current.plus({ days: 1 });
+    }
+  }
+
+  return dates;
+}
+
+export function useDragDatePreview(periodType: PeriodType) {
   const pointerYRef = React.useRef<number>(-1);
   const rowMapRef = React.useRef(new Map<string, TrackedRow>());
+  const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [previewDate, setPreviewDate] = React.useState<string | null>(null);
-  const [gapY, setGapY] = React.useState<number | null>(null);
-  const [insertIndex, setInsertIndex] = React.useState<number>(-1);
+  const [ghostRows, setGhostRows] = React.useState<GhostRowsData | null>(null);
   const [activeId, setActiveId] = React.useState<string | null>(null);
 
   const isPreviewActive = !!activeId;
 
-  const registerRow = React.useCallback((id: string, date: string, el: HTMLElement | null) => {
+  const registerRow = React.useCallback((id: string, date: string, el: HTMLElement | null, periodKey: string) => {
     if (el) {
-      rowMapRef.current.set(id, { id, date, el });
+      rowMapRef.current.set(id, { id, date, el, periodKey });
     } else {
       rowMapRef.current.delete(id);
     }
@@ -31,6 +100,8 @@ export function useDragDatePreview() {
   const setActive = React.useCallback((id: string | null) => {
     setActiveId(id);
   }, []);
+
+  const getRowMap = React.useCallback(() => rowMapRef.current, []);
 
   const updatePointerY = React.useCallback((y: number) => {
     pointerYRef.current = y;
@@ -46,27 +117,26 @@ export function useDragDatePreview() {
       .map((r) => ({
         id: r.id,
         date: r.date,
+        periodKey: r.periodKey,
         rect: r.el!.getBoundingClientRect(),
       }))
       .sort((a, b) => a.rect.top - b.rect.top);
 
     if (rows.length === 0) {
       setPreviewDate(null);
-      setGapY(null);
-      setInsertIndex(0);
+      setGhostRows(null);
       return;
     }
 
     if (rows.length === 1) {
       setPreviewDate(rows[0].date);
-      setGapY(rows[0].rect.top);
-      setInsertIndex(y < rows[0].rect.top ? 0 : 1);
+      setGhostRows(null);
       return;
     }
 
     let topRow: (typeof rows)[0] | null = null;
     let bottomRow: (typeof rows)[0] | null = null;
-    let topIndex = -1;
+    let isEdgeCase: "top" | "bottom" | false = false;
 
     for (let i = 0; i < rows.length - 1; i++) {
       const current = rows[i];
@@ -75,32 +145,27 @@ export function useDragDatePreview() {
       if (y >= current.rect.bottom && y <= next.rect.top) {
         topRow = current;
         bottomRow = next;
-        topIndex = i;
         break;
       }
     }
 
     if (!topRow || !bottomRow) {
-      for (let i = 0; i < rows.length; i++) {
-        const row = rows[i];
-        if (y >= row.rect.top && y <= row.rect.bottom) {
-          topRow = row;
-          bottomRow = row;
-          topIndex = i;
-          break;
-        }
-      }
-    }
-
-    if (!topRow) {
       if (y < rows[0].rect.top) {
         topRow = rows[0];
         bottomRow = rows[1] ?? rows[0];
-        topIndex = -1;
-      } else {
+        isEdgeCase = "top";
+      } else if (y > rows[rows.length - 1].rect.bottom) {
         topRow = rows[rows.length - 2] ?? rows[rows.length - 1];
         bottomRow = rows[rows.length - 1];
-        topIndex = rows.length - 2;
+        isEdgeCase = "bottom";
+      } else {
+        for (const row of rows) {
+          if (y >= row.rect.top && y <= row.rect.bottom) {
+            topRow = row;
+            bottomRow = row;
+            break;
+          }
+        }
       }
     }
 
@@ -121,20 +186,48 @@ export function useDragDatePreview() {
 
     const date = interpolateDate(topRow.date, bottomRow.date, ratio);
 
-    const computedIndex = topIndex >= 0 ? topIndex + 1 : 0;
-
     setPreviewDate(date);
-    setGapY(gapTop);
-    setInsertIndex(computedIndex);
-  }, [activeId]);
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    if (isEdgeCase || gapHeight > 2) {
+      debounceRef.current = setTimeout(() => {
+        const dates = generateGhostDates(topRow!.date, bottomRow!.date, isEdgeCase, periodType);
+        const dateWidth = gapHeight / Math.max(dates.length, 1);
+
+        const ghostIndex = Math.min(
+          Math.floor((y - gapTop) / dateWidth),
+          dates.length - 1
+        );
+        const highlightedDate = dates[Math.max(0, ghostIndex)];
+
+        setGhostRows({
+          dates,
+          gapY: gapTop,
+          gapHeight,
+          pointerY: y,
+          highlightedDate,
+          isEdgeCase,
+        });
+      }, 200);
+    } else {
+      setGhostRows(null);
+    }
+  }, [activeId, periodType]);
+
+  React.useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   return {
     previewDate,
-    gapY,
-    insertIndex,
+    ghostRows,
     isPreviewActive,
     registerRow,
     setActive,
     updatePointerY,
+    getRowMap,
   };
 }
