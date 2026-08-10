@@ -25,6 +25,7 @@ interface AddItemRowProps {
 }
 
 export function AddItemRow({ onSubmit, onCancel, defaultDate }: AddItemRowProps) {
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [amount, setAmount] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [category, setCategory] = React.useState("");
@@ -41,6 +42,7 @@ export function AddItemRow({ onSubmit, onCancel, defaultDate }: AddItemRowProps)
   const { syncCategory } = useDebtCategorySync();
 
   React.useEffect(() => {
+    setIsSubmitting(false);
     amountRef.current?.focus();
   }, []);
 
@@ -75,9 +77,12 @@ export function AddItemRow({ onSubmit, onCancel, defaultDate }: AddItemRowProps)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || !description.trim()) return;
 
+    setIsSubmitting(true);
     const submittedCategory = category.trim() || "Uncategorized";
 
     if (
