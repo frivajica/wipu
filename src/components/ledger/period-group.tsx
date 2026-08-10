@@ -10,7 +10,7 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
-  DragOverEvent,
+  DragMoveEvent,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -113,7 +113,7 @@ export function PeriodGroup({
     pause();
   };
 
-  const handleDragOver = React.useCallback((event: DragOverEvent) => {
+  const handleDragMove = React.useCallback((event: DragMoveEvent) => {
     if (event.activatorEvent && "clientY" in event.activatorEvent) {
       updatePointerY((event.activatorEvent as MouseEvent).clientY);
     }
@@ -187,7 +187,7 @@ export function PeriodGroup({
       sensors={sensors}
       collisionDetection={closestCenter}
       onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
+      onDragMove={handleDragMove}
       onDragEnd={handleDragEnd}
     >
       <SortableContext
