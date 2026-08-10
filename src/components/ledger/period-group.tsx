@@ -20,14 +20,13 @@ import {
 import { DateTime } from "luxon";
 import { LedgerItem } from "@/lib/types";
 import { PeriodHeader } from "./period-header";
-import { AddItemRow } from "./add-item-row";
 import { LedgerItemList } from "./period/ledger-item-list";
 import { useScrollTrackingContext } from "@/contexts/scroll-tracking-context";
+import { getMidpointDate } from "@/lib/date-utils";
 
-import { Plus, ArrowUp, ArrowDown } from "lucide-react";
+import { ArrowUp, ArrowDown } from "lucide-react";
 import { useUIStore } from "@/stores/ui-store";
 import { cn } from "@/lib/utils";
-import { AnimatePresence } from "framer-motion";
 import { SPRING_DEFAULT } from "@/lib/animations";
 
 interface PeriodGroupProps {
@@ -45,13 +44,6 @@ interface PeriodGroupProps {
     runningDebt: number;
     displayLabel: string;
   };
-}
-
-function getMidpointDate(dateA: string, dateB: string): string {
-  const start = DateTime.fromISO(dateA).toMillis();
-  const end = DateTime.fromISO(dateB).toMillis();
-  const midpoint = DateTime.fromMillis(start + (end - start) / 2);
-  return midpoint.toISODate() || dateA;
 }
 
 export function PeriodGroup({
@@ -87,7 +79,6 @@ export function PeriodGroup({
     );
   };
 
-  const [isAdding, setIsAdding] = React.useState(false);
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [optimisticItems, addOptimisticItems] = React.useOptimistic(
     items,
@@ -141,26 +132,6 @@ export function PeriodGroup({
         );
       });
     }
-  };
-
-  const handleAdd = (data: {
-    amount: number;
-    description: string;
-    category: string;
-    date: string;
-    type?: "default" | "debt";
-    groupId?: string | null;
-  }) => {
-    onAddItem({
-      ...data,
-      spaceId: items[0]?.spaceId || "",
-      createdBy: currentUserId,
-      updatedBy: currentUserId,
-      sortOrder: items.length,
-      type: data.type || "default",
-      groupId: data.groupId || null,
-    });
-    setIsAdding(false);
   };
 
   const handleEditSave = (data: {
@@ -256,39 +227,6 @@ export function PeriodGroup({
       </div>
 
       {content}
-
-      <AnimatePresence>
-        {isAdding ? (
-          <motion.div
-            initial={{ opacity: 0, height: 0, marginTop: 0 }}
-            animate={{ opacity: 1, height: "auto", marginTop: 8 }}
-            exit={{ opacity: 0, height: 0, marginTop: 0 }}
-            transition={SPRING_DEFAULT}
-          >
-            <AddItemRow
-              onSubmit={handleAdd}
-              onCancel={() => setIsAdding(false)}
-              defaultDate={items[items.length - 1]?.date}
-            />
-          </motion.div>
-        ) : (
-          <motion.button
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setIsAdding(true)}
-            className={cn(
-              "w-full mt-2 py-2.5 px-3 flex items-center justify-center gap-2 text-sm font-medium cursor-pointer",
-              "rounded-xl bg-surface border border-border/40 border-dashed",
-              "text-text-tertiary hover:text-primary-accent hover:border-primary-accent/30 hover:bg-primary-accent/2",
-              "transition-all duration-200 ease-out"
-            )}
-          >
-            <Plus className="h-4 w-4" />
-            Add to {label}
-          </motion.button>
-        )}
-      </AnimatePresence>
     </motion.section>
   );
 }
