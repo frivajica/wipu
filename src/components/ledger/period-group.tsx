@@ -10,6 +10,7 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
+  DragOverEvent,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -17,12 +18,14 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { DateTime } from "luxon";
 import { LedgerItem } from "@/lib/types";
 import { PeriodHeader } from "./period-header";
 import { LedgerItemList } from "./period/ledger-item-list";
 import { useScrollTrackingContext } from "@/contexts/scroll-tracking-context";
 import { getMidpointDate } from "@/lib/date-utils";
+import { useDragDatePreview } from "@/hooks/shared/use-drag-date-preview";
+import { DatePreviewPill } from "./date-preview-pill";
+import { InsertionLine } from "./insertion-line";
 
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { useUIStore } from "@/stores/ui-store";
@@ -64,7 +67,6 @@ export function PeriodGroup({
     if (sortField === field) {
       setSort(field, sortDirection === "asc" ? "desc" : "asc");
     } else {
-      // Default to descending for date/amount, ascending for text
       const isText = field === "description" || field === "category" || field === "profile";
       setSort(field, isText ? "asc" : "desc");
     }
@@ -88,6 +90,14 @@ export function PeriodGroup({
   const { pause, resume, observeElement, unobserveElement, currentPeriodKey } =
     useScrollTrackingContext();
 
+  const {
+    previewDate,
+    insertionY,
+    isPreviewActive,
+    registerRow,
+    updatePointerY,
+  } = useDragDatePreview(items);
+
   const isActiveDateSort = sortField === "date" && sortDirection === "desc";
 
   const sensors = useSensors(
@@ -103,6 +113,12 @@ export function PeriodGroup({
     pause();
   };
 
+  const handleDragOver = React.useCallback((event: DragOverEvent) => {
+    if (event.activatorEvent && "clientY" in event.activatorEvent) {
+      updatePointerY((event.activatorEvent as MouseEvent).clientY);
+    }
+  }, [updatePointerY]);
+
   const handleDragEnd = (event: DragEndEvent) => {
     resume();
     const { active, over } = event;
@@ -112,17 +128,12 @@ export function PeriodGroup({
       const newItems = arrayMove(optimisticItems, oldIndex, newIndex);
 
       const movedItem = newItems[newIndex];
-      const before = newItems[newIndex - 1];
-      const after = newItems[newIndex + 1];
-
-      let newDate: string;
-      if (before && after) {
-        newDate = getMidpointDate(before.date, after.date);
-      } else {
-        newDate = (before || after).date;
-      }
-      movedItem.date = newDate;
-      const dateUpdates = { [movedItem.id]: newDate };
+      const finalDate = previewDate || getMidpointDate(
+        newItems[newIndex - 1]?.date ?? movedItem.date,
+        newItems[newIndex + 1]?.date ?? movedItem.date
+      );
+      movedItem.date = finalDate;
+      const dateUpdates = { [movedItem.id]: finalDate };
 
       React.startTransition(() => {
         addOptimisticItems(newItems);
@@ -167,6 +178,7 @@ export function PeriodGroup({
       observeElement={isActiveDateSort ? observeElement : () => {}}
       unobserveElement={isActiveDateSort ? unobserveElement : () => {}}
       periodKey={label}
+      registerDragRow={isDragEnabled ? registerRow : undefined}
     />
   );
 
@@ -175,6 +187,7 @@ export function PeriodGroup({
       sensors={sensors}
       collisionDetection={closestCenter}
       onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
       <SortableContext
@@ -204,9 +217,9 @@ export function PeriodGroup({
 
       <div className={cn(
         "hidden md:grid gap-3 px-3 pb-2 text-xs font-semibold text-text-tertiary uppercase tracking-wider transition-all duration-200 ease-out",
-        isDragEnabled 
-          ? "grid-cols-[28px_100px_1fr_1fr_90px_64px]" 
-          : "grid-cols-[0_100px_1fr_1fr_90px_64px]"
+        isDragEnabled
+          ? "grid-cols-[18px_100px_1fr_1fr_90px_64px_18px]"
+          : "grid-cols-[0_100px_1fr_1fr_90px_64px_0]"
       )}>
         <div className="overflow-hidden"></div>
         <div className="cursor-pointer hover:text-text-secondary flex items-center" onClick={() => handleSort("amount")}>
@@ -224,9 +237,17 @@ export function PeriodGroup({
         <div className="text-center cursor-pointer hover:text-text-secondary flex items-center justify-center" onClick={() => handleSort("profile")}>
           Profile {renderSortIcon("profile")}
         </div>
+        <div className="overflow-hidden"></div>
       </div>
 
       {content}
+
+      {isPreviewActive && (
+        <>
+          <DatePreviewPill date={previewDate} y={insertionY} />
+          <InsertionLine y={insertionY} />
+        </>
+      )}
     </motion.section>
   );
 }

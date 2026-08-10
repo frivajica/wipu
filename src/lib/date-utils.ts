@@ -6,3 +6,10 @@ export function getMidpointDate(dateA: string, dateB: string): string {
   const midpoint = DateTime.fromMillis(start + (end - start) / 2);
   return midpoint.toISODate() || dateA;
 }
+
+export function interpolateDate(dateA: string, dateB: string, ratio: number): string {
+  const start = DateTime.fromISO(dateA).toMillis();
+  const end = DateTime.fromISO(dateB).toMillis();
+  const interpolated = DateTime.fromMillis(start + (end - start) * ratio);
+  return interpolated.toISODate() || dateA;
+}

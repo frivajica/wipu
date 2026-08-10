@@ -30,6 +30,7 @@ interface LedgerItemListProps {
   ) => void;
   unobserveElement: (el: HTMLElement) => void;
   periodKey: string;
+  registerDragRow?: (id: string, date: string, el: HTMLElement | null) => void;
 }
 
 export function LedgerItemList({
@@ -45,6 +46,7 @@ export function LedgerItemList({
   observeElement,
   unobserveElement,
   periodKey,
+  registerDragRow,
 }: LedgerItemListProps) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -83,6 +85,7 @@ export function LedgerItemList({
               unobserveElement={unobserveElement}
               periodKey={periodKey}
               date={item.date}
+              registerDragRow={registerDragRow}
             />
           );
         })}

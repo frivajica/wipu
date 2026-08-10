@@ -45,8 +45,8 @@ export function LedgerRow({
   };
 
   const gridCols = isDragEnabled
-    ? "grid-cols-[28px_1fr] md:grid-cols-[28px_100px_1fr_1fr_90px_64px]"
-    : "grid-cols-[0_1fr] md:grid-cols-[0_100px_1fr_1fr_90px_64px]";
+    ? "grid-cols-[18px_1fr_18px] md:grid-cols-[18px_100px_1fr_1fr_90px_64px_18px]"
+    : "grid-cols-[0_1fr_0] md:grid-cols-[0_100px_1fr_1fr_90px_64px_0]";
 
   const classes = cn(
     "group grid items-center transition-all duration-200 ease-out",
@@ -62,25 +62,25 @@ export function LedgerRow({
     isEditing && "bg-primary-accent/4 border-primary-accent/20 shadow-glow-focus"
   );
 
+  const handleContent = isDragEnabled ? (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.5 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.5 }}
+      transition={SPRING_SNAP}
+    >
+      <DragHandle
+        {...dragHandleProps}
+        isDragging={isDragging}
+      />
+    </motion.div>
+  ) : null;
+
   const grid = (
     <div className={classes}>
-      {/** Always present to maintain grid column count for auto-placement */}
       <div className="overflow-hidden">
         <AnimatePresence>
-          {isDragEnabled && (
-            <motion.div
-              key="handle"
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.5 }}
-              transition={SPRING_SNAP}
-            >
-              <DragHandle
-                {...dragHandleProps}
-                isDragging={isDragging}
-              />
-            </motion.div>
-          )}
+          {handleContent}
         </AnimatePresence>
       </div>
       <LedgerRowContent
@@ -88,6 +88,11 @@ export function LedgerRow({
         userName={userName}
         onClick={handleClick}
       />
+      <div className="overflow-hidden">
+        <AnimatePresence>
+          {handleContent}
+        </AnimatePresence>
+      </div>
     </div>
   );
 
