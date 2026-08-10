@@ -12,7 +12,7 @@ import {
   DragEndEvent,
 } from "@dnd-kit/core";
 import {
-  sortableKeyboardCoordinates,
+  arrayMove,
 } from "@dnd-kit/sortable";
 import { useAuth } from "@/hooks/use-auth";
 import { useLedger } from "@/hooks/use-ledger";
@@ -31,7 +31,7 @@ import { LedgerBalanceBar } from "@/components/ledger/ledger-balance-bar";
 import { ExportButton } from "@/components/ledger/export-button";
 import { CursorLine } from "@/components/ledger/cursor-line";
 import { GapInsertion } from "@/components/ledger/gap-insertion";
-import { ScrollTrackingProvider } from "@/contexts/scroll-tracking-context";
+import { ScrollTrackingProvider, useScrollTrackingContext } from "@/contexts/scroll-tracking-context";
 import { DateTime } from "luxon";
 
 export default function LedgerPage() {
@@ -98,9 +98,7 @@ export default function LedgerPage() {
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 },
     }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
+    useSensor(KeyboardSensor)
   );
 
   React.useEffect(() => {
@@ -160,11 +158,52 @@ export default function LedgerPage() {
   );
 
   const handleDragEnd = React.useCallback((event: DragEndEvent) => {
-    const { active } = event;
+    const { active, over } = event;
     const activeId = String(active.id);
+    const overId = over ? String(over.id) : null;
 
-    const finalDate = datePreview.previewDate;
-    if (!finalDate) return;
+    const draggedItem = items.find((i) => i.id === activeId);
+    if (!draggedItem) return;
+
+    const finalDate = datePreview.previewDate || draggedItem.date;
+
+    if (overId && draggedItem) {
+      const overItem = items.find((i) => i.id === overId);
+      if (overItem && overItem.date === draggedItem.date) {
+        const periodKey = visibleKeys.find((key) => {
+          const group = groupedItems.get(key);
+          return group?.some((i) => i.id === activeId);
+        });
+        if (periodKey) {
+          const periodItems = groupedItems.get(periodKey) || [];
+          const oldIndex = periodItems.findIndex((i) => i.id === activeId);
+          const newIndex = periodItems.findIndex((i) => i.id === overId);
+          if (oldIndex !== -1 && newIndex !== -1) {
+            const newItems = arrayMove(periodItems, oldIndex, newIndex);
+            const movedItem = newItems[newIndex];
+            const before = newItems[newIndex - 1];
+            const after = newItems[newIndex + 1];
+            let newDate: string;
+            if (before && after) {
+              const start = new Date(before.date).getTime();
+              const end = new Date(after.date).getTime();
+              newDate = new Date(start + (end - start) / 2).toISOString().split("T")[0];
+            } else {
+              newDate = (before || after).date;
+            }
+            movedItem.date = newDate;
+            const dateUpdates = { [movedItem.id]: newDate };
+            reorderItems({
+              spaceId: activeSpaceId || "",
+              itemIds: newItems.map((i) => i.id),
+              dateUpdates,
+              updatedBy: user?.id,
+            });
+            return;
+          }
+        }
+      }
+    }
 
     updateItem({
       id: activeId,
@@ -173,7 +212,7 @@ export default function LedgerPage() {
         updatedBy: user?.id || "",
       },
     });
-  }, [datePreview.previewDate, updateItem, user?.id]);
+  }, [items, datePreview.previewDate, visibleKeys, groupedItems, updateItem, reorderItems, activeSpaceId, user?.id]);
 
   const handleDragStart = React.useCallback((event: { active: { id: string | number } }) => {
     datePreview.setActive(String(event.active.id));
