@@ -14,7 +14,7 @@ export function useDragDatePreview() {
   const rowMapRef = React.useRef(new Map<string, TrackedRow>());
 
   const [previewDate, setPreviewDate] = React.useState<string | null>(null);
-  const [insertionY, setInsertionY] = React.useState<number | null>(null);
+  const [gapY, setGapY] = React.useState<number | null>(null);
   const [activeId, setActiveId] = React.useState<string | null>(null);
 
   const isPreviewActive = !!activeId;
@@ -51,13 +51,13 @@ export function useDragDatePreview() {
 
     if (rows.length === 0) {
       setPreviewDate(null);
-      setInsertionY(null);
+      setGapY(null);
       return;
     }
 
     if (rows.length === 1) {
       setPreviewDate(rows[0].date);
-      setInsertionY(rows[0].rect.top);
+      setGapY(rows[0].rect.top);
       return;
     }
 
@@ -111,15 +111,14 @@ export function useDragDatePreview() {
     ratio = Math.max(0, Math.min(1, ratio));
 
     const date = interpolateDate(topRow.date, bottomRow.date, ratio);
-    const insertionPosition = gapTop + gapHeight * ratio;
 
     setPreviewDate(date);
-    setInsertionY(insertionPosition);
+    setGapY(gapTop);
   }, [activeId]);
 
   return {
     previewDate,
-    insertionY,
+    gapY,
     isPreviewActive,
     registerRow,
     setActive,

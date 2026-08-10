@@ -10,7 +10,6 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
-  DragMoveEvent,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -34,8 +33,7 @@ import { LedgerEmptyState } from "@/components/ledger/ledger-empty-state";
 import { LedgerBalanceBar } from "@/components/ledger/ledger-balance-bar";
 import { ExportButton } from "@/components/ledger/export-button";
 import { CursorLine } from "@/components/ledger/cursor-line";
-import { DatePreviewPill } from "@/components/ledger/date-preview-pill";
-import { InsertionLine } from "@/components/ledger/insertion-line";
+import { GapInsertion } from "@/components/ledger/gap-insertion";
 import { ScrollTrackingProvider } from "@/contexts/scroll-tracking-context";
 import { DateTime } from "luxon";
 
@@ -296,8 +294,7 @@ export default function LedgerPage() {
 
               {datePreview.isPreviewActive && (
                 <>
-                  <DatePreviewPill date={datePreview.previewDate} y={datePreview.insertionY} />
-                  <InsertionLine y={datePreview.insertionY} />
+                  <GapInsertion y={datePreview.gapY} date={datePreview.previewDate} isActive={datePreview.isPreviewActive} />
                 </>
               )}
             </SortableContext>
