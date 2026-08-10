@@ -2,30 +2,10 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-  DragMoveEvent,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
 import { LedgerItem } from "@/lib/types";
 import { PeriodHeader } from "./period-header";
 import { LedgerItemList } from "./period/ledger-item-list";
 import { useScrollTrackingContext } from "@/contexts/scroll-tracking-context";
-import { getMidpointDate } from "@/lib/date-utils";
-import { useDragDatePreview } from "@/hooks/shared/use-drag-date-preview";
-import { DatePreviewPill } from "./date-preview-pill";
-import { InsertionLine } from "./insertion-line";
 
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { useUIStore } from "@/stores/ui-store";
@@ -47,17 +27,17 @@ interface PeriodGroupProps {
     runningDebt: number;
     displayLabel: string;
   };
+  registerDragRow?: (id: string, date: string, el: HTMLElement | null) => void;
 }
 
 export function PeriodGroup({
   label,
   items,
-  onAddItem,
   onEditItem,
   onDeleteItem,
-  onReorderItems,
   currentUserId,
   periodStats,
+  registerDragRow,
 }: PeriodGroupProps) {
   const sortField = useUIStore((s) => s.sortField);
   const sortDirection = useUIStore((s) => s.sortDirection);
@@ -82,68 +62,12 @@ export function PeriodGroup({
   };
 
   const [editingId, setEditingId] = React.useState<string | null>(null);
-  const [optimisticItems, addOptimisticItems] = React.useOptimistic(
-    items,
-    (_state, newItems: LedgerItem[]) => newItems
-  );
 
-  const { pause, resume, observeElement, unobserveElement, currentPeriodKey } =
+  const { observeElement, unobserveElement, currentPeriodKey } =
     useScrollTrackingContext();
 
-  const {
-    previewDate,
-    insertionY,
-    isPreviewActive,
-    registerRow,
-    updatePointerY,
-  } = useDragDatePreview(items);
-
   const isActiveDateSort = sortField === "date" && sortDirection === "desc";
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 8 },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  const handleDragStart = () => {
-    pause();
-  };
-
-  const handleDragMove = React.useCallback((event: DragMoveEvent) => {
-    if (event.activatorEvent && "clientY" in event.activatorEvent) {
-      updatePointerY((event.activatorEvent as MouseEvent).clientY);
-    }
-  }, [updatePointerY]);
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    resume();
-    const { active, over } = event;
-    if (over && active.id !== over.id) {
-      const oldIndex = optimisticItems.findIndex((item) => item.id === active.id);
-      const newIndex = optimisticItems.findIndex((item) => item.id === over.id);
-      const newItems = arrayMove(optimisticItems, oldIndex, newIndex);
-
-      const movedItem = newItems[newIndex];
-      const finalDate = previewDate || getMidpointDate(
-        newItems[newIndex - 1]?.date ?? movedItem.date,
-        newItems[newIndex + 1]?.date ?? movedItem.date
-      );
-      movedItem.date = finalDate;
-      const dateUpdates = { [movedItem.id]: finalDate };
-
-      React.startTransition(() => {
-        addOptimisticItems(newItems);
-        onReorderItems(
-          newItems.map((item) => item.id),
-          dateUpdates
-        );
-      });
-    }
-  };
+  const isDragEnabled = sortField === null || sortField === "date";
 
   const handleEditSave = (data: {
     amount: number;
@@ -159,45 +83,6 @@ export function PeriodGroup({
       setEditingId(null);
     }
   };
-
-  const displayItems = optimisticItems;
-
-  const isDragEnabled = sortField === null || sortField === "date";
-
-  const list = (
-    <LedgerItemList
-      items={displayItems}
-      editingId={editingId}
-      onEdit={onEditItem}
-      onDelete={onDeleteItem}
-      onStartEdit={setEditingId}
-      onSaveEdit={handleEditSave}
-      onCancelEdit={() => setEditingId(null)}
-      currentUserId={currentUserId}
-      isDragEnabled={isDragEnabled}
-      observeElement={isActiveDateSort ? observeElement : () => {}}
-      unobserveElement={isActiveDateSort ? unobserveElement : () => {}}
-      periodKey={label}
-      registerDragRow={isDragEnabled ? registerRow : undefined}
-    />
-  );
-
-  const content = isDragEnabled ? (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragStart={handleDragStart}
-      onDragMove={handleDragMove}
-      onDragEnd={handleDragEnd}
-    >
-      <SortableContext
-        items={displayItems.map((item) => item.id)}
-        strategy={verticalListSortingStrategy}
-      >
-        {list}
-      </SortableContext>
-    </DndContext>
-  ) : list;
 
   return (
     <motion.section
@@ -240,14 +125,21 @@ export function PeriodGroup({
         <div className="overflow-hidden"></div>
       </div>
 
-      {content}
-
-      {isPreviewActive && (
-        <>
-          <DatePreviewPill date={previewDate} y={insertionY} />
-          <InsertionLine y={insertionY} />
-        </>
-      )}
+      <LedgerItemList
+        items={items}
+        editingId={editingId}
+        onEdit={onEditItem}
+        onDelete={onDeleteItem}
+        onStartEdit={setEditingId}
+        onSaveEdit={handleEditSave}
+        onCancelEdit={() => setEditingId(null)}
+        currentUserId={currentUserId}
+        isDragEnabled={isDragEnabled}
+        observeElement={isActiveDateSort ? observeElement : () => {}}
+        unobserveElement={isActiveDateSort ? unobserveElement : () => {}}
+        periodKey={label}
+        registerDragRow={registerDragRow}
+      />
     </motion.section>
   );
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useDndContext } from "@dnd-kit/core";
 import { interpolateDate } from "@/lib/date-utils";
 
 interface TrackedRow {
@@ -10,15 +9,15 @@ interface TrackedRow {
   el: HTMLElement | null;
 }
 
-export function useDragDatePreview(items: Array<{ id: string; date: string }>) {
-  const { active } = useDndContext();
+export function useDragDatePreview() {
   const pointerYRef = React.useRef<number>(-1);
   const rowMapRef = React.useRef(new Map<string, TrackedRow>());
 
   const [previewDate, setPreviewDate] = React.useState<string | null>(null);
   const [insertionY, setInsertionY] = React.useState<number | null>(null);
+  const [activeId, setActiveId] = React.useState<string | null>(null);
 
-  const isPreviewActive = !!active;
+  const isPreviewActive = !!activeId;
 
   const registerRow = React.useCallback((id: string, date: string, el: HTMLElement | null) => {
     if (el) {
@@ -26,6 +25,10 @@ export function useDragDatePreview(items: Array<{ id: string; date: string }>) {
     } else {
       rowMapRef.current.delete(id);
     }
+  }, []);
+
+  const setActive = React.useCallback((id: string | null) => {
+    setActiveId(id);
   }, []);
 
   const updatePointerY = React.useCallback((y: number) => {
@@ -38,16 +41,23 @@ export function useDragDatePreview(items: Array<{ id: string; date: string }>) {
     if (y < 0) return;
 
     const rows = Array.from(rowMapRef.current.values())
-      .filter((r) => r.el !== null)
+      .filter((r) => r.el !== null && r.id !== activeId)
       .map((r) => ({
-        ...r,
+        id: r.id,
+        date: r.date,
         rect: r.el!.getBoundingClientRect(),
       }))
       .sort((a, b) => a.rect.top - b.rect.top);
 
-    if (rows.length < 2) {
+    if (rows.length === 0) {
       setPreviewDate(null);
       setInsertionY(null);
+      return;
+    }
+
+    if (rows.length === 1) {
+      setPreviewDate(rows[0].date);
+      setInsertionY(rows[0].rect.top);
       return;
     }
 
@@ -58,7 +68,7 @@ export function useDragDatePreview(items: Array<{ id: string; date: string }>) {
       const current = rows[i];
       const next = rows[i + 1];
 
-      if (y >= current.rect.top && y <= next.rect.bottom) {
+      if (y >= current.rect.bottom && y <= next.rect.top) {
         topRow = current;
         bottomRow = next;
         break;
@@ -66,20 +76,22 @@ export function useDragDatePreview(items: Array<{ id: string; date: string }>) {
     }
 
     if (!topRow || !bottomRow) {
+      for (const row of rows) {
+        if (y >= row.rect.top && y <= row.rect.bottom) {
+          topRow = row;
+          bottomRow = row;
+          break;
+        }
+      }
+    }
+
+    if (!topRow) {
       if (y < rows[0].rect.top) {
         topRow = rows[0];
         bottomRow = rows[1] ?? rows[0];
-      } else if (y > rows[rows.length - 1].rect.bottom) {
+      } else {
         topRow = rows[rows.length - 2] ?? rows[rows.length - 1];
         bottomRow = rows[rows.length - 1];
-      } else {
-        for (const row of rows) {
-          if (y >= row.rect.top && y <= row.rect.bottom) {
-            topRow = row;
-            bottomRow = row;
-            break;
-          }
-        }
       }
     }
 
@@ -92,8 +104,6 @@ export function useDragDatePreview(items: Array<{ id: string; date: string }>) {
     let ratio: number;
     if (gapHeight > 0 && y >= gapTop && y <= gapBottom) {
       ratio = (y - gapTop) / gapHeight;
-    } else if (topRow.id === bottomRow.id) {
-      ratio = 0.5;
     } else {
       ratio = 0.5;
     }
@@ -105,13 +115,14 @@ export function useDragDatePreview(items: Array<{ id: string; date: string }>) {
 
     setPreviewDate(date);
     setInsertionY(insertionPosition);
-  }, []);
+  }, [activeId]);
 
   return {
     previewDate,
     insertionY,
     isPreviewActive,
     registerRow,
+    setActive,
     updatePointerY,
   };
 }

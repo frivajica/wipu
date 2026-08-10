@@ -2,11 +2,28 @@
 
 import * as React from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  DragMoveEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { useAuth } from "@/hooks/use-auth";
 import { useLedger } from "@/hooks/use-ledger";
 import { useSpaces } from "@/hooks/use-spaces";
 import { useUIStore } from "@/stores/ui-store";
 import { useGroupedLedger } from "@/hooks/use-grouped-ledger";
+import { useDragDatePreview } from "@/hooks/shared/use-drag-date-preview";
 import { PeriodSelector } from "@/components/ledger/period-selector";
 import { CustomDateRange } from "@/components/ledger/custom-date-range";
 import { PeriodGroup } from "@/components/ledger/period-group";
@@ -17,6 +34,8 @@ import { LedgerEmptyState } from "@/components/ledger/ledger-empty-state";
 import { LedgerBalanceBar } from "@/components/ledger/ledger-balance-bar";
 import { ExportButton } from "@/components/ledger/export-button";
 import { CursorLine } from "@/components/ledger/cursor-line";
+import { DatePreviewPill } from "@/components/ledger/date-preview-pill";
+import { InsertionLine } from "@/components/ledger/insertion-line";
 import { ScrollTrackingProvider } from "@/contexts/scroll-tracking-context";
 import { DateTime } from "luxon";
 
@@ -56,17 +75,19 @@ export default function LedgerPage() {
   }, [balances.periods]);
 
   const flatItems = React.useMemo(() => {
-    const items: Array<{ id: string; amount: number; type: string; date: string }> = [];
+    const result: Array<{ id: string; amount: number; type: string; date: string }> = [];
     for (const key of visibleKeys) {
       const group = groupedItems.get(key);
       if (group) {
         for (const item of group) {
-          items.push({ id: item.id, amount: item.amount, type: item.type, date: item.date });
+          result.push({ id: item.id, amount: item.amount, type: item.type, date: item.date });
         }
       }
     }
-    return items;
+    return result;
   }, [visibleKeys, groupedItems]);
+
+  const allItemIds = React.useMemo(() => items.map((i) => i.id), [items]);
 
   const globalTotal = balances.totalBalance;
 
@@ -77,6 +98,36 @@ export default function LedgerPage() {
     }),
     []
   );
+
+  const datePreview = useDragDatePreview();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  React.useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      datePreview.updatePointerY(e.clientY);
+    };
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        datePreview.updatePointerY(e.touches[0].clientY);
+      }
+    };
+    if (datePreview.isPreviewActive) {
+      window.addEventListener("mousemove", handleMouseMove, { passive: true });
+      window.addEventListener("touchmove", handleTouchMove, { passive: true });
+    }
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("touchmove", handleTouchMove);
+    };
+  }, [datePreview.isPreviewActive, datePreview.updatePointerY]);
 
   const handleAddFirstItem = React.useCallback(
     async (data: {
@@ -115,17 +166,33 @@ export default function LedgerPage() {
     [updateItem, user?.id]
   );
 
-  const handleReorderItems = React.useCallback(
-    (itemIds: string[], dateUpdates?: Record<string, string>) => {
-      return reorderItems({
-        spaceId: activeSpaceId || "",
-        itemIds,
-        dateUpdates,
-        updatedBy: user?.id,
-      });
-    },
-    [reorderItems, activeSpaceId, user?.id]
-  );
+  const handleDragEnd = React.useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const activeId = String(active.id);
+    const overId = String(over.id);
+
+    const oldIndex = items.findIndex((item) => item.id === activeId);
+    const newIndex = items.findIndex((item) => item.id === overId);
+    const newItems = arrayMove(items, oldIndex, newIndex);
+
+    const finalDate = datePreview.previewDate || items[oldIndex]?.date;
+    const dateUpdates = { [activeId]: finalDate };
+
+    reorderItems({
+      spaceId: activeSpaceId || "",
+      itemIds: newItems.map((item) => item.id),
+      dateUpdates,
+      updatedBy: user?.id,
+    });
+  }, [items, datePreview.previewDate, reorderItems, activeSpaceId, user?.id]);
+
+  const handleDragStart = React.useCallback((event: { active: { id: string | number } }) => {
+    datePreview.setActive(String(event.active.id));
+  }, [datePreview]);
+
+  const isDragEnabled = sortField === null || sortField === "date";
 
   if (isLoading) return <LedgerSkeleton />;
 
@@ -183,37 +250,93 @@ export default function LedgerPage() {
         items={flatItems}
         initialTotal={globalTotal}
       >
-        <LedgerBalanceBar />
-        <CursorLine />
+        {isDragEnabled ? (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={allItemIds}
+              strategy={verticalListSortingStrategy}
+            >
+              <LedgerBalanceBar />
+              <CursorLine />
 
-        <div className="space-y-2">
-          <AnimatePresence mode="popLayout">
-            {visibleKeys.map((key) => (
-              <PeriodGroup
-                key={key}
-                label={key}
-                items={groupedItems.get(key) || []}
-                onAddItem={addItem}
-                onEditItem={handleEditItem}
-                onDeleteItem={deleteItem}
-                onReorderItems={handleReorderItems}
-                currentUserId={user?.id || ""}
-                periodStats={periodStatsMap.get(key)}
+              <div className="space-y-2">
+                <AnimatePresence mode="popLayout">
+                  {visibleKeys.map((key) => (
+                    <PeriodGroup
+                      key={key}
+                      label={key}
+                      items={groupedItems.get(key) || []}
+                      onAddItem={addItem}
+                      onEditItem={handleEditItem}
+                      onDeleteItem={deleteItem}
+                      onReorderItems={() => {}}
+                      currentUserId={user?.id || ""}
+                      periodStats={periodStatsMap.get(key)}
+                      registerDragRow={datePreview.registerRow}
+                    />
+                  ))}
+                </AnimatePresence>
+
+                {visibleKeys.length === 0 && (
+                  <LedgerEmptyState onAdd={handleAddFirstItem} />
+                )}
+
+                <InfiniteScrollLoader
+                  isLoading={isLoading}
+                  hasMore={hasMore}
+                  onLoadMore={loadMore}
+                  hasItems={items.length > 0}
+                />
+              </div>
+
+              {datePreview.isPreviewActive && (
+                <>
+                  <DatePreviewPill date={datePreview.previewDate} y={datePreview.insertionY} />
+                  <InsertionLine y={datePreview.insertionY} />
+                </>
+              )}
+            </SortableContext>
+          </DndContext>
+        ) : (
+          <>
+            <LedgerBalanceBar />
+            <CursorLine />
+
+            <div className="space-y-2">
+              <AnimatePresence mode="popLayout">
+                {visibleKeys.map((key) => (
+                  <PeriodGroup
+                    key={key}
+                    label={key}
+                    items={groupedItems.get(key) || []}
+                    onAddItem={addItem}
+                    onEditItem={handleEditItem}
+                    onDeleteItem={deleteItem}
+                    onReorderItems={() => {}}
+                    currentUserId={user?.id || ""}
+                    periodStats={periodStatsMap.get(key)}
+                  />
+                ))}
+              </AnimatePresence>
+
+              {visibleKeys.length === 0 && (
+                <LedgerEmptyState onAdd={handleAddFirstItem} />
+              )}
+
+              <InfiniteScrollLoader
+                isLoading={isLoading}
+                hasMore={hasMore}
+                onLoadMore={loadMore}
+                hasItems={items.length > 0}
               />
-            ))}
-          </AnimatePresence>
-
-          {visibleKeys.length === 0 && (
-            <LedgerEmptyState onAdd={handleAddFirstItem} />
-          )}
-
-          <InfiniteScrollLoader
-            isLoading={isLoading}
-            hasMore={hasMore}
-            onLoadMore={loadMore}
-            hasItems={items.length > 0}
-          />
-        </div>
+            </div>
+          </>
+        )}
       </ScrollTrackingProvider>
     </div>
   );
