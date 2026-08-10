@@ -368,7 +368,7 @@ export default function LedgerPage() {
                 <GhostRows
                   dates={datePreview.ghostRows.dates}
                   gapY={datePreview.ghostRows.gapY}
-                  gapHeight={datePreview.ghostRows.gapHeight}
+                  expandedHeight={datePreview.ghostRows.expandedHeight}
                   pointerY={datePreview.ghostRows.pointerY}
                   highlightedDate={datePreview.ghostRows.highlightedDate}
                 />

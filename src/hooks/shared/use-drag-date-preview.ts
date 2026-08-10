@@ -5,6 +5,8 @@ import { DateTime } from "luxon";
 import { interpolateDate } from "@/lib/date-utils";
 import { PeriodType } from "@/lib/types";
 
+const GHOST_ROW_HEIGHT = 28;
+
 interface TrackedRow {
   id: string;
   date: string;
@@ -15,7 +17,7 @@ interface TrackedRow {
 interface GhostRowsData {
   dates: string[];
   gapY: number;
-  gapHeight: number;
+  expandedHeight: number;
   pointerY: number;
   highlightedDate: string | null;
   isEdgeCase: "top" | "bottom" | false;
@@ -82,6 +84,7 @@ export function useDragDatePreview(periodType: PeriodType) {
   const pointerYRef = React.useRef<number>(-1);
   const rowMapRef = React.useRef(new Map<string, TrackedRow>());
   const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const currentGapRef = React.useRef<string | null>(null);
 
   const [previewDate, setPreviewDate] = React.useState<string | null>(null);
   const [ghostRows, setGhostRows] = React.useState<GhostRowsData | null>(null);
@@ -125,12 +128,14 @@ export function useDragDatePreview(periodType: PeriodType) {
     if (rows.length === 0) {
       setPreviewDate(null);
       setGhostRows(null);
+      currentGapRef.current = null;
       return;
     }
 
     if (rows.length === 1) {
       setPreviewDate(rows[0].date);
       setGhostRows(null);
+      currentGapRef.current = null;
       return;
     }
 
@@ -169,7 +174,14 @@ export function useDragDatePreview(periodType: PeriodType) {
       }
     }
 
-    if (!topRow || !bottomRow) return;
+    if (!topRow || !bottomRow) {
+      if (currentGapRef.current !== null) {
+        currentGapRef.current = null;
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        setGhostRows(null);
+      }
+      return;
+    }
 
     const gapTop = topRow.rect.bottom;
     const gapBottom = bottomRow.rect.top;
@@ -185,18 +197,20 @@ export function useDragDatePreview(periodType: PeriodType) {
     ratio = Math.max(0, Math.min(1, ratio));
 
     const date = interpolateDate(topRow.date, bottomRow.date, ratio);
-
     setPreviewDate(date);
 
-    if (debounceRef.current) clearTimeout(debounceRef.current);
+    const gapKey = `${topRow.id}-${bottomRow.id}`;
 
-    if (isEdgeCase || gapHeight > 2) {
+    if (gapKey !== currentGapRef.current) {
+      currentGapRef.current = gapKey;
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+
       debounceRef.current = setTimeout(() => {
         const dates = generateGhostDates(topRow!.date, bottomRow!.date, isEdgeCase, periodType);
-        const dateWidth = gapHeight / Math.max(dates.length, 1);
+        const expandedHeight = dates.length * GHOST_ROW_HEIGHT;
 
         const ghostIndex = Math.min(
-          Math.floor((y - gapTop) / dateWidth),
+          Math.floor((y - gapTop) / Math.max(gapHeight, 1)),
           dates.length - 1
         );
         const highlightedDate = dates[Math.max(0, ghostIndex)];
@@ -204,14 +218,12 @@ export function useDragDatePreview(periodType: PeriodType) {
         setGhostRows({
           dates,
           gapY: gapTop,
-          gapHeight,
+          expandedHeight,
           pointerY: y,
           highlightedDate,
           isEdgeCase,
         });
       }, 200);
-    } else {
-      setGhostRows(null);
     }
   }, [activeId, periodType]);
 
