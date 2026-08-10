@@ -162,31 +162,19 @@ export default function LedgerPage() {
   );
 
   const handleDragEnd = React.useCallback((event: DragEndEvent) => {
-    const { active, over } = event;
+    const { active } = event;
     const activeId = String(active.id);
-    const overId = over ? String(over.id) : null;
 
     const activeIndex = flatItems.findIndex((i) => i.id === activeId);
     if (activeIndex === -1) return;
 
-    if (!overId) {
-      updateItem({
-        id: activeId,
-        updates: {
-          date: flatItems[activeIndex].date,
-          updatedBy: user?.id || "",
-        },
-      });
-      return;
-    }
+    const targetIndex = datePreview.insertIndex;
+    if (targetIndex < 0) return;
 
-    const overIndex = flatItems.findIndex((i) => i.id === overId);
-    if (overIndex === -1) return;
-
-    const newItems = arrayMove(flatItems, activeIndex, overIndex);
-    const movedItem = newItems[overIndex];
-    const before = newItems[overIndex - 1];
-    const after = newItems[overIndex + 1];
+    const newItems = arrayMove(flatItems, activeIndex, targetIndex);
+    const movedItem = newItems[targetIndex];
+    const before = newItems[targetIndex - 1];
+    const after = newItems[targetIndex + 1];
 
     let newDate: string;
     if (before && after) {
@@ -204,7 +192,7 @@ export default function LedgerPage() {
         updatedBy: user?.id || "",
       },
     });
-  }, [flatItems, updateItem, user?.id]);
+  }, [flatItems, datePreview.insertIndex, updateItem, user?.id]);
 
   const handleDragStart = React.useCallback((event: { active: { id: string | number } }) => {
     datePreview.setActive(String(event.active.id));

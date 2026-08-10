@@ -15,6 +15,7 @@ export function useDragDatePreview() {
 
   const [previewDate, setPreviewDate] = React.useState<string | null>(null);
   const [gapY, setGapY] = React.useState<number | null>(null);
+  const [insertIndex, setInsertIndex] = React.useState<number>(-1);
   const [activeId, setActiveId] = React.useState<string | null>(null);
 
   const isPreviewActive = !!activeId;
@@ -52,17 +53,20 @@ export function useDragDatePreview() {
     if (rows.length === 0) {
       setPreviewDate(null);
       setGapY(null);
+      setInsertIndex(0);
       return;
     }
 
     if (rows.length === 1) {
       setPreviewDate(rows[0].date);
       setGapY(rows[0].rect.top);
+      setInsertIndex(y < rows[0].rect.top ? 0 : 1);
       return;
     }
 
     let topRow: (typeof rows)[0] | null = null;
     let bottomRow: (typeof rows)[0] | null = null;
+    let topIndex = -1;
 
     for (let i = 0; i < rows.length - 1; i++) {
       const current = rows[i];
@@ -71,15 +75,18 @@ export function useDragDatePreview() {
       if (y >= current.rect.bottom && y <= next.rect.top) {
         topRow = current;
         bottomRow = next;
+        topIndex = i;
         break;
       }
     }
 
     if (!topRow || !bottomRow) {
-      for (const row of rows) {
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
         if (y >= row.rect.top && y <= row.rect.bottom) {
           topRow = row;
           bottomRow = row;
+          topIndex = i;
           break;
         }
       }
@@ -89,9 +96,11 @@ export function useDragDatePreview() {
       if (y < rows[0].rect.top) {
         topRow = rows[0];
         bottomRow = rows[1] ?? rows[0];
+        topIndex = -1;
       } else {
         topRow = rows[rows.length - 2] ?? rows[rows.length - 1];
         bottomRow = rows[rows.length - 1];
+        topIndex = rows.length - 2;
       }
     }
 
@@ -112,13 +121,17 @@ export function useDragDatePreview() {
 
     const date = interpolateDate(topRow.date, bottomRow.date, ratio);
 
+    const computedIndex = topIndex >= 0 ? topIndex + 1 : 0;
+
     setPreviewDate(date);
     setGapY(gapTop);
+    setInsertIndex(computedIndex);
   }, [activeId]);
 
   return {
     previewDate,
     gapY,
+    insertIndex,
     isPreviewActive,
     registerRow,
     setActive,
