@@ -12,10 +12,7 @@ import {
   DragEndEvent,
 } from "@dnd-kit/core";
 import {
-  arrayMove,
-  SortableContext,
   sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { useAuth } from "@/hooks/use-auth";
 import { useLedger } from "@/hooks/use-ledger";
@@ -84,8 +81,6 @@ export default function LedgerPage() {
     }
     return result;
   }, [visibleKeys, groupedItems]);
-
-  const allItemIds = React.useMemo(() => items.map((i) => i.id), [items]);
 
   const globalTotal = balances.totalBalance;
 
@@ -165,30 +160,36 @@ export default function LedgerPage() {
   );
 
   const handleDragEnd = React.useCallback((event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-
+    const { active } = event;
     const activeId = String(active.id);
-    const overId = String(over.id);
 
-    const oldIndex = items.findIndex((item) => item.id === activeId);
-    const newIndex = items.findIndex((item) => item.id === overId);
-    const newItems = arrayMove(items, oldIndex, newIndex);
+    const finalDate = datePreview.previewDate;
+    if (!finalDate) return;
 
-    const finalDate = datePreview.previewDate || items[oldIndex]?.date;
-    const dateUpdates = { [activeId]: finalDate };
-
-    reorderItems({
-      spaceId: activeSpaceId || "",
-      itemIds: newItems.map((item) => item.id),
-      dateUpdates,
-      updatedBy: user?.id,
+    updateItem({
+      id: activeId,
+      updates: {
+        date: finalDate,
+        updatedBy: user?.id || "",
+      },
     });
-  }, [items, datePreview.previewDate, reorderItems, activeSpaceId, user?.id]);
+  }, [datePreview.previewDate, updateItem, user?.id]);
 
   const handleDragStart = React.useCallback((event: { active: { id: string | number } }) => {
     datePreview.setActive(String(event.active.id));
   }, [datePreview]);
+
+  const handleReorderItems = React.useCallback(
+    (itemIds: string[], dateUpdates?: Record<string, string>) => {
+      return reorderItems({
+        spaceId: activeSpaceId || "",
+        itemIds,
+        dateUpdates,
+        updatedBy: user?.id,
+      });
+    },
+    [reorderItems, activeSpaceId, user?.id]
+  );
 
   const isDragEnabled = sortField === null || sortField === "date";
 
@@ -255,49 +256,42 @@ export default function LedgerPage() {
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           >
-            <SortableContext
-              items={allItemIds}
-              strategy={verticalListSortingStrategy}
-            >
-              <LedgerBalanceBar />
-              <CursorLine />
+            <LedgerBalanceBar />
+            <CursorLine />
 
-              <div className="space-y-2">
-                <AnimatePresence mode="popLayout">
-                  {visibleKeys.map((key) => (
-                    <PeriodGroup
-                      key={key}
-                      label={key}
-                      items={groupedItems.get(key) || []}
-                      onAddItem={addItem}
-                      onEditItem={handleEditItem}
-                      onDeleteItem={deleteItem}
-                      onReorderItems={() => {}}
-                      currentUserId={user?.id || ""}
-                      periodStats={periodStatsMap.get(key)}
-                      registerDragRow={datePreview.registerRow}
-                    />
-                  ))}
-                </AnimatePresence>
+            <div className="space-y-2">
+              <AnimatePresence mode="popLayout">
+                {visibleKeys.map((key) => (
+                  <PeriodGroup
+                    key={key}
+                    label={key}
+                    items={groupedItems.get(key) || []}
+                    onAddItem={addItem}
+                    onEditItem={handleEditItem}
+                    onDeleteItem={deleteItem}
+                    onReorderItems={handleReorderItems}
+                    currentUserId={user?.id || ""}
+                    periodStats={periodStatsMap.get(key)}
+                    registerDragRow={datePreview.registerRow}
+                  />
+                ))}
+              </AnimatePresence>
 
-                {visibleKeys.length === 0 && (
-                  <LedgerEmptyState onAdd={handleAddFirstItem} />
-                )}
-
-                <InfiniteScrollLoader
-                  isLoading={isLoading}
-                  hasMore={hasMore}
-                  onLoadMore={loadMore}
-                  hasItems={items.length > 0}
-                />
-              </div>
-
-              {datePreview.isPreviewActive && (
-                <>
-                  <GapInsertion y={datePreview.gapY} date={datePreview.previewDate} isActive={datePreview.isPreviewActive} />
-                </>
+              {visibleKeys.length === 0 && (
+                <LedgerEmptyState onAdd={handleAddFirstItem} />
               )}
-            </SortableContext>
+
+              <InfiniteScrollLoader
+                isLoading={isLoading}
+                hasMore={hasMore}
+                onLoadMore={loadMore}
+                hasItems={items.length > 0}
+              />
+            </div>
+
+            {datePreview.isPreviewActive && (
+              <GapInsertion y={datePreview.gapY} date={datePreview.previewDate} isActive={datePreview.isPreviewActive} />
+            )}
           </DndContext>
         ) : (
           <>
@@ -314,7 +308,7 @@ export default function LedgerPage() {
                     onAddItem={addItem}
                     onEditItem={handleEditItem}
                     onDeleteItem={deleteItem}
-                    onReorderItems={() => {}}
+                    onReorderItems={handleReorderItems}
                     currentUserId={user?.id || ""}
                     periodStats={periodStatsMap.get(key)}
                   />

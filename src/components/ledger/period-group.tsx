@@ -2,10 +2,26 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { LedgerItem } from "@/lib/types";
 import { PeriodHeader } from "./period-header";
 import { LedgerItemList } from "./period/ledger-item-list";
 import { useScrollTrackingContext } from "@/contexts/scroll-tracking-context";
+import { getMidpointDate } from "@/lib/date-utils";
 
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { useUIStore } from "@/stores/ui-store";
@@ -35,6 +51,7 @@ export function PeriodGroup({
   items,
   onEditItem,
   onDeleteItem,
+  onReorderItems,
   currentUserId,
   periodStats,
   registerDragRow,
@@ -62,12 +79,65 @@ export function PeriodGroup({
   };
 
   const [editingId, setEditingId] = React.useState<string | null>(null);
+  const [optimisticItems, addOptimisticItems] = React.useOptimistic(
+    items,
+    (_state, newItems: LedgerItem[]) => newItems
+  );
 
-  const { observeElement, unobserveElement, currentPeriodKey } =
+  const { pause, resume, observeElement, unobserveElement, currentPeriodKey } =
     useScrollTrackingContext();
 
   const isActiveDateSort = sortField === "date" && sortDirection === "desc";
   const isDragEnabled = sortField === null || sortField === "date";
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragStart = () => {
+    pause();
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    resume();
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const activeId = String(active.id);
+    const overId = String(over.id);
+
+    const oldIndex = optimisticItems.findIndex((item) => item.id === activeId);
+    const newIndex = optimisticItems.findIndex((item) => item.id === overId);
+
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const newItems = arrayMove(optimisticItems, oldIndex, newIndex);
+    const movedItem = newItems[newIndex];
+    const before = newItems[newIndex - 1];
+    const after = newItems[newIndex + 1];
+
+    let newDate: string;
+    if (before && after) {
+      newDate = getMidpointDate(before.date, after.date);
+    } else {
+      newDate = (before || after).date;
+    }
+    movedItem.date = newDate;
+    const dateUpdates = { [movedItem.id]: newDate };
+
+    React.startTransition(() => {
+      addOptimisticItems(newItems);
+      onReorderItems(
+        newItems.map((item) => item.id),
+        dateUpdates
+      );
+    });
+  };
 
   const handleEditSave = (data: {
     amount: number;
@@ -83,6 +153,44 @@ export function PeriodGroup({
       setEditingId(null);
     }
   };
+
+  const displayItems = optimisticItems;
+
+  const itemIds = React.useMemo(() => displayItems.map((item) => item.id), [displayItems]);
+
+  const list = (
+    <LedgerItemList
+      items={displayItems}
+      editingId={editingId}
+      onEdit={onEditItem}
+      onDelete={onDeleteItem}
+      onStartEdit={setEditingId}
+      onSaveEdit={handleEditSave}
+      onCancelEdit={() => setEditingId(null)}
+      currentUserId={currentUserId}
+      isDragEnabled={isDragEnabled}
+      observeElement={isActiveDateSort ? observeElement : () => {}}
+      unobserveElement={isActiveDateSort ? unobserveElement : () => {}}
+      periodKey={label}
+      registerDragRow={registerDragRow}
+    />
+  );
+
+  const content = isDragEnabled ? (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      <SortableContext
+        items={itemIds}
+        strategy={verticalListSortingStrategy}
+      >
+        {list}
+      </SortableContext>
+    </DndContext>
+  ) : list;
 
   return (
     <motion.section
@@ -125,21 +233,7 @@ export function PeriodGroup({
         <div className="overflow-hidden"></div>
       </div>
 
-      <LedgerItemList
-        items={items}
-        editingId={editingId}
-        onEdit={onEditItem}
-        onDelete={onDeleteItem}
-        onStartEdit={setEditingId}
-        onSaveEdit={handleEditSave}
-        onCancelEdit={() => setEditingId(null)}
-        currentUserId={currentUserId}
-        isDragEnabled={isDragEnabled}
-        observeElement={isActiveDateSort ? observeElement : () => {}}
-        unobserveElement={isActiveDateSort ? unobserveElement : () => {}}
-        periodKey={label}
-        registerDragRow={registerDragRow}
-      />
+      {content}
     </motion.section>
   );
 }
