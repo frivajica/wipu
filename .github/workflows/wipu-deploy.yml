@@ -1,0 +1,26 @@
+name: Deploy wipu to Pi
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Connect to tailnet
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+          ping: ${{ vars.PI_HOST }}
+
+      - name: Deploy
+        env:
+          PI_HOST: ${{ vars.PI_HOST }}
+          PI_USER: ${{ vars.PI_USER }}
+        run: |
+          ssh -o StrictHostKeyChecking=accept-new \
+            "$PI_USER@$PI_HOST" \
+            "sudo /home/frivajica/Homelab/scripts/deploy-app.sh wipu"

@@ -514,21 +514,10 @@ For period stats, use the SQL function `get_period_stats()` defined in schema.
 
 ### Cron Job
 
-- [ ] Create `src/app/api/cron/recurring/route.ts` (Vercel Cron compatible)
+- [ ] Create `src/app/api/cron/recurring/route.ts` (self-hosted; no Vercel)
 - [ ] Query: `SELECT * FROM recurring_items WHERE next_occurrence <= CURRENT_DATE AND is_active = true`
 - [ ] For each due item: generate next batch of instances, update next_occurrence
-- [ ] Set up Vercel Cron in `vercel.json`:
-
-```json
-{
-  "crons": [
-    {
-      "path": "/api/cron/recurring",
-      "schedule": "0 0 * * *"
-    }
-  ]
-}
-```
+- [ ] Run daily via a systemd timer/cron on the Pi (e.g. `curl -f https://wipu.franj.dev/api/cron/recurring`), not Vercel Cron
 
 ### Period Totals with Recurring
 
