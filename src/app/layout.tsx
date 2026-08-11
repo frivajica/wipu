@@ -3,7 +3,6 @@ import { Inter, Manrope } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { AuthGuard } from "@/components/auth-guard";
 import { Header } from "@/components/layout/header";
-import { CiCheck } from "@/components/layout/ci-check";
 import { ToastContainer } from "@/components/ui/toast";
 import "./globals.css";
 
@@ -40,7 +39,6 @@ export default function RootLayout({
             </main>
           </AuthGuard>
           <ToastContainer />
-          <CiCheck />
         </Providers>
       </body>
     </html>
