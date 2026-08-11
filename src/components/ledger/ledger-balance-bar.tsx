@@ -135,7 +135,7 @@ export function LedgerBalanceBar() {
               : { width: "auto", opacity: 1, overflow: "visible" }
           }
           transition={SPRING_DEFAULT}
-          className="flex items-center gap-2 flex-shrink-0"
+          className="flex items-center gap-2 shrink-0"
         >
           {isSticky && (
             <div className="rounded-lg px-2.5 py-1 text-center bg-surface-strong whitespace-nowrap">
