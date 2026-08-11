@@ -29,12 +29,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} ${manrope.variable} font-sans antialiased bg-background text-text-primary`}
+        className={`${inter.variable} ${manrope.variable} font-sans antialiased bg-background text-text-primary min-h-dvh flex flex-col`}
       >
         <Providers>
           <AuthGuard>
             <Header />
-            <main className="max-w-4xl mx-auto px-4 py-6">
+            <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-6">
               {children}
             </main>
           </AuthGuard>
