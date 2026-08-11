@@ -37,11 +37,11 @@ export function LoginForm() {
     >
       <div className="space-y-2">
         <label htmlFor="email" className="text-sm font-medium text-text-primary">Email</label>
-        <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <Input id="email" type="email" autoComplete="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
       </div>
       <div className="space-y-2">
         <label htmlFor="password" className="text-sm font-medium text-text-primary">Password</label>
-        <Input id="password" type="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+        <Input id="password" type="password" autoComplete="current-password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} required />
       </div>
     </AuthFormLayout>
   );

@@ -38,15 +38,15 @@ export function RegisterForm() {
     >
       <div className="space-y-2">
         <label htmlFor="name" className="text-sm font-medium text-text-primary">Name</label>
-        <Input id="name" type="text" placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} required />
+        <Input id="name" type="text" autoComplete="name" placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} required />
       </div>
       <div className="space-y-2">
         <label htmlFor="email" className="text-sm font-medium text-text-primary">Email</label>
-        <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <Input id="email" type="email" autoComplete="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
       </div>
       <div className="space-y-2">
         <label htmlFor="password" className="text-sm font-medium text-text-primary">Password</label>
-        <Input id="password" type="password" placeholder="Create a password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+        <Input id="password" type="password" autoComplete="new-password" placeholder="Create a password" value={password} onChange={(e) => setPassword(e.target.value)} required />
       </div>
     </AuthFormLayout>
   );
