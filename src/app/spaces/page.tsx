@@ -10,6 +10,7 @@ import { InviteLinkModal } from "@/components/spaces/invite-link-modal";
 import { SpaceManageModal } from "@/components/spaces/space-manage-modal";
 import { SpaceModals } from "@/components/spaces/space-modals";
 import { SpacesSkeleton } from "@/components/spaces/spaces-skeleton";
+import { ErrorState } from "@/components/ui/error-state";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { Space } from "@/lib/types";
@@ -21,6 +22,8 @@ export default function SpacesPage() {
   const {
     spaces,
     isLoading,
+    isError,
+    refetchSpaces,
     createSpace,
     updateSpaceName,
     removeMember,
@@ -41,6 +44,22 @@ export default function SpacesPage() {
     switchSpace(spaceId);
     router.push("/ledger");
   };
+
+  if (isError) {
+    return (
+      <div className="min-h-full bg-background">
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-2xl font-bold font-display text-text-primary">Your Spaces</h1>
+              <p className="text-text-secondary mt-1">Manage your teams and workspaces</p>
+            </div>
+          </div>
+          <ErrorState message="Couldn't load your spaces." onRetry={refetchSpaces} />
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

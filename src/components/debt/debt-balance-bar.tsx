@@ -5,7 +5,7 @@ import { formatCurrency } from "@/lib/formatting";
 import { BalanceBar } from "@/components/layout/balance-bar";
 
 export function DebtBalanceBar() {
-  const { balances } = useLedger();
+  const { balances, balancesPending } = useLedger();
 
   return (
     <BalanceBar>
@@ -14,7 +14,7 @@ export function DebtBalanceBar() {
           Total Debt
         </p>
         <p className="text-sm font-bold text-debt">
-          {formatCurrency(balances.totalDebt)}
+          {balancesPending ? "—" : formatCurrency(balances.totalDebt)}
         </p>
       </div>
       <div className="rounded-lg bg-surface-strong px-2.5 py-1 text-center">
@@ -22,7 +22,7 @@ export function DebtBalanceBar() {
           Real Balance
         </p>
         <p className="text-sm font-bold text-text">
-          {formatCurrency(balances.realBalance)}
+          {balancesPending ? "—" : formatCurrency(balances.realBalance)}
         </p>
       </div>
     </BalanceBar>

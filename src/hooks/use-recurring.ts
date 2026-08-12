@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useSpaceStore } from "@/stores/space-store";
+import { useSpaces } from "@/hooks/use-spaces";
 import { useMutationWithToast } from "@/hooks/shared/use-mutation-with-toast";
 
 export interface RecurringRule {
@@ -53,8 +54,9 @@ export interface CreateRecurringRulePayload {
 
 export function useRecurring() {
   const activeSpaceId = useSpaceStore((s) => s.activeSpaceId);
+  const { isLoading: spacesLoading } = useSpaces();
 
-  const { data: rules = [], isLoading } = useQuery({
+  const { data: rules = [], isPending, isError, refetch } = useQuery({
     queryKey: ["recurring", activeSpaceId],
     queryFn: async (): Promise<RecurringRule[]> => {
       if (!activeSpaceId) return [];
@@ -63,7 +65,7 @@ export function useRecurring() {
       const data = await res.json();
       return data.rules;
     },
-    enabled: !!activeSpaceId,
+    enabled: !!activeSpaceId && !spacesLoading,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -125,7 +127,9 @@ export function useRecurring() {
 
   return {
     rules,
-    isLoading,
+    isPending,
+    isError,
+    refetchRules: refetch,
     createRule: createRule.mutateAsync,
     updateRule: updateRule.mutateAsync,
     toggleActive: toggleActive.mutateAsync,

@@ -10,13 +10,14 @@ import { DebtGroupList } from "@/components/debt/debt-group-list";
 import { DebtEmptyState } from "@/components/debt/debt-empty-state";
 import { DebtSkeleton } from "@/components/debt/debt-skeleton";
 import { CreateDebtGroupModal } from "@/components/debt/create-debt-group-modal";
+import { ErrorState } from "@/components/ui/error-state";
+import { NoActiveSpace } from "@/components/ui/no-active-space";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
 export default function DebtPage() {
   return (
     <div className="space-y-6">
-      <DebtBalanceBar />
       <DebtContent />
     </div>
   );
@@ -24,10 +25,17 @@ export default function DebtPage() {
 
 function DebtContent() {
   const { user } = useAuth();
-  const { activeSpaceId } = useSpaces();
+  const {
+    activeSpaceId,
+    isLoading: spacesLoading,
+    isError: spacesError,
+    refetchSpaces,
+  } = useSpaces();
   const {
     groups,
-    isLoading,
+    isPending,
+    isError,
+    refetchGroups,
     createGroup,
     updateGroup,
     deleteGroup,
@@ -40,10 +48,17 @@ function DebtContent() {
     await createGroup(name);
   };
 
-  if (isLoading) return <DebtSkeleton />;
+  if (spacesError) {
+    return <ErrorState message="Couldn't load your spaces." onRetry={refetchSpaces} />;
+  }
+  if (spacesLoading) return <DebtSkeleton />;
+  if (!activeSpaceId) return <NoActiveSpace />;
+  if (isPending) return <DebtSkeleton />;
+  if (isError) return <ErrorState onRetry={refetchGroups} />;
 
   return (
     <>
+      <DebtBalanceBar />
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-text-primary">Debt Groups</h2>
         <Button size="sm" onClick={() => setIsModalOpen(true)}>

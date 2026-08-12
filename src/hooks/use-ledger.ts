@@ -1,8 +1,9 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useSpaceStore } from "@/stores/space-store";
 import { useUIStore } from "@/stores/ui-store";
+import { useSpaces } from "@/hooks/use-spaces";
 import { LedgerItem, LedgerBalances } from "@/lib/types";
 import { useMutationWithToast } from "@/hooks/shared/use-mutation-with-toast";
 
@@ -10,8 +11,9 @@ export function useLedger() {
   const activeSpaceId = useSpaceStore((s) => s.activeSpaceId);
   const periodType = useUIStore((s) => s.periodType);
   const balanceCutoffDate = useUIStore((s) => s.balanceCutoffDate);
+  const { isLoading: spacesLoading } = useSpaces();
 
-  const { data: items, isLoading } = useQuery({
+  const { data: items, isPending, isError, refetch } = useQuery({
     queryKey: ["ledger", activeSpaceId],
     queryFn: async (): Promise<LedgerItem[]> => {
       if (!activeSpaceId) return [];
@@ -20,7 +22,7 @@ export function useLedger() {
       const data = await res.json();
       return data.items;
     },
-    enabled: !!activeSpaceId,
+    enabled: !!activeSpaceId && !spacesLoading,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -39,8 +41,9 @@ export function useLedger() {
       if (!res.ok) throw new Error("Failed to fetch balances");
       return res.json();
     },
-    enabled: !!activeSpaceId,
+    enabled: !!activeSpaceId && !spacesLoading,
     staleTime: 5 * 60 * 1000,
+    placeholderData: keepPreviousData,
   });
 
   const addItem = useMutationWithToast({
@@ -118,8 +121,11 @@ export function useLedger() {
 
   return {
     items: items || [],
-    isLoading,
+    isPending,
+    isError,
+    refetchItems: refetch,
     balances: balances || { totalBalance: 0, totalDebt: 0, realBalance: 0, periods: [] },
+    balancesPending: balances === undefined,
     addItem: addItem.mutateAsync,
     updateItem: updateItem.mutateAsync,
     deleteItem: deleteItem.mutateAsync,

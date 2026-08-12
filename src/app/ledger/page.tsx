@@ -29,6 +29,8 @@ import { InfiniteScrollLoader } from "@/components/ledger/infinite-scroll-loader
 import { LedgerSkeleton } from "@/components/ledger/ledger-skeleton";
 import { LedgerEmptyState } from "@/components/ledger/ledger-empty-state";
 import { LedgerBalanceBar } from "@/components/ledger/ledger-balance-bar";
+import { ErrorState } from "@/components/ui/error-state";
+import { NoActiveSpace } from "@/components/ui/no-active-space";
 import { ExportButton } from "@/components/ledger/export-button";
 import { CursorLine } from "@/components/ledger/cursor-line";
 import { ScrollTrackingProvider } from "@/contexts/scroll-tracking-context";
@@ -36,8 +38,13 @@ import { DateTime } from "luxon";
 
 export default function LedgerPage() {
   const { user } = useAuth();
-  const { activeSpaceId } = useSpaces();
-  const { items, isLoading, balances, addItem, updateItem, deleteItem, reorderItems } = useLedger();
+  const {
+    activeSpaceId,
+    isLoading: spacesLoading,
+    isError: spacesError,
+    refetchSpaces,
+  } = useSpaces();
+  const { items, isPending, isError, refetchItems, balances, addItem, updateItem, deleteItem, reorderItems } = useLedger();
 
   const periodType = useUIStore((s) => s.periodType);
   const customDateRange = useUIStore((s) => s.customDateRange);
@@ -191,7 +198,13 @@ export default function LedgerPage() {
 
   const isDragEnabled = sortField === null || sortField === "date";
 
-  if (isLoading) return <LedgerSkeleton />;
+  if (spacesError) {
+    return <ErrorState message="Couldn't load your spaces." onRetry={refetchSpaces} />;
+  }
+  if (spacesLoading) return <LedgerSkeleton />;
+  if (!activeSpaceId) return <NoActiveSpace />;
+  if (isPending) return <LedgerSkeleton />;
+  if (isError) return <ErrorState onRetry={refetchItems} />;
 
   return (
     <div className="space-y-6 pb-safe">
@@ -282,7 +295,6 @@ export default function LedgerPage() {
                 )}
 
                 <InfiniteScrollLoader
-                  isLoading={isLoading}
                   hasMore={hasMore}
                   onLoadMore={loadMore}
                   hasItems={items.length > 0}
@@ -317,7 +329,6 @@ export default function LedgerPage() {
               )}
 
               <InfiniteScrollLoader
-                isLoading={isLoading}
                 hasMore={hasMore}
                 onLoadMore={loadMore}
                 hasItems={items.length > 0}

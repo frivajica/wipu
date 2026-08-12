@@ -2,13 +2,15 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useSpaceStore } from "@/stores/space-store";
+import { useSpaces } from "@/hooks/use-spaces";
 import { useMutationWithToast } from "@/hooks/shared/use-mutation-with-toast";
 import { DebtGroup } from "@/lib/types";
 
 export function useDebt() {
   const activeSpaceId = useSpaceStore((s) => s.activeSpaceId);
+  const { isLoading: spacesLoading } = useSpaces();
 
-  const { data: groups, isLoading } = useQuery({
+  const { data: groups, isPending, isError, refetch } = useQuery({
     queryKey: ["debt-groups", activeSpaceId],
     queryFn: async (): Promise<DebtGroup[]> => {
       if (!activeSpaceId) return [];
@@ -17,7 +19,7 @@ export function useDebt() {
       const data = await res.json();
       return data.groups;
     },
-    enabled: !!activeSpaceId,
+    enabled: !!activeSpaceId && !spacesLoading,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -61,7 +63,9 @@ export function useDebt() {
 
   return {
     groups: groups || [],
-    isLoading,
+    isPending,
+    isError,
+    refetchGroups: refetch,
     createGroup: createGroup.mutateAsync,
     updateGroup: updateGroup.mutateAsync,
     deleteGroup: deleteGroup.mutateAsync,

@@ -14,7 +14,7 @@ export function useSpaces() {
   const setActiveSpace = useSpaceStore((s) => s.setActiveSpace);
   const { addToast } = useToastStore();
 
-  const { data: spaces = [], isLoading } = useQuery({
+  const { data: spaces = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["spaces", user?.id],
     queryFn: async (): Promise<Space[]> => {
       if (!user) return [];
@@ -118,6 +118,8 @@ export function useSpaces() {
     activeSpaceId,
     activeSpace: spaces.find((s) => s.id === activeSpaceId),
     isLoading,
+    isError,
+    refetchSpaces: refetch,
     createSpace: createSpace.mutateAsync,
     updateSpaceName: updateSpaceName.mutateAsync,
     removeMember: removeMember.mutateAsync,

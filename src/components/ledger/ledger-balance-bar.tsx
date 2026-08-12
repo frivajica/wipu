@@ -16,7 +16,7 @@ import { DateTime } from "luxon";
 import { AddItemRow } from "./add-item-row";
 
 export function LedgerBalanceBar() {
-  const { balances, items, addItem } = useLedger();
+  const { balances, balancesPending, items, addItem } = useLedger();
   const { user } = useAuth();
   const { activeSpaceId } = useSpaces();
   const sortField = useUIStore((s) => s.sortField);
@@ -142,7 +142,9 @@ export function LedgerBalanceBar() {
               <p className="text-[9px] font-medium text-text-secondary uppercase tracking-wide">
                 All Time
               </p>
-              <p className="text-sm font-bold text-text">{formatCurrency(globalTotal)}</p>
+              <p className="text-sm font-bold text-text">
+                {balancesPending ? "—" : formatCurrency(globalTotal)}
+              </p>
             </div>
           )}
           <div
@@ -155,7 +157,9 @@ export function LedgerBalanceBar() {
             <p className="text-[9px] font-medium text-text-secondary uppercase tracking-wide">
               At This Point
             </p>
-            <p className="text-sm font-bold text-text">{formatCurrency(displayTotal)}</p>
+            <p className="text-sm font-bold text-text">
+              {balancesPending ? "—" : formatCurrency(displayTotal)}
+            </p>
           </div>
         </motion.div>
       </motion.div>

@@ -11,13 +11,22 @@ import { CreateRecurringRuleModal } from "@/components/recurring/create-recurrin
 import { EditRecurringRuleModal } from "@/components/recurring/edit-recurring-rule-modal";
 import { RecurringEmptyState } from "@/components/recurring/recurring-empty-state";
 import { RecurringSkeleton } from "@/components/recurring/recurring-skeleton";
+import { ErrorState } from "@/components/ui/error-state";
+import { NoActiveSpace } from "@/components/ui/no-active-space";
 import { DeleteConfirmationModal } from "@/components/ui/delete-confirmation-modal";
 
 export default function RecurringPage() {
-  const { activeSpaceId } = useSpaces();
+  const {
+    activeSpaceId,
+    isLoading: spacesLoading,
+    isError: spacesError,
+    refetchSpaces,
+  } = useSpaces();
   const {
     rules,
-    isLoading,
+    isPending,
+    isError,
+    refetchRules,
     createRule,
     updateRule,
     deleteRule,
@@ -30,7 +39,13 @@ export default function RecurringPage() {
   const [editRule, setEditRule] = React.useState<RecurringRule | null>(null);
   const [ruleToDelete, setRuleToDelete] = React.useState<RecurringRule | null>(null);
 
-  if (isLoading) return <RecurringSkeleton />;
+  if (spacesError) {
+    return <ErrorState message="Couldn't load your spaces." onRetry={refetchSpaces} />;
+  }
+  if (spacesLoading) return <RecurringSkeleton />;
+  if (!activeSpaceId) return <NoActiveSpace />;
+  if (isPending) return <RecurringSkeleton />;
+  if (isError) return <ErrorState onRetry={refetchRules} />;
 
   return (
     <div className="space-y-6 pb-safe">
